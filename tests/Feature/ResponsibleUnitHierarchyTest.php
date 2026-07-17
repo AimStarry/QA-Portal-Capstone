@@ -79,8 +79,10 @@ class ResponsibleUnitHierarchyTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get(route('admin.categories.index'));
         $response->assertStatus(200);
-        $response->assertSee('Category');
-        $response->assertSee('Laboratory Management');
+        $response->assertJsonStructure([
+            'responsibleUnits',
+            'laboratories'
+        ]);
     }
 
     public function test_admin_can_create_responsible_unit()

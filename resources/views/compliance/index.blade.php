@@ -1087,44 +1087,26 @@
 
     <!-- Manage Categories & Labs Modal -->
     <div id="manage-labs-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full overflow-hidden transform scale-95 transition-all flex flex-col" style="max-width: 800px; max-height: calc(100vh - 80px);">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full overflow-hidden transform scale-95 transition-all flex flex-col" style="max-width: 500px; max-height: calc(100vh - 80px);">
             <div class="bg-hau-maroon px-5 py-3 text-white flex items-center justify-between border-b-2 border-hau-gold shrink-0">
                 <h3 class="text-base font-bold">Manage Categories &amp; Laboratories</h3>
                 <button onclick="closeModal('manage-labs-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
             </div>
+
+            <!-- Tabs Navigation -->
+            <div class="flex border-b border-gray-200 bg-gray-50 px-5 shrink-0">
+                <button type="button" onclick="switchManageLabsTab('list')" id="manage-labs-tab-list" class="px-4 py-3 text-xs font-bold text-hau-maroon border-b-2 border-hau-maroon focus:outline-none transition">
+                    Existing Labs &amp; Categories
+                </button>
+                <button type="button" onclick="switchManageLabsTab('add')" id="manage-labs-tab-add" class="px-4 py-3 text-xs font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition">
+                    Add Lab / Category
+                </button>
+            </div>
             
-            <div class="p-5 flex flex-col md:flex-row gap-6 overflow-hidden flex-1 min-h-0">
-                <!-- Left panel: Add Category/Lab Form -->
-                <div class="md:w-5/12 space-y-4">
-                    <div class="border-b border-gray-150 pb-1">
-                        <h4 class="text-[11px] font-black text-hau-maroon uppercase tracking-wider">Add Lab / Category</h4>
-                    </div>
-                    <form id="create-lab-form" onsubmit="saveNewCategoryLab(event)" class="space-y-3.5">
-                        @csrf
-                        <div>
-                            <label for="new-lab-name" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Lab / Category Name</label>
-                            <input type="text" name="name" id="new-lab-name" required placeholder="e.g. Cisco Lab 1" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
-                        </div>
-                        <div>
-                            <label for="new-lab-unit" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Parent Responsible Unit</label>
-                            <select name="responsible_unit_id" id="new-lab-unit" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="">Select Parent Unit</option>
-                                @foreach($dbResponsibleUnits as $ru)
-                                    <option value="{{ $ru->responsible_unit_id }}">{{ $ru->name }} @if($ru->code)({{ $ru->code }})@endif</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <button type="submit" class="w-full py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">
-                            Add Lab / Category
-                        </button>
-                    </form>
-                </div>
-                
-                <!-- Vertical Divider -->
-                <div class="hidden md:block w-px bg-gray-150"></div>
-                
-                <!-- Right panel: Scrollable List with search -->
-                <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <!-- Panel Container -->
+            <div class="flex-1 flex flex-col overflow-hidden min-h-0 bg-white">
+                <!-- Panel: List -->
+                <div id="manage-labs-panel-list" class="p-5 flex flex-col min-h-0 overflow-hidden flex-1">
                     <div class="flex justify-between items-center border-b border-gray-150 pb-1 mb-3 shrink-0">
                         <h4 class="text-[11px] font-black text-hau-maroon uppercase tracking-wider">Existing Labs &amp; Categories</h4>
                         <span id="manage-labs-count" class="text-[10px] font-bold bg-hau-maroon/5 text-hau-maroon px-2 py-0.5 rounded font-mono">0 Total</span>
@@ -1136,9 +1118,35 @@
                     </div>
                     
                     <!-- Scrollable list -->
-                    <div class="flex-1 overflow-y-auto min-h-0" id="manage-labs-list-container">
+                    <div class="flex-1 overflow-y-auto min-h-0 pr-1" id="manage-labs-list-container">
                         <!-- Populated by JS -->
                     </div>
+                </div>
+
+                <!-- Panel: Add -->
+                <div id="manage-labs-panel-add" class="p-5 space-y-4 flex-1 hidden overflow-y-auto">
+                    <div class="border-b border-gray-150 pb-1">
+                        <h4 class="text-[11px] font-black text-hau-maroon uppercase tracking-wider">Add Lab / Category</h4>
+                    </div>
+                    <form id="create-lab-form" onsubmit="saveNewCategoryLab(event)" class="space-y-4">
+                        @csrf
+                        <div>
+                            <label for="new-lab-name" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Lab / Category Name</label>
+                            <input type="text" name="name" id="new-lab-name" required placeholder="e.g. Cisco Lab 1" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                        </div>
+                        <div>
+                            <label for="new-lab-unit" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Parent Responsible Unit</label>
+                            <select name="responsible_unit_id" id="new-lab-unit" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                                <option value="">Select Parent Unit</option>
+                                @foreach($dbResponsibleUnits as $ru)
+                                    <option value="{{ $ru->responsible_unit_id }}">{{ $ru->name }} @if($ru->code)({{ $ru->code }})@endif</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">
+                            Add Lab / Category
+                        </button>
+                    </form>
                 </div>
             </div>
             
@@ -1164,7 +1172,27 @@
 
     function openManageLabsModal() {
         openModal('manage-labs-modal');
-        loadManageLabsList();
+        switchManageLabsTab('list');
+    }
+
+    function switchManageLabsTab(tab) {
+        const listTab = document.getElementById('manage-labs-tab-list');
+        const addTab = document.getElementById('manage-labs-tab-add');
+        const listPanel = document.getElementById('manage-labs-panel-list');
+        const addPanel = document.getElementById('manage-labs-panel-add');
+        
+        if (tab === 'list') {
+            listTab.className = "px-4 py-3 text-xs font-bold text-hau-maroon border-b-2 border-hau-maroon focus:outline-none transition";
+            addTab.className = "px-4 py-3 text-xs font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition";
+            listPanel.classList.remove('hidden');
+            addPanel.classList.add('hidden');
+            loadManageLabsList();
+        } else if (tab === 'add') {
+            addTab.className = "px-4 py-3 text-xs font-bold text-hau-maroon border-b-2 border-hau-maroon focus:outline-none transition";
+            listTab.className = "px-4 py-3 text-xs font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition";
+            addPanel.classList.remove('hidden');
+            listPanel.classList.add('hidden');
+        }
     }
 
     function loadManageLabsList() {
@@ -1268,7 +1296,7 @@
             const currentEditUnit = document.getElementById('edit-resp').value;
             if (currentEditUnit) updateLaboratories(currentEditUnit, 'edit-laboratory_id');
 
-            loadManageLabsList();
+            switchManageLabsTab('list');
         })
         .catch(err => {
             alert('Error: ' + err.message);
