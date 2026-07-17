@@ -1,0 +1,26 @@
+# Implementation Tasks
+
+- [x] Database Layer Migrations
+  - [x] Create migration for `units` table
+  - [x] Create migration to add `contact_person` and `contact_email` to `compliance_records` table
+  - [x] Create migration to drop `evidence_link` from `recommendation_items` table
+  - [x] Run migrations `php artisan migrate` endpoint)
+- [x] Update `ComplianceController` (store/update with checklist, toggle method)
+- [x] Update `DashboardController` (checklist-based compliance rates)
+- [x] Update `app.css` (checklist styles, animations)
+- [x] Update `dashboard.blade.php` (remove emojis, fix alerts, HAU design)
+- [/] Restore Card 1 to original layout/count and add the new "Accredited Program(s)" Card
+- [ ] Update JS in `applyFilters()` to support both cards
+- [ ] Verify changes manually level dropdown + badges
+- [x] Add due date urgency badges (Overdue / Due Soon)
+- [x] Add overall checklist compliance rate statistic card
+- [x] Fix graduates logging: Add modal, inline log button, edit/delete actions directly on Program Show Graduates tab
+- [x] Remove CSV Export button and controller export functionality
+- [x] Rename all occurrences of "Responsible Unit" labels to "Unit or Department"
+- [x] Rebuild Vite assets
+- [x] Verify everything works (Vite compile & Browser testing)
+- [x] Refine Dashboard metrics cards (Accredited Programs count, Active Certificates, Degree Offerings)
+- [x] Clean up former names for schools/colleges (SOC to CICT, remove SBA/SEA/SHTM redundancies)
+- [x] Update SNAMS former name to College of Nursing (CON)
+- [x] Add explicit Former Name input fields in School creation/edition forms
+- [x] Refactor School and Unit creation forms into separate overlay modal dialogs

@@ -6,24 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('programs', function (Blueprint $table) {
-            $table->id();
+            $table->id('program_id');
             $table->string('program_code')->unique();
             $table->string('program_name');
-            $table->string('college');
-            $table->string('program_level')->default('Undergraduate');
+            $table->string('former_name')->nullable();
+            $table->foreignId('college_id')->constrained('colleges', 'college_id')->cascadeOnDelete();
+            $table->string('department')->nullable();
+            $table->string('former_department')->nullable();
+            $table->string('program_level');
+            $table->boolean('is_accreditable')->default(true);
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('programs');

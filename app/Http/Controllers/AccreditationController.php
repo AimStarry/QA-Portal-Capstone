@@ -4,16 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Models\Program;
 use App\Models\Accreditation;
+use App\Models\ComplianceRecord;
+use App\Models\RecommendationItem;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Http\Requests\StoreAccreditationRequest;
+use App\Http\Requests\UpdateAccreditationRequest;
 
 class AccreditationController extends Controller
 {
+    /**
+     * Enforce QA Admin role.
+     */
+    private function enforceAdmin()
+    {
+        if (!auth()->check() || auth()->user()->usertype !== 'QA Admin') {
+            abort(403, 'Unauthorized action. Only QA Admins can access accreditations.');
+        }
+    }
+
     /**
      * Display a listing of the resource (Dashboard + list).
      */
     public function index(Request $request)
     {
+        $this->enforceAdmin();
         $programs = Program::orderBy('program_code')->get();
 
         // Calculate dashboard stats
@@ -27,14 +42,24 @@ class AccreditationController extends Controller
 
         $expiringOrExpired = Accreditation::whereIn('status', ['Expiring Soon', 'Expired'])->count();
 
-        $totalAccreditations = Accreditation::count();
-        $localAccreditations = Accreditation::where('type', 'Local')->count();
-        $intlAccreditations = Accreditation::where('type', 'International')->count();
-        $regulatoryAccreditations = Accreditation::where('type', 'Regulatory')->count();
+        // Calculate dynamic recommendation accomplishment rates by type (Local, International, Regulatory)
+        $localBodies = Accreditation::where('type', 'Local')->distinct()->pluck('accrediting_body')->toArray();
+        $localRecords = ComplianceRecord::whereIn('accrediting_body', $localBodies)->pluck('compliance_record_id');
+        $localTotalItems = RecommendationItem::whereIn('compliance_record_id', $localRecords)->count();
+        $localCompleted = RecommendationItem::whereIn('compliance_record_id', $localRecords)->where('is_completed', true)->count();
+        $localPercentage = $localTotalItems > 0 ? round(($localCompleted / $localTotalItems) * 100) : 0;
 
-        $localPercentage = $totalAccreditations > 0 ? round(($localAccreditations / $totalAccreditations) * 100) : 0;
-        $intlPercentage = $totalAccreditations > 0 ? round(($intlAccreditations / $totalAccreditations) * 100) : 0;
-        $regulatoryPercentage = $totalAccreditations > 0 ? round(($regulatoryAccreditations / $totalAccreditations) * 100) : 0;
+        $intlBodies = Accreditation::where('type', 'International')->distinct()->pluck('accrediting_body')->toArray();
+        $intlRecords = ComplianceRecord::whereIn('accrediting_body', $intlBodies)->pluck('compliance_record_id');
+        $intlTotalItems = RecommendationItem::whereIn('compliance_record_id', $intlRecords)->count();
+        $intlCompleted = RecommendationItem::whereIn('compliance_record_id', $intlRecords)->where('is_completed', true)->count();
+        $intlPercentage = $intlTotalItems > 0 ? round(($intlCompleted / $intlTotalItems) * 100) : 0;
+
+        $regBodies = Accreditation::where('type', 'Regulatory')->distinct()->pluck('accrediting_body')->toArray();
+        $regRecords = ComplianceRecord::whereIn('accrediting_body', $regBodies)->pluck('compliance_record_id');
+        $regTotalItems = RecommendationItem::whereIn('compliance_record_id', $regRecords)->count();
+        $regCompleted = RecommendationItem::whereIn('compliance_record_id', $regRecords)->where('is_completed', true)->count();
+        $regulatoryPercentage = $regTotalItems > 0 ? round(($regCompleted / $regTotalItems) * 100) : 0;
 
         // Start querying accreditations with program relation
         $query = Accreditation::with('program');
@@ -66,6 +91,7 @@ class AccreditationController extends Controller
         }
 
         $accreditations = $query->orderBy('expiry_date', 'asc')->get();
+        $accreditingBodies = \App\Models\AccreditingBody::orderBy('code')->get();
 
         return view('accreditations.index', compact(
             'accreditations',
@@ -76,24 +102,17 @@ class AccreditationController extends Controller
             'expiringOrExpired',
             'localPercentage',
             'intlPercentage',
-            'regulatoryPercentage'
+            'regulatoryPercentage',
+            'accreditingBodies'
         ));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreAccreditationRequest $request)
     {
-        $validated = $request->validate([
-            'program_id' => 'required|exists:programs,id',
-            'accrediting_body' => 'required|string|max:255',
-            'type' => ['required', Rule::in(['Local', 'International', 'Regulatory'])],
-            'level_or_tier' => 'nullable|string|max:255',
-            'last_visit' => 'nullable|date',
-            'expiry_date' => 'nullable|date',
-            'status' => ['required', Rule::in(['Active', 'Expiring Soon', 'Expired', 'Pending'])],
-        ]);
+        $validated = $request->validated();
 
         Accreditation::create($validated);
 
@@ -103,17 +122,9 @@ class AccreditationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Accreditation $accreditation)
+    public function update(UpdateAccreditationRequest $request, Accreditation $accreditation)
     {
-        $validated = $request->validate([
-            'program_id' => 'required|exists:programs,id',
-            'accrediting_body' => 'required|string|max:255',
-            'type' => ['required', Rule::in(['Local', 'International', 'Regulatory'])],
-            'level_or_tier' => 'nullable|string|max:255',
-            'last_visit' => 'nullable|date',
-            'expiry_date' => 'nullable|date',
-            'status' => ['required', Rule::in(['Active', 'Expiring Soon', 'Expired', 'Pending'])],
-        ]);
+        $validated = $request->validated();
 
         $accreditation->update($validated);
 
@@ -125,6 +136,7 @@ class AccreditationController extends Controller
      */
     public function destroy(Accreditation $accreditation)
     {
+        $this->enforceAdmin();
         $accreditation->delete();
 
         return redirect()->route('accreditations.index')->with('success', 'Accreditation deleted successfully.');

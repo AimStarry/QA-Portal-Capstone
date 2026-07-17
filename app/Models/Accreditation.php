@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use App\Traits\HasCustomPrimaryKey;
+
 class Accreditation extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCustomPrimaryKey;
+
+    protected $primaryKey = 'accreditation_id';
 
     protected $fillable = [
         'program_id',
@@ -30,6 +34,6 @@ class Accreditation extends Model
      */
     public function program(): BelongsTo
     {
-        return $this->belongsTo(Program::class);
+        return $this->belongsTo(Program::class, 'program_id', 'program_id');
     }
 }

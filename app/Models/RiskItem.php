@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use App\Traits\HasCustomPrimaryKey;
+
 class RiskItem extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCustomPrimaryKey;
+
+    protected $primaryKey = 'risk_item_id';
 
     protected $fillable = [
         'program_id',
@@ -24,6 +28,6 @@ class RiskItem extends Model
      */
     public function program(): BelongsTo
     {
-        return $this->belongsTo(Program::class);
+        return $this->belongsTo(Program::class, 'program_id', 'program_id');
     }
 }

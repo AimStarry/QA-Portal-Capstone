@@ -6,14 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('accreditations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('program_id')->constrained()->cascadeOnDelete();
+            $table->id('accreditation_id');
+            $table->foreignId('program_id')->constrained('programs', 'program_id')->cascadeOnDelete();
             $table->string('accrediting_body');
             $table->string('type')->default('Local'); // e.g. Local, International, Regulatory
             $table->string('level_or_tier')->nullable();
@@ -24,9 +21,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('accreditations');

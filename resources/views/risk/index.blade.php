@@ -189,7 +189,9 @@
                             data-mitigation="{{ $r->mitigation_plan }}"
                             data-status="{{ $r->status }}">
                             
-                            <td class="px-6 py-4 font-bold text-hau-maroon text-sm">{{ $r->program->program_code }}</td>
+                            <td class="px-6 py-4 font-bold text-hau-maroon text-sm hover:underline">
+                                <a href="{{ route('programs.show', $r->program_id) }}">{{ $r->program->program_code }}</a>
+                            </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm font-medium text-gray-900 line-clamp-2 leading-relaxed max-w-[300px]" title="{{ $r->description }}">
                                     {{ $r->description }}

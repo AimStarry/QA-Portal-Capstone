@@ -9,19 +9,61 @@ use Illuminate\Http\Request;
 class GraduateRecordController extends Controller
 {
     /**
+     * Enforce access control.
+     */
+    private function enforceAccess($action)
+    {
+        $user = auth()->user();
+        if ($user->usertype === 'Head of Unit') {
+            abort(403, 'Unauthorized action. Support Units do not have access to graduate records.');
+        }
+
+        // Restrict write actions to QA Admin only
+        if (in_array($action, ['store', 'update', 'destroy'])) {
+            if ($user->usertype !== 'QA Admin') {
+                abort(403, 'Unauthorized action. Only QA Admins can manage graduate records.');
+            }
+        }
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
+        $this->enforceAccess('index');
         $role = session('active_role', 'QA Admin');
-        $programs = Program::orderBy('program_code')->get();
+        $user = auth()->user();
+
+        if ($user->usertype !== 'QA Admin') {
+            $role = 'Unit or Department';
+            session(['active_role' => 'Unit or Department']);
+        }
+
+        $collegeId = $user->college_id;
+
+        // Query programs based on college if Dean or Principal
+        $programsQuery = Program::orderBy('program_code');
+        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $programsQuery->where('college_id', $collegeId);
+        }
+        $programs = $programsQuery->get();
 
         // Get unique school years and terms for search/filter dropdowns
-        $schoolYears = GraduateRecord::distinct()->pluck('school_year')->sort()->values();
-        $terms = GraduateRecord::distinct()->pluck('term')->sort()->values();
+        $schoolYearsQuery = GraduateRecord::distinct();
+        $termsQuery = GraduateRecord::distinct();
+        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $schoolYearsQuery->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+            $termsQuery->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+        }
+        $schoolYears = $schoolYearsQuery->pluck('school_year')->sort()->values();
+        $terms = $termsQuery->pluck('term')->sort()->values();
 
         // Query graduate records
         $query = GraduateRecord::with('program');
+        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $query->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+        }
 
         // Apply filters
         if ($request->filled('search')) {
@@ -48,14 +90,25 @@ class GraduateRecordController extends Controller
             $query->where('term', $request->input('term'));
         }
 
+        if ($request->filled('college_id')) {
+            $query->whereHas('program', fn($q) => $q->where('college_id', $request->input('college_id')));
+        }
+
         $graduates = $query->orderBy('school_year', 'desc')->orderBy('term', 'asc')->get();
+
+        $collegesQuery = \App\Models\College::orderBy('name');
+        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $collegesQuery->where('college_id', $collegeId);
+        }
+        $colleges = $collegesQuery->get();
 
         return view('graduates.index', compact(
             'role',
             'graduates',
             'programs',
             'schoolYears',
-            'terms'
+            'terms',
+            'colleges'
         ));
     }
 
@@ -64,8 +117,10 @@ class GraduateRecordController extends Controller
      */
     public function store(Request $request)
     {
+        $this->enforceAccess('store'); // enforceAccess already ensures QA Admin via usertype
+
         $validated = $request->validate([
-            'program_id' => 'required|exists:programs,id',
+            'program_id' => 'required|exists:programs,program_id',
             'school_year' => 'required|string|max:255',
             'term' => 'required|string|max:255',
             'graduates_count' => 'required|integer|min:0',
@@ -81,10 +136,12 @@ class GraduateRecordController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $this->enforceAccess('update'); // enforceAccess already ensures QA Admin via usertype
+
         $record = GraduateRecord::findOrFail($id);
 
         $validated = $request->validate([
-            'program_id' => 'required|exists:programs,id',
+            'program_id' => 'required|exists:programs,program_id',
             'school_year' => 'required|string|max:255',
             'term' => 'required|string|max:255',
             'graduates_count' => 'required|integer|min:0',
@@ -100,6 +157,8 @@ class GraduateRecordController extends Controller
      */
     public function destroy($id)
     {
+        $this->enforceAccess('destroy'); // enforceAccess already ensures QA Admin via usertype
+
         $record = GraduateRecord::findOrFail($id);
         $record->delete();
 

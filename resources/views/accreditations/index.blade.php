@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $bodies = $accreditations->pluck('accrediting_body')->unique()->sort()->values();
+@endphp
 <div class="space-y-8 font-sans">
 
     <!-- Header Section -->
@@ -9,117 +12,159 @@
             <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Accreditations Directory</h2>
             <p class="text-xs sm:text-sm text-gray-500">Manage program certificates, certification tiers, and upcoming evaluations.</p>
         </div>
+        <div class="flex items-center gap-2">
+            <button onclick="openModal('add-accrediting-body-modal')" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 hover:bg-gray-50 shadow-sm focus:outline-none transition font-bold">
+                + Add Accrediting Body
+            </button>
+        </div>
     </div>
 
     <!-- Dashboard Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Total Programs Card -->
-        <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden transition hover:shadow-md">
-            <div class="p-6 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Programs</p>
-                    <p class="mt-2 text-3xl font-black text-gray-900 font-mono">{{ $totalPrograms }}</p>
-                </div>
-                <div class="p-3 bg-hau-maroon/10 rounded-lg text-hau-maroon">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                    </svg>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Accreditable Program(s) Card -->
+        <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden transition hover:shadow-md relative group flex flex-col justify-between h-full">
+            <div class="absolute -top-1 left-0 right-0 h-1 bg-hau-gold"></div>
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1.5">
+                        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Accreditable Program(s)</p>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-black text-hau-maroon font-mono leading-tight">
+                                {{ $programs->where('is_accreditable', true)->count() }}
+                            </span>
+                            <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Program(s)</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-hau-gold/10 rounded-xl text-hau-gold-dark shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-3 border-t border-gray-100">
-                <a href="{{ route('programs.index') }}" class="text-xs font-bold text-hau-maroon hover:text-hau-maroon-light">
-                    Go to Programs Directory &rarr;
+            <div class="bg-gray-50/50 px-6 py-3.5 border-t border-gray-100">
+                <a href="{{ route('programs.index') }}" class="text-xs font-bold text-hau-maroon hover:text-hau-maroon-light transition inline-flex items-center gap-1">
+                    Manage Programs &rarr;
                 </a>
             </div>
         </div>
 
-        <!-- Active Accreditations Card -->
-        <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden transition hover:shadow-md">
-            <div class="p-6 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Audits</p>
-                    <p class="mt-2 text-3xl font-black text-emerald-600 font-mono">{{ $activeAccreditations }}</p>
-                </div>
-                <div class="p-3 bg-emerald-50 rounded-lg text-emerald-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
+        <!-- Accredited Program(s) Card -->
+        <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden transition hover:shadow-md relative group flex flex-col justify-between h-full">
+            <div class="absolute -top-1 left-0 right-0 h-1 bg-hau-maroon"></div>
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1.5">
+                        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Accredited Program(s)</p>
+                        <div class="flex items-baseline gap-2">
+                            <span id="card-total-accredited-count" class="text-3xl font-black text-gray-900 font-mono leading-tight">
+                                {{ $accreditations->where('status', 'Active')->pluck('program_id')->unique()->count() }}
+                            </span>
+                            <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Program(s)</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-hau-maroon/5 rounded-xl text-hau-maroon shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-3 border-t border-gray-100">
-                <button onclick="filterByStatus('Active')" class="text-xs font-bold text-emerald-600 hover:text-emerald-700">
-                    View active records &rarr;
-                </button>
+            <div class="bg-gray-50/50 px-6 py-3 border-t border-gray-100">
+                <select id="card-filter-body-select" onchange="updateCardFilter(this.value)" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon cursor-pointer font-bold text-gray-700">
+                    <option value="">All Accrediting Bodies</option>
+                    @foreach($bodies as $body)
+                        <option value="{{ $body }}">{{ $body }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 
-        <!-- PAASCU Accredited Programs Card -->
-        <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden transition hover:shadow-md relative group">
-            <div class="absolute -top-1 left-0 right-0 h-1 bg-hau-gold"></div>
-            <div class="p-6 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">PAASCU Accredited</p>
-                    <p class="mt-2 text-3xl font-black text-hau-maroon font-mono">{{ $paascuProgramsCount }}</p>
-                </div>
-                <div class="p-3 bg-hau-gold/15 rounded-lg text-hau-gold-dark">
-                    <span class="font-bold text-xs">PAASCU</span>
+        <!-- Accreditation Type Card -->
+        <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden transition hover:shadow-md relative group flex flex-col justify-between h-full">
+            <div class="absolute -top-1 left-0 right-0 h-1 bg-hau-maroon"></div>
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1.5">
+                        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Accreditation Type</p>
+                        <div class="flex items-baseline gap-2">
+                            <span id="card-type-count" class="text-3xl font-black text-gray-900 font-mono leading-tight">
+                                {{ $accreditations->where('status', 'Active')->pluck('program_id')->unique()->count() }}
+                            </span>
+                            <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Program(s)</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-hau-maroon/5 rounded-xl text-hau-maroon shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-3 border-t border-gray-100">
-                <button id="paascu-toggle-card" onclick="togglePaascuFilterFromCard()" class="text-xs font-bold text-hau-maroon hover:text-hau-maroon-light">
-                    Filter by PAASCU only
-                </button>
+            <div class="bg-gray-50/50 px-6 py-3 border-t border-gray-100">
+                <select id="card-filter-type-select" onchange="updateCardTypeFilter(this.value)" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon cursor-pointer font-bold text-gray-700">
+                    <option value="">All Types</option>
+                    <option value="Local">Local</option>
+                    <option value="International">International</option>
+                    <option value="Regulatory">Regulatory</option>
+                </select>
             </div>
         </div>
 
         <!-- Expired/Expiring Soon Card -->
-        <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden transition hover:shadow-md">
-            <div class="p-6 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Expired / Expiring</p>
-                    <p class="mt-2 text-3xl font-black text-rose-600 font-mono">{{ $expiringOrExpired }}</p>
-                </div>
-                <div class="p-3 bg-rose-50 rounded-lg text-rose-500">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
+        <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden transition hover:shadow-md flex flex-col justify-between h-full">
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1.5">
+                        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Expired / Expiring</p>
+                        <p class="text-3xl font-black text-rose-600 font-mono leading-tight">{{ $expiringOrExpired }}</p>
+                    </div>
+                    <div class="p-3 bg-rose-50 rounded-xl text-rose-500 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-3 border-t border-gray-100">
-                <button onclick="filterByExpiring()" class="text-xs font-bold text-rose-600 hover:text-rose-700">
-                    View warnings &rarr;
+            <div class="bg-gray-50/50 px-6 py-3.5 border-t border-gray-100">
+                <button onclick="filterByExpiring()" class="text-xs font-bold text-rose-600 hover:text-rose-700 transition inline-flex items-center gap-1">
+                    View Warnings &rarr;
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Accreditation Type Breakdown -->
-    <div class="bg-white rounded-xl shadow-xs border border-gray-200 p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-            <div class="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                <span>Local Accreditations</span>
-                <span class="font-mono text-hau-maroon bg-hau-maroon/5 px-2 py-0.5 rounded font-black">{{ $localPercentage }}%</span>
+
+    <!-- Recommendation Accomplishment Breakdown -->
+    <div class="bg-white rounded-xl shadow-xs border border-gray-200 p-5 space-y-3">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Recommendation Accomplishment by Type</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <div class="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                    <span>Local Recommendation(s)</span>
+                    <span class="font-mono text-hau-maroon bg-hau-maroon/5 px-2 py-0.5 rounded font-black">{{ $localPercentage }}%</span>
+                </div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-hau-maroon h-full rounded-full transition-all duration-500" style="width: {{ $localPercentage }}%"></div>
+                </div>
             </div>
-            <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                <div class="bg-hau-maroon h-full rounded-full transition-all duration-500" style="width: {{ $localPercentage }}%"></div>
+            <div>
+                <div class="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                    <span>International Recommendation(s)</span>
+                    <span class="font-mono text-hau-gold-dark bg-hau-gold/10 px-2 py-0.5 rounded font-black">{{ $intlPercentage }}%</span>
+                </div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-hau-gold h-full rounded-full transition-all duration-500" style="width: {{ $intlPercentage }}%"></div>
+                </div>
             </div>
-        </div>
-        <div>
-            <div class="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                <span>International Accreditations</span>
-                <span class="font-mono text-hau-gold-dark bg-hau-gold/10 px-2 py-0.5 rounded font-black">{{ $intlPercentage }}%</span>
-            </div>
-            <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                <div class="bg-hau-gold h-full rounded-full transition-all duration-500" style="width: {{ $intlPercentage }}%"></div>
-            </div>
-        </div>
-        <div>
-            <div class="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                <span>Regulatory Certifications</span>
-                <span class="font-mono text-gray-600 bg-gray-100 px-2 py-0.5 rounded font-black">{{ $regulatoryPercentage }}%</span>
-            </div>
-            <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                <div class="bg-gray-500 h-full rounded-full transition-all duration-500" style="width: {{ $regulatoryPercentage }}%"></div>
+            <div>
+                <div class="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                    <span>Regulatory Recommendation(s)</span>
+                    <span class="font-mono text-gray-600 bg-gray-100 px-2 py-0.5 rounded font-black">{{ $regulatoryPercentage }}%</span>
+                </div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-gray-500 h-full rounded-full transition-all duration-500" style="width: {{ $regulatoryPercentage }}%"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -138,12 +183,6 @@
             </div>
 
             <!-- Accrediting Body Dropdown -->
-            {{-- FIX 1: $bodies was derived from $accreditations->pluck()->unique()->sort() which returns
-                 a keyed Collection. @foreach on a sorted keyed collection can produce duplicate or
-                 misaligned option values. values() reindexes it to a clean 0-based list. --}}
-            @php
-                $bodies = $accreditations->pluck('accrediting_body')->unique()->sort()->values();
-            @endphp
             <div>
                 <select id="filter-body" onchange="applyFilters()" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
                     <option value="">All Accrediting Bodies</option>
@@ -227,7 +266,7 @@
                                      but doesn't protect JS string context. Wrap values in json_encode() instead
                                      so any quotes/special chars are safely escaped for JS. --}}
                                 <div class="font-bold text-hau-maroon text-sm hover:underline cursor-pointer"
-                                     onclick="viewProgramDetails({{ json_encode($a->program->program_code) }}, {{ json_encode($a->program->program_name) }}, {{ json_encode($a->program->college) }})">
+                                     onclick="viewProgramDetails({{ $a->program_id }})">
                                     {{ $a->program->program_code }}
                                 </div>
                                 <div class="text-xs text-gray-500 mt-0.5 max-w-[200px] truncate" title="{{ $a->program->program_name }}">
@@ -317,14 +356,21 @@
                     <select name="program_id" id="add-program_id" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
                         <option value="">Select a Program</option>
                         @foreach ($programs as $p)
-                            <option value="{{ $p->id }}">{{ $p->program_code }} &mdash; {{ $p->program_name }}</option>
+                            <option value="{{ $p->id }}" {{ !$p->is_accreditable ? 'disabled' : '' }}>
+                                {{ $p->program_code }} &mdash; {{ $p->program_name }} {{ !$p->is_accreditable ? '(Non-Accreditable - Baseline Deficient)' : '' }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="add-accrediting_body" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Accrediting Body</label>
-                        <input type="text" name="accrediting_body" id="add-accrediting_body" required placeholder="e.g. PAASCU" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                        <select name="accrediting_body" id="add-accrediting_body" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                            <option value="" disabled selected>Select Accrediting Body</option>
+                            @foreach($accreditingBodies as $body)
+                                <option value="{{ $body->code }}">{{ $body->code }} &mdash; {{ $body->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div>
                         <label for="add-type" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Type</label>
@@ -384,18 +430,24 @@
                     <label for="edit-program_id" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Academic Program</label>
                     <select name="program_id" id="edit-program_id" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
                         @foreach ($programs as $p)
-                            <option value="{{ $p->id }}">{{ $p->program_code }} &mdash; {{ $p->program_name }}</option>
+                            <option value="{{ $p->id }}" {{ !$p->is_accreditable ? 'disabled' : '' }}>
+                                {{ $p->program_code }} &mdash; {{ $p->program_name }} {{ !$p->is_accreditable ? '(Non-Accreditable - Baseline Deficient)' : '' }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="edit-accrediting_body" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Accrediting Body</label>
-                        <input type="text" name="accrediting_body" id="edit-accrediting_body" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                        <select name="accrediting_body" id="edit-accrediting_body" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                            @foreach($accreditingBodies as $body)
+                                <option value="{{ $body->code }}">{{ $body->code }} &mdash; {{ $body->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div>
                         <label for="edit-type" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Type</label>
-                        <select name="edit-type" id="edit-type" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                        <select name="type" id="edit-type" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
                             <option value="Local">Local</option>
                             <option value="International">International</option>
                             <option value="Regulatory">Regulatory</option>
@@ -436,8 +488,75 @@
     </div>
 </div>
 
+<!-- Add Accrediting Body Modal -->
+<div id="add-accrediting-body-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-lg overflow-hidden transform scale-95 transition-all">
+        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
+            <h3 class="text-lg font-bold">Add Accrediting Body</h3>
+            <button onclick="closeModal('add-accrediting-body-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+        </div>
+        <form action="{{ route('accrediting-bodies.store') }}" method="POST">
+            @csrf
+            <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                <div>
+                    <label for="add-body-name" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Accrediting Body Name</label>
+                    <input type="text" name="name" id="add-body-name" required placeholder="e.g. Philippine Accrediting Association of Schools, Colleges..." class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                </div>
+                <div>
+                    <label for="add-body-code" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Acronym / Code</label>
+                    <input type="text" name="code" id="add-body-code" required placeholder="e.g. PAASCU" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                </div>
+                <div>
+                    <label for="add-body-type" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Type</label>
+                    <select name="type" id="add-body-type" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                        <option value="Local" selected>Local</option>
+                        <option value="International">International</option>
+                        <option value="Regulatory">Regulatory</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="add-body-description" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Description (Optional)</label>
+                    <textarea name="description" id="add-body-description" rows="2" placeholder="Provide any details about this accrediting body..." class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Standard Areas (Optional)</label>
+                    <div id="add-body-areas-list" class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <input type="text" name="areas[]" placeholder="e.g. Area I: Philosophy and Objectives" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                            <button type="button" onclick="this.closest('.flex').remove()" class="p-1.5 text-gray-400 hover:text-rose-600 rounded transition shrink-0" title="Remove">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="addBodyAreaInput()" class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-hau-maroon hover:text-hau-maroon-light transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Add another area
+                    </button>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
+                <button type="button" onclick="closeModal('add-accrediting-body-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition font-bold">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-sm font-semibold rounded-lg shadow transition font-bold">Save Body</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- ================= JAVASCRIPT ================= -->
 <script>
+    function addBodyAreaInput() {
+        const container = document.getElementById('add-body-areas-list');
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2 mt-2';
+        div.innerHTML = `
+            <input type="text" name="areas[]" placeholder="e.g. Next Area" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+            <button type="button" onclick="this.closest('.flex').remove()" class="p-1.5 text-gray-400 hover:text-rose-600 rounded transition shrink-0" title="Remove">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        `;
+        container.appendChild(div);
+    }
+
     function openModal(id) {
         const modal = document.getElementById(id);
         modal.classList.remove('hidden');
@@ -482,8 +601,8 @@
         openModal('edit-modal');
     }
 
-    function viewProgramDetails(code, name, college) {
-        alert(`${code} - ${name}\n\nCollege: ${college}`);
+    function viewProgramDetails(id) {
+        window.location.href = `/programs/${id}`;
     }
 
     function filterByStatus(statusVal) {
@@ -498,13 +617,30 @@
         applyFilters();
     }
 
-    function togglePaascuFilterFromCard() {
-        const cb = document.getElementById('filter-paascu');
-        cb.checked = !cb.checked;
+    function updateCardFilter(bodyVal) {
+        const cardSelect = document.getElementById('card-filter-body-select');
+        if (cardSelect && cardSelect.value !== bodyVal) cardSelect.value = bodyVal;
+        
+        const mainSelect = document.getElementById('filter-body');
+        if (mainSelect && mainSelect.value !== bodyVal) {
+            mainSelect.value = bodyVal;
+        }
+        applyFilters();
+    }
+
+    function updateCardTypeFilter(typeVal) {
+        const cardSelect = document.getElementById('card-filter-type-select');
+        if (cardSelect && cardSelect.value !== typeVal) cardSelect.value = typeVal;
+        
+        const mainSelect = document.getElementById('filter-type');
+        if (mainSelect && mainSelect.value !== typeVal) {
+            mainSelect.value = typeVal;
+        }
         applyFilters();
     }
 
     function applyFilters() {
+        const totalAccreditableCount = {{ $programs->where('is_accreditable', true)->count() }};
         const searchInput  = document.getElementById('filter-search').value.toLowerCase();
         const bodyFilter   = document.getElementById('filter-body').value.toLowerCase();
         const typeFilter   = document.getElementById('filter-type').value;
@@ -514,16 +650,64 @@
         const expiryMode   = statusEl.dataset.expiryMode === 'true';
         const paascuFilter = document.getElementById('filter-paascu').checked;
 
-        const cardBtn = document.getElementById('paascu-toggle-card');
-        if (paascuFilter) {
-            cardBtn.innerText = 'Clear PAASCU filter';
-            cardBtn.classList.add('text-hau-gold-dark');
-        } else {
-            cardBtn.innerText = 'Filter by PAASCU only';
-            cardBtn.classList.remove('text-hau-gold-dark');
+        // Sync main body filter value back to card select and re-calculate count
+        const cardSelect = document.getElementById('card-filter-body-select');
+        const mainBodyVal = document.getElementById('filter-body').value;
+        if (cardSelect && cardSelect.value !== mainBodyVal) {
+            cardSelect.value = mainBodyVal;
+        }
+
+        // Sync main type filter value back to card type select
+        const cardTypeSelect = document.getElementById('card-filter-type-select');
+        const mainTypeVal = document.getElementById('filter-type').value;
+        if (cardTypeSelect && cardTypeSelect.value !== mainTypeVal) {
+            cardTypeSelect.value = mainTypeVal;
         }
 
         const rows = document.querySelectorAll('#accreditation-rows tr[data-id]');
+        
+        // Recompute unique program count for the accredited programs card and type breakdown
+        const filterVal = mainBodyVal.toLowerCase();
+        const uniqueAllAccredited = new Set();
+        const uniqueLocalAccredited = new Set();
+        const uniqueIntlAccredited = new Set();
+        const uniqueRegAccredited = new Set();
+        let activeAccreditationsCount = 0;
+
+        rows.forEach(row => {
+            const rowBody = row.getAttribute('data-accrediting-body').toLowerCase();
+            const progId = row.getAttribute('data-program-id');
+            const rowType = row.getAttribute('data-type');
+            const rowStatus = row.getAttribute('data-status');
+            
+            if (rowStatus === 'Active') {
+                if (!filterVal || rowBody === filterVal) {
+                    activeAccreditationsCount++;
+                    uniqueAllAccredited.add(progId);
+                    if (rowType === 'Local') {
+                        uniqueLocalAccredited.add(progId);
+                    } else if (rowType === 'International') {
+                        uniqueIntlAccredited.add(progId);
+                    } else if (rowType === 'Regulatory') {
+                        uniqueRegAccredited.add(progId);
+                    }
+                }
+            }
+        });
+        const totalAccreditedEl = document.getElementById('card-total-accredited-count');
+        if (totalAccreditedEl) totalAccreditedEl.innerText = uniqueAllAccredited.size;
+        
+        let typeCount = uniqueAllAccredited.size;
+        if (mainTypeVal === 'Local') {
+            typeCount = uniqueLocalAccredited.size;
+        } else if (mainTypeVal === 'International') {
+            typeCount = uniqueIntlAccredited.size;
+        } else if (mainTypeVal === 'Regulatory') {
+            typeCount = uniqueRegAccredited.size;
+        }
+        const cardTypeCountEl = document.getElementById('card-type-count');
+        if (cardTypeCountEl) cardTypeCountEl.innerText = typeCount;
+
         let matchesCount = 0;
 
         rows.forEach(row => {

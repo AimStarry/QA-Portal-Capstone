@@ -23,19 +23,19 @@
         <div class="bg-white rounded-xl shadow-xs border border-gray-200 p-5">
             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Recorded Graduates</p>
             <p class="text-3xl font-black text-gray-900 mt-2 font-mono">
-                {{ number_format($graduates->sum('graduates_count')) }}
+                <span id="stat-total-graduates">{{ number_format($graduates->sum('graduates_count')) }}</span>
             </p>
         </div>
         <div class="bg-white rounded-xl shadow-xs border border-gray-200 p-5">
             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Record Entries</p>
             <p class="text-3xl font-black text-hau-maroon mt-2 font-mono">
-                {{ $graduates->count() }}
+                <span id="stat-total-entries">{{ $graduates->count() }}</span>
             </p>
         </div>
         <div class="bg-white rounded-xl shadow-xs border border-gray-200 p-5">
             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Average Graduates per Term</p>
             <p class="text-3xl font-black text-emerald-600 mt-2 font-mono">
-                {{ $graduates->count() > 0 ? round($graduates->average('graduates_count')) : 0 }}
+                <span id="stat-average-graduates">{{ $graduates->count() > 0 ? round($graduates->average('graduates_count')) : 0 }}</span>
             </p>
         </div>
     </div>
@@ -52,6 +52,16 @@
                     </svg>
                 </div>
                 <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Search school year, program..." class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+            </div>
+
+            <!-- Department Selector -->
+            <div>
+                <select id="filter-college" onchange="applyFilters()" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <option value="">All Departments</option>
+                    @foreach($colleges as $col)
+                        <option value="{{ $col->college_id }}">{{ $col->code ?: $col->name }}</option>
+                    @endforeach
+                </select>
             </div>
 
             <!-- Program Selector -->
@@ -80,9 +90,13 @@
                     <option value="">All Terms</option>
                     <option value="1st Semester">1st Semester</option>
                     <option value="2nd Semester">2nd Semester</option>
+                    <option value="Summer">Summer</option>
                     <option value="1st Trimester">1st Trimester</option>
                     <option value="2nd Trimester">2nd Trimester</option>
                     <option value="3rd Trimester">3rd Trimester</option>
+                    <option value="1st Term">1st Term</option>
+                    <option value="2nd Term">2nd Term</option>
+                    <option value="3rd Term">3rd Term</option>
                 </select>
             </div>
         </div>
@@ -115,12 +129,15 @@
                             data-program-code="{{ $g->program->program_code }}"
                             data-program-name="{{ $g->program->program_name }}"
                             data-level="{{ $g->program->program_level }}"
+                            data-college-id="{{ $g->program->college_id }}"
                             data-sy="{{ $g->school_year }}"
                             data-term="{{ $g->term }}"
                             data-count="{{ $g->graduates_count }}">
                             
                             <td class="px-6 py-4">
-                                <div class="font-bold text-hau-maroon text-sm">{{ $g->program->program_code }}</div>
+                                <div class="font-bold text-hau-maroon text-sm hover:underline">
+                                    <a href="{{ route('programs.show', $g->program_id) }}">{{ $g->program->program_code }}</a>
+                                </div>
                                 <div class="text-xs text-gray-400 mt-0.5">{{ $g->program->program_name }}</div>
                             </td>
                             <td class="px-6 py-4 text-xs font-semibold">
@@ -202,9 +219,13 @@
                             <select name="term" id="add-term" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
                                 <option value="1st Semester" selected>1st Semester</option>
                                 <option value="2nd Semester">2nd Semester</option>
+                                <option value="Summer">Summer</option>
                                 <option value="1st Trimester">1st Trimester</option>
                                 <option value="2nd Trimester">2nd Trimester</option>
                                 <option value="3rd Trimester">3rd Trimester</option>
+                                <option value="1st Term">1st Term</option>
+                                <option value="2nd Term">2nd Term</option>
+                                <option value="3rd Term">3rd Term</option>
                             </select>
                         </div>
                     </div>
@@ -257,9 +278,13 @@
                             <select name="term" id="edit-term" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
                                 <option value="1st Semester">1st Semester</option>
                                 <option value="2nd Semester">2nd Semester</option>
+                                <option value="Summer">Summer</option>
                                 <option value="1st Trimester">1st Trimester</option>
                                 <option value="2nd Trimester">2nd Trimester</option>
                                 <option value="3rd Trimester">3rd Trimester</option>
+                                <option value="1st Term">1st Term</option>
+                                <option value="2nd Term">2nd Term</option>
+                                <option value="3rd Term">3rd Term</option>
                             </select>
                         </div>
                     </div>
@@ -328,15 +353,19 @@
         const programFilter = document.getElementById('filter-program').value.toLowerCase();
         const syFilter = document.getElementById('filter-sy').value.toLowerCase();
         const termFilter = document.getElementById('filter-term').value;
+        const collegeFilter = document.getElementById('filter-college').value;
 
         const rows = document.querySelectorAll('#graduate-rows tr[data-id]');
         let matchesCount = 0;
+        let totalGraduates = 0;
+        let visibleEntries = 0;
 
         rows.forEach(row => {
             const programCode = row.getAttribute('data-program-code').toLowerCase();
             const programName = row.getAttribute('data-program-name').toLowerCase();
             const sy = row.getAttribute('data-sy').toLowerCase();
             const term = row.getAttribute('data-term');
+            const collegeId = row.getAttribute('data-college-id');
 
             // Conditions
             const matchesSearch = !searchInput || 
@@ -347,14 +376,33 @@
             const matchesProgram = !programFilter || programCode === programFilter;
             const matchesSy = !syFilter || sy === syFilter;
             const matchesTerm = !termFilter || term === termFilter;
+            const matchesCollege = !collegeFilter || collegeId === collegeFilter;
 
-            if (matchesSearch && matchesProgram && matchesSy && matchesTerm) {
+            if (matchesSearch && matchesProgram && matchesSy && matchesTerm && matchesCollege) {
                 row.classList.remove('hidden');
                 matchesCount++;
+                const count = parseInt(row.getAttribute('data-count')) || 0;
+                totalGraduates += count;
+                visibleEntries++;
             } else {
                 row.classList.add('hidden');
             }
         });
+
+        // Update stats
+        const totalGradsSpan = document.getElementById('stat-total-graduates');
+        if (totalGradsSpan) {
+            totalGradsSpan.innerText = totalGraduates.toLocaleString();
+        }
+        const totalEntriesSpan = document.getElementById('stat-total-entries');
+        if (totalEntriesSpan) {
+            totalEntriesSpan.innerText = visibleEntries.toLocaleString();
+        }
+        const avgGradsSpan = document.getElementById('stat-average-graduates');
+        if (avgGradsSpan) {
+            const avg = visibleEntries > 0 ? Math.round(totalGraduates / visibleEntries) : 0;
+            avgGradsSpan.innerText = avg.toLocaleString();
+        }
 
         const visibleCountSpan = document.getElementById('visible-count');
         if (visibleCountSpan) visibleCountSpan.innerText = matchesCount;

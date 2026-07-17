@@ -10,17 +10,56 @@ use Illuminate\Validation\Rule;
 class RiskController extends Controller
 {
     /**
+     * Enforce access control.
+     */
+    private function enforceAccess($action)
+    {
+        $user = auth()->user();
+        if ($user->usertype === 'Head of Unit') {
+            abort(403, 'Unauthorized action. Support Units do not have access to Risk Monitor.');
+        }
+
+        // Restrict write actions to QA Admin only
+        if (in_array($action, ['store', 'update', 'destroy'])) {
+            if ($user->usertype !== 'QA Admin') {
+                abort(403, 'Unauthorized action. Only QA Admins can manage Risk Monitor.');
+            }
+        }
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $programs = Program::orderBy('program_code')->get();
+        $this->enforceAccess('index');
+        $user = auth()->user();
+        $collegeId = $user->college_id;
+
+        // Query programs based on college if Dean or Principal
+        $programsQuery = Program::orderBy('program_code');
+        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $programsQuery->where('college_id', $collegeId);
+        }
+        $programs = $programsQuery->get();
 
         // Calculate risk status counts
-        $totalRisks = RiskItem::count();
-        $identifiedCount = RiskItem::where('status', 'Identified')->count();
-        $mitigatedCount = RiskItem::where('status', 'Mitigated')->count();
-        $monitoringCount = RiskItem::where('status', 'Monitoring')->count();
+        $totalRisksQuery = RiskItem::query();
+        $identifiedQuery = RiskItem::where('status', 'Identified');
+        $mitigatedQuery = RiskItem::where('status', 'Mitigated');
+        $monitoringQuery = RiskItem::where('status', 'Monitoring');
+
+        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $totalRisksQuery->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+            $identifiedQuery->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+            $mitigatedQuery->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+            $monitoringQuery->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+        }
+
+        $totalRisks = $totalRisksQuery->count();
+        $identifiedCount = $identifiedQuery->count();
+        $mitigatedCount = $mitigatedQuery->count();
+        $monitoringCount = $monitoringQuery->count();
 
         // Calculate Matrix counts for visual representation
         // Matrix grid: [Likelihood][Impact]
@@ -30,7 +69,12 @@ class RiskController extends Controller
             'Low' => ['Low' => 0, 'Medium' => 0, 'High' => 0],
         ];
 
-        $risksForMatrix = RiskItem::all();
+        $matrixQuery = RiskItem::query();
+        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $matrixQuery->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+        }
+        $risksForMatrix = $matrixQuery->get();
+
         foreach ($risksForMatrix as $r) {
             $l = $r->likelihood;
             $i = $r->impact;
@@ -41,6 +85,9 @@ class RiskController extends Controller
 
         // Query records
         $query = RiskItem::with('program');
+        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $query->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+        }
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -75,8 +122,9 @@ class RiskController extends Controller
      */
     public function store(Request $request)
     {
+        $this->enforceAccess('store'); // enforceAccess() already checks usertype from database
         $validated = $request->validate([
-            'program_id' => 'required|exists:programs,id',
+            'program_id' => 'required|exists:programs,program_id',
             'description' => 'required|string',
             'likelihood' => ['required', Rule::in(['Low', 'Medium', 'High'])],
             'impact' => ['required', Rule::in(['Low', 'Medium', 'High'])],
@@ -94,10 +142,11 @@ class RiskController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $risk = RiskItem::findOrFail($id);
+        $this->enforceAccess('update'); // enforceAccess() already checks usertype from database
 
+        $risk = RiskItem::findOrFail($id);
         $validated = $request->validate([
-            'program_id' => 'required|exists:programs,id',
+            'program_id' => 'required|exists:programs,program_id',
             'description' => 'required|string',
             'likelihood' => ['required', Rule::in(['Low', 'Medium', 'High'])],
             'impact' => ['required', Rule::in(['Low', 'Medium', 'High'])],
@@ -115,6 +164,8 @@ class RiskController extends Controller
      */
     public function destroy($id)
     {
+        $this->enforceAccess('destroy'); // enforceAccess() already checks usertype from database
+
         $risk = RiskItem::findOrFail($id);
         $risk->delete();
 

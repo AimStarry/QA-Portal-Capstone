@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use App\Traits\HasCustomPrimaryKey;
+
 class GraduateRecord extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCustomPrimaryKey;
+
+    protected $primaryKey = 'graduate_record_id';
 
     protected $fillable = [
         'program_id',
@@ -22,6 +26,6 @@ class GraduateRecord extends Model
      */
     public function program(): BelongsTo
     {
-        return $this->belongsTo(Program::class);
+        return $this->belongsTo(Program::class, 'program_id', 'program_id');
     }
 }
