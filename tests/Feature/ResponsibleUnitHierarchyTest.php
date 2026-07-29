@@ -132,7 +132,7 @@ class ResponsibleUnitHierarchyTest extends TestCase
             'status' => 'Pending',
             'priority' => 'High',
             'responsible_unit_id' => $this->unit->responsible_unit_id,
-            'laboratory_id' => $this->lab->laboratory_id,
+            'categories' => ['Resurvey Feedback'],
             'accrediting_body' => 'PACUCOA',
             'school' => 'School of Computing',
             'recommendations' => ['Draw topological map'],
@@ -143,9 +143,8 @@ class ResponsibleUnitHierarchyTest extends TestCase
         $this->assertDatabaseHas('compliance_records', [
             'title' => 'Submit network schema diagrams',
             'responsible_unit_id' => $this->unit->responsible_unit_id,
-            'laboratory_id' => $this->lab->laboratory_id,
             'responsible_unit' => 'School of Computing',
-            'category' => 'Ada Lovelace Computer Laboratory',
+            'category' => 'Resurvey Feedback',
         ]);
     }
 }

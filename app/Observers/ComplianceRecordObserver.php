@@ -16,15 +16,17 @@ class ComplianceRecordObserver
         $program = Program::find($programId);
         if (!$program) return;
 
-        // If the program has at least one compliance record
-        if ($program->complianceRecords()->exists()) {
-            // Efficient exists query to check for non-Compliant records
-            $hasDeficiencies = $program->complianceRecords()
-                ->where('status', '!=', 'Compliant')
-                ->exists();
+        // Check if the program has any deficient compliance records or assignments
+        $hasDeficienciesDirect = $program->complianceRecords()
+            ->where('status', '!=', 'Compliant')
+            ->exists();
 
-            $program->update(['is_accreditable' => !$hasDeficiencies]);
-        }
+        $hasDeficienciesAssignments = $program->complianceAssignments()
+            ->where('status', '!=', 'Compliant')
+            ->exists();
+
+        $hasDeficiencies = $hasDeficienciesDirect || $hasDeficienciesAssignments;
+        $program->update(['is_accreditable' => !$hasDeficiencies]);
     }
 
     /**

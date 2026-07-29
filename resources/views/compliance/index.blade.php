@@ -10,14 +10,6 @@
             <p class="text-xs sm:text-sm text-gray-500">Track documentation audits and compliance tasks. Recommendations are managed as checklists to drive compliance rates.</p>
         </div>
         <div class="flex items-center gap-2">
-            @if($role === 'QA Admin')
-                <button type="button" onclick="openManageLabsModal()" class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-sm font-semibold rounded-xl text-gray-700 shadow-sm transition">
-                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                    </svg>
-                    Manage Categories &amp; Labs
-                </button>
-            @endif
             <button onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-hau-maroon border border-transparent text-sm font-semibold rounded-xl text-white hover:bg-hau-maroon-light shadow-sm focus:outline-none transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Log Compliance Task
@@ -30,6 +22,36 @@
         $totalRecs = $complianceRecords->sum(fn($r) => $r->recommendationItems->count());
         $completedRecs = $complianceRecords->sum(fn($r) => $r->recommendationItems->where('is_completed', true)->count());
         $overallRate = $totalRecs > 0 ? round(($completedRecs / $totalRecs) * 100) : 0;
+
+        $getSchoolCode = function($name) {
+            if (empty($name)) return '';
+            $map = [
+                'School of Business and Accountancy' => 'SBA',
+                'School of Arts and Sciences' => 'SAS',
+                'School of Education' => 'SED',
+                'School of Engineering and Architecture' => 'SEA',
+                'School of Hospitality and Tourism Management' => 'SHTM',
+                'School of Nursing and Allied Medical Sciences' => 'SNAMS',
+                'School of Computing' => 'SOC',
+                'College of Criminal Justice Education and Forensic Sciences' => 'CCJEF',
+                'Basic Education' => 'BED',
+                'College of Nursing (CON)' => 'CON',
+                'College of Information and Communications Technology (CICT)' => 'CICT',
+            ];
+            $trimmed = trim($name);
+            if (isset($map[$trimmed])) return $map[$trimmed];
+            
+            if (str_contains($trimmed, ';')) {
+                $parts = array_map('trim', explode(';', $trimmed));
+                $codes = [];
+                foreach ($parts as $p) {
+                    $codes[] = $map[$p] ?? (strlen($p) > 8 ? preg_replace('/(?<=\\w)\\w*\\s*/', '', $p) : $p);
+                }
+                return implode(', ', array_unique(array_filter($codes)));
+            }
+            
+            return strlen($trimmed) > 8 ? preg_replace('/(?<=\\w)\\w*\\s*/', '', $trimmed) : $trimmed;
+        };
     @endphp
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
@@ -77,7 +99,7 @@
                     <div class="bg-white rounded-xl p-4 border border-hau-maroon/10 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div class="space-y-1.5 flex-1 min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-hau-maroon/5 text-hau-maroon">{{ $pending->program->program_code }}</span>
+                                <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-hau-maroon/5 text-hau-maroon" title="{{ $pending->school }}">{{ $pending->program->program_code ?? ($getSchoolCode($pending->school) ?: 'General') }}</span>
                                 @if($pending->accrediting_body)
                                     <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-hau-gold/15 text-hau-maroon-dark">{{ $pending->accrediting_body }}</span>
                                 @endif
@@ -271,16 +293,15 @@
         @forelse ($complianceRecords as $c)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-hau-maroon/40 transition cursor-pointer animate-fade-slide-up"
                  onclick="openDetailModal(this)"
-                 data-id="{{ $c->id }}"
+                 data-id="{{ $c->compliance_record_id }}"
                  data-program-id="{{ $c->program_id }}"
-                 data-program-code="{{ $c->program->program_code }}"
+                 data-program-code="{{ $c->program->program_code ?? 'N/A' }}"
                  data-title="{{ $c->title }}"
                  data-desc="{{ $c->description }}"
                  data-status="{{ $c->status }}"
                  data-due="{{ $c->due_date ? $c->due_date->format('Y-m-d') : '' }}"
                  data-resp="{{ $c->responsible_unit }}"
                  data-responsible-unit-id="{{ $c->responsible_unit_id }}"
-                 data-laboratory-id="{{ $c->laboratory_id }}"
                  data-contact-person="{{ $c->contact_person }}"
                  data-contact-email="{{ $c->contact_email }}"
                  data-link="{{ $c->document_link }}"
@@ -298,21 +319,108 @@
                  data-workflow-stage="{{ $c->workflow_stage ?? 'recommendation_created' }}"
                  data-priority="{{ $c->priority ?? 'Medium' }}"
                  data-recommendations="{{ $c->recommendationItems->toJson() }}"
+                 data-assignments="{{ json_encode($c->assignments->map(fn($a) => [
+                     'id' => $a->id,
+                     'program_id' => $a->program_id,
+                     'program_code' => $a->program->program_code ?? null,
+                     'program_name' => $a->program->program_name ?? null,
+                     'school_name' => $a->school_name,
+                     'unit_id' => $a->responsible_unit_id,
+                     'unit_name' => $a->responsibleUnit->name ?? null,
+                     'unit_code' => $a->responsibleUnit->code ?? null,
+                     'status' => $a->status,
+                     'approval_state' => $a->approval_state,
+                     'document_link' => $a->document_link,
+                     'pending_document_link' => $a->pending_document_link,
+                     'action_plan' => $a->action_plan,
+                     'rejection_reason' => $a->rejection_reason,
+                 ])) }}"
                  data-completion-rate="{{ $c->recommendationItems->count() > 0 ? round(($c->recommendationItems->where('is_completed', true)->count() / $c->recommendationItems->count()) * 100) : 0 }}">
                  
                  <!-- Top Body -->
                  <div class="p-5 space-y-4 flex-1">
                      <div class="flex items-start justify-between gap-2">
-                         <div class="flex flex-wrap gap-1">
-                             <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon hover:underline">
-                                 <a href="{{ route('programs.show', $c->program_id) }}" onclick="event.stopPropagation();">{{ $c->program->program_code }}</a>
-                             </span>
-                             @if ($c->accrediting_body)
-                                 <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-hau-gold/15 text-hau-maroon-dark">
-                                     {{ $c->accrediting_body }}
-                                 </span>
-                             @endif
-                         </div>
+                          <div class="flex flex-wrap gap-1">
+                              @php
+                                  $isAllUnitsTask = str_contains($c->responsible_unit ?? '', 'All Departments') || str_contains($c->responsible_unit ?? '', 'All Units');
+                              @endphp
+                              @if ($isAllUnitsTask)
+                                  <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-150">
+                                      All Departments &amp; Units
+                                  </span>
+                              @else
+                                  @php
+                                      $badgeItems = [];
+                                      if ($c->assignments && $c->assignments->count() > 0) {
+                                          foreach($c->assignments as $ass) {
+                                              if($ass->program) {
+                                                  $badgeItems[] = ['type' => 'prog', 'id' => $ass->program_id, 'label' => $ass->program->program_code, 'link' => route('programs.show', $ass->program_id)];
+                                              } elseif($ass->school_name) {
+                                                  $sCode = $getSchoolCode($ass->school_name);
+                                                  if (!empty($sCode)) {
+                                                      $badgeItems[] = ['type' => 'sch', 'id' => $sCode, 'label' => $sCode, 'title' => $ass->school_name];
+                                                  }
+                                              } elseif($ass->responsibleUnit) {
+                                                  $label = $ass->responsibleUnit->code ?? $ass->responsibleUnit->name;
+                                                  $badgeItems[] = ['type' => 'unit', 'id' => $ass->responsible_unit_id, 'label' => $label];
+                                              }
+                                          }
+                                      } elseif($c->program) {
+                                          $badgeItems[] = ['type' => 'prog', 'id' => $c->program_id, 'label' => $c->program->program_code, 'link' => route('programs.show', $c->program_id)];
+                                      } elseif($c->school) {
+                                          foreach(explode(';', $c->school) as $sItem) {
+                                              $sName = trim($sItem);
+                                              $sCode = $getSchoolCode($sName);
+                                              if (!empty($sCode)) {
+                                                  $badgeItems[] = ['type' => 'sch', 'id' => $sCode, 'label' => $sCode, 'title' => $sName];
+                                              }
+                                          }
+                                      }
+                                      
+                                      $uniqueBadges = [];
+                                      $seenKeys = [];
+                                      foreach ($badgeItems as $item) {
+                                          $key = $item['type'] . '_' . $item['id'];
+                                          if (!in_array($key, $seenKeys)) {
+                                              $seenKeys[] = $key;
+                                              $uniqueBadges[] = $item;
+                                          }
+                                      }
+
+                                      $maxVisible = 4;
+                                      $visibleBadges = array_slice($uniqueBadges, 0, $maxVisible);
+                                      $hiddenCount = count($uniqueBadges) - count($visibleBadges);
+                                      $allLabels = array_map(fn($b) => $b['label'], $uniqueBadges);
+                                  @endphp
+
+                                  @foreach($visibleBadges as $b)
+                                      @if(isset($b['link']))
+                                          <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon hover:underline">
+                                              <a href="{{ $b['link'] }}" onclick="event.stopPropagation();">{{ $b['label'] }}</a>
+                                          </span>
+                                      @elseif($b['type'] === 'unit')
+                                          <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700">
+                                              {{ $b['label'] }}
+                                          </span>
+                                      @else
+                                          <span title="{{ $b['title'] ?? '' }}" class="inline-flex px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon">
+                                              {{ $b['label'] }}
+                                          </span>
+                                      @endif
+                                  @endforeach
+
+                                  @if($hiddenCount > 0)
+                                      <span title="{{ implode(', ', $allLabels) }}" class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200 cursor-help">
+                                          +{{ $hiddenCount }} more
+                                      </span>
+                                  @endif
+                              @endif
+                              @if ($c->accrediting_body)
+                                  <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-hau-gold/15 text-hau-maroon-dark">
+                                      {{ $c->accrediting_body }}
+                                  </span>
+                              @endif
+                          </div>
                          
                          <div class="flex items-center gap-1 shrink-0">
                              <!-- Priority Badge -->
@@ -429,15 +537,16 @@
                              </div>
                              <!-- Checklist Items -->
                              <div class="space-y-1">
-                                 @foreach($c->recommendationItems->take(3) as $item)
+                                 @foreach($c->recommendationItems->take(1) as $item)
                                      <label class="checklist-item flex items-start gap-2 py-1 px-2 rounded-lg cursor-pointer group" data-item-id="{{ $item->id }}" data-record-id="{{ $c->id }}">
-                                         <input type="checkbox" class="checklist-checkbox mt-0.5" {{ $item->is_completed ? 'checked' : '' }} onchange="toggleRecommendation({{ $item->id }}, {{ $c->id }})" />
+                                         <input type="checkbox" class="checklist-checkbox mt-0.5 shrink-0" {{ $item->is_completed ? 'checked' : '' }} onchange="toggleRecommendation({{ $item->id }}, {{ $c->id }})" />
                                          <span class="text-xs text-gray-700 leading-relaxed {{ $item->is_completed ? 'checklist-text-completed' : '' }}" id="reco-text-card-{{ $item->id }}">{{ $item->text }}</span>
                                      </label>
                                  @endforeach
-                                 @if($c->recommendationItems->count() > 3)
-                                     <div class="text-[10px] text-hau-maroon font-bold pl-2 pt-1 hover:underline">
-                                         + {{ $c->recommendationItems->count() - 3 }} more recommendation(s)...
+                                 @if($c->recommendationItems->count() > 1)
+                                     <div class="text-[10px] text-hau-maroon font-bold pl-2 pt-0.5 flex items-center gap-1 hover:underline cursor-pointer">
+                                         <svg class="w-3 h-3 text-hau-maroon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                         +{{ $c->recommendationItems->count() - 1 }} more recommendation(s)...
                                      </div>
                                  @endif
                              </div>
@@ -459,15 +568,42 @@
                          </p>
                      </div>
 
-                     <!-- Document Link -->
-                     <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
-                         <span class="text-gray-400 font-semibold">Evidence Link:</span>
-                         @if ($c->document_link)
-                             <a href="{{ $c->document_link }}" target="_blank" onclick="event.stopPropagation();" class="text-hau-maroon hover:underline font-mono font-medium truncate block max-w-[200px]" title="{{ $c->document_link }}">
-                                 Open Link <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                             </a>
-                         @else
-                              <span class="text-gray-400 font-medium italic">No document attached</span>
+                     <!-- Document / Evidence Links -->
+                     <div class="pt-2 border-t border-gray-100 text-xs space-y-1">
+                         @php
+                             $hasAnyLink = false;
+                         @endphp
+                         @if ($c->assignments && $c->assignments->count() > 0)
+                             <span class="text-gray-400 font-semibold block text-[10px] uppercase tracking-wider">Evidence Links:</span>
+                             @foreach($c->assignments as $ass)
+                                 @php
+                                     $activeLink = $ass->pending_document_link ?? $ass->document_link;
+                                     $targetLabel = $ass->program->program_code ?? ($ass->school_name ? $getSchoolCode($ass->school_name) : ($ass->responsibleUnit->code ?? $ass->responsibleUnit->name ?? 'Unit'));
+                                 @endphp
+                                 @if($activeLink)
+                                     @php $hasAnyLink = true; @endphp
+                                     <div class="flex items-center justify-between gap-2 text-[11px]">
+                                         <span class="font-bold text-gray-700 truncate max-w-[120px]" title="{{ $targetLabel }}">{{ $targetLabel }}:</span>
+                                         <a href="{{ $activeLink }}" target="_blank" onclick="event.stopPropagation();" class="text-hau-maroon hover:underline font-mono font-semibold truncate block max-w-[180px]" title="{{ $activeLink }}">
+                                             {{ $ass->pending_document_link ? 'Proposed Link 🔗' : 'Open Link 🔗' }}
+                                         </a>
+                                     </div>
+                                 @endif
+                             @endforeach
+                         @endif
+
+                         @if(!$hasAnyLink && $c->document_link)
+                             <div class="flex items-center justify-between">
+                                 <span class="text-gray-400 font-semibold">Evidence Link:</span>
+                                 <a href="{{ $c->document_link }}" target="_blank" onclick="event.stopPropagation();" class="text-hau-maroon hover:underline font-mono font-medium truncate block max-w-[200px]" title="{{ $c->document_link }}">
+                                     Open Link <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                 </a>
+                             </div>
+                         @elseif(!$hasAnyLink)
+                             <div class="flex items-center justify-between">
+                                 <span class="text-gray-400 font-semibold">Evidence Link:</span>
+                                 <span class="text-gray-400 font-medium italic">No document attached</span>
+                             </div>
                          @endif
                      </div>
 
@@ -478,26 +614,26 @@
                  </div>
 
                  <!-- Footer Controls -->
-                 <div class="bg-gray-50/70 px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-                     <div class="flex items-center gap-1.5 text-xs text-gray-550 font-semibold">
-                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <div class="bg-gray-50/70 px-4 py-2.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
+                     <div class="flex items-center gap-1.5 text-xs text-gray-550 font-semibold flex-wrap min-w-0">
+                         <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                          </svg>
                          @if ($c->due_date)
-                              <span class="font-mono">Due: {{ $c->due_date->format('M d, Y') }}</span>
+                              <span class="font-mono whitespace-nowrap">Due: {{ $c->due_date->format('M d, Y') }}</span>
                               @if($c->status !== 'Compliant')
                                   @if($c->due_date->isPast())
-                                      <span class="text-rose-600 font-extrabold text-[10px] bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100 animate-pulse">Overdue!</span>
+                                      <span class="text-rose-600 font-extrabold text-[10px] bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100 animate-pulse whitespace-nowrap shrink-0">Overdue!</span>
                                   @elseif($c->due_date->diffInDays(now()) <= 7)
-                                      <span class="text-amber-700 font-extrabold text-[10px] bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">Due Soon</span>
+                                      <span class="text-amber-700 font-extrabold text-[10px] bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 whitespace-nowrap shrink-0">Due Soon</span>
                                   @endif
                               @endif
                           @else
-                              <span>No deadline</span>
+                              <span class="whitespace-nowrap">No deadline</span>
                           @endif
                      </div>
                      
-                     <div class="flex items-center gap-2">
+                     <div class="flex items-center gap-2 shrink-0 ml-auto">
                          @if ($role === 'QA Admin')
                              <!-- Admin Full CRUD -->
                              <button onclick="event.stopPropagation(); openEditModal(this.closest('[data-id]'))" class="p-1 text-gray-400 hover:text-hau-maroon hover:bg-gray-200/50 rounded transition" title="Edit Task">
@@ -518,7 +654,7 @@
                              <!-- Unit or Department Draft Propose Update Button -->
                              <button onclick="event.stopPropagation(); openProposeModal(this.closest('[data-id]'))" 
                                      {{ $c->approval_state === 'Pending Approval' ? 'disabled' : '' }}
-                                     class="inline-flex px-3 py-1 border border-hau-maroon hover:bg-hau-maroon/5 text-hau-maroon font-bold text-xs rounded-lg transition disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed shadow-2xs">
+                                     class="inline-flex items-center justify-center whitespace-nowrap shrink-0 px-3 py-1.5 border border-hau-maroon hover:bg-hau-maroon/5 text-hau-maroon font-bold text-xs rounded-lg transition disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed shadow-2xs">
                                  Propose Update
                              </button>
                          @endif
@@ -551,67 +687,149 @@
                     <div class="border-b border-gray-150 pb-1">
                         <h4 class="text-[10px] font-black text-hau-maroon uppercase tracking-wider">I. Context & Categorization</h4>
                     </div>
-                    <div class="grid grid-cols-3 gap-3">
+
+                    <!-- Row 1: School & Accrediting Body -->
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label for="add-program_id" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Academic Program</label>
-                            <select name="program_id" id="add-program_id" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="">Select a Program</option>
-                                @foreach ($programs as $p)
-                                    <option value="{{ $p->id }}" data-college="{{ $p->college->name ?? '' }}">{{ $p->program_code }} &mdash; {{ $p->program_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label for="add-school" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">School / College</label>
-                            <select name="school" id="add-school" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="" disabled {{ !(Auth::user()->usertype === 'Dean' && Auth::user()->college) ? 'selected' : '' }}>Select School / College</option>
-                                @php
-                                    $schoolsList = [
-                                        "School of Business and Accountancy",
-                                        "School of Engineering and Architecture",
-                                        "School of Arts and Sciences",
-                                        "School of Education",
-                                        "School of Hospitality and Tourism Management",
-                                        "School of Nursing and Allied Medical Sciences",
-                                        "School of Computing",
-                                        "College of Criminal Justice Education and Forensic Sciences",
-                                        "Basic Education"
-                                    ];
-                                @endphp
-                                @foreach($schoolsList as $sch)
-                                    <option value="{{ $sch }}" {{ (Auth::user()->usertype === 'Dean' && Auth::user()->college && Auth::user()->college->name === $sch) ? 'selected' : '' }}>{{ $sch }}</option>
-                                @endforeach
-                            </select>
+                            <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">School(s) / College(s)</label>
+                            <div id="add-schools-list" class="space-y-1.5">
+                                <div class="flex items-center gap-1.5 school-dropdown-row">
+                                    <select name="schools[]" id="add-school" class="add-school-select block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                                        <option value="" disabled {{ !(Auth::user()->usertype === 'Dean' && Auth::user()->college) ? 'selected' : '' }}>Select School / College</option>
+                                        @php
+                                            $schoolsList = [
+                                                "School of Business and Accountancy",
+                                                "School of Engineering and Architecture",
+                                                "School of Arts and Sciences",
+                                                "School of Education",
+                                                "School of Hospitality and Tourism Management",
+                                                "School of Nursing and Allied Medical Sciences",
+                                                "School of Computing",
+                                                "College of Criminal Justice Education and Forensic Sciences",
+                                                "Basic Education"
+                                            ];
+                                        @endphp
+                                        @foreach($schoolsList as $sch)
+                                            <option value="{{ $sch }}" {{ (Auth::user()->usertype === 'Dean' && Auth::user()->college && Auth::user()->college->name === $sch) ? 'selected' : '' }}>{{ $sch }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="button" onclick="removeDropdownRow(this)" class="p-0.5 text-gray-400 hover:text-rose-600 rounded transition w-5 h-5 flex items-center justify-center shrink-0" title="Remove school">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" onclick="addSchoolDropdownRow('add-schools-list')" class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-hau-maroon hover:text-hau-maroon-light transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add another school / college
+                            </button>
                         </div>
                         <div>
                             <label for="add-accrediting_body" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Accrediting Body</label>
-                            <select name="accrediting_body" id="add-accrediting_body" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="">Select Accrediting Body</option>
-                                @foreach($dbAccreditingBodies as $ab)
-                                    <option value="{{ $ab->code }}">{{ $ab->code }} &mdash; {{ $ab->name }}</option>
-                                @endforeach
-                            </select>
+                            <div class="flex items-center gap-1.5">
+                                <select name="accrediting_body" id="add-accrediting_body" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                                    <option value="">Select Accrediting Body</option>
+                                    @foreach($dbAccreditingBodies as $ab)
+                                        <option value="{{ $ab->code }}">{{ $ab->code }} &mdash; {{ $ab->name }}</option>
+                                    @endforeach
+                                </select>
+                                <span class="w-5 h-5 shrink-0 inline-block"></span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3">
+                    <!-- Row 2: Programs & Units Repeaters -->
+                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-150">
+                        <!-- Academic Programs Repeater -->
                         <div>
-                            <label for="add-resp" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Unit or Department</label>
-                            <select name="responsible_unit_id" id="add-resp" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="">Select Responsible Department/Unit</option>
-                                @foreach($dbResponsibleUnits as $ru)
-                                    <option value="{{ $ru->responsible_unit_id }}" {{ (Auth::user()->responsible_unit_id === $ru->responsible_unit_id) ? 'selected' : '' }}>{{ $ru->name }} @if($ru->code)({{ $ru->code }})@endif</option>
-                                @endforeach
-                            </select>
+                            <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Academic Program(s) (Optional)</label>
+                            <div id="add-programs-list" class="space-y-1.5">
+                                <div class="flex items-center gap-1.5 program-dropdown-row">
+                                    <select name="program_ids[]" id="add-program_id" class="add-program-select block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                                        <option value="">Select a Program</option>
+                                        @foreach ($programs as $p)
+                                            <option value="{{ $p->id }}" data-college="{{ $p->college->name ?? '' }}">{{ $p->program_code }} &mdash; {{ $p->program_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="button" onclick="removeDropdownRow(this)" class="p-0.5 text-gray-400 hover:text-rose-600 rounded transition w-5 h-5 flex items-center justify-center shrink-0" title="Remove program">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" onclick="addProgramDropdownRow('add-programs-list')" class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-hau-maroon hover:text-hau-maroon-light transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add another program
+                            </button>
                         </div>
+
+                        <!-- Departments / Units Repeater -->
                         <div>
-                            <label for="add-laboratory_id" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5 flex justify-between items-center">
-                                <span>Category / Lab</span>
-                                <span class="text-[9px] text-amber-600 font-bold normal-case block" id="add-lab-notice">⚠️ Select Dept first</span>
-                            </label>
-                            <select name="laboratory_id" id="add-laboratory_id" disabled class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="">Select Category / Lab</option>
-                            </select>
+                            <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Unit(s) or Department(s)</label>
+                            <div id="add-units-list" class="space-y-1.5">
+                                <div class="flex items-center gap-1.5 unit-dropdown-row">
+                                    <select name="responsible_unit_ids[]" id="add-resp" class="add-unit-select block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                                        <option value="">Select Responsible Department/Unit</option>
+                                        <option value="all">All Departments &amp; Units (University-Wide)</option>
+                                        @php
+                                            $schoolsWithDepts = $dbResponsibleUnits->whereNull('parent_unit_id')->filter(fn($u) => $u->children->count() > 0);
+                                            $adminOffices = $dbResponsibleUnits->whereNull('parent_unit_id')->filter(fn($u) => $u->children->count() === 0);
+                                        @endphp
+                                        @foreach($schoolsWithDepts->sortBy('name') as $school)
+                                            <optgroup label="{{ $school->name }}">
+                                                <option value="{{ $school->responsible_unit_id }}"
+                                                    {{ (Auth::user()->responsible_unit_id === $school->responsible_unit_id) ? 'selected' : '' }}>
+                                                    {{ $school->name }} (Whole School / College)
+                                                </option>
+                                                @foreach($school->children->sortBy('name') as $dept)
+                                                    <option value="{{ $dept->responsible_unit_id }}"
+                                                        {{ (Auth::user()->responsible_unit_id === $dept->responsible_unit_id) ? 'selected' : '' }}>
+                                                        {{ $dept->name }}
+                                                    </option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endforeach
+                                        @if($adminOffices->count() > 0)
+                                            <optgroup label="Administrative Offices &amp; Units">
+                                                @foreach($adminOffices->sortBy('name') as $office)
+                                                    <option value="{{ $office->responsible_unit_id }}"
+                                                        {{ (Auth::user()->responsible_unit_id === $office->responsible_unit_id) ? 'selected' : '' }}>
+                                                        {{ $office->name }}{{ $office->code ? ' ('.$office->code.')' : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
+                                    </select>
+                                    <button type="button" onclick="removeDropdownRow(this)" class="p-0.5 text-gray-400 hover:text-rose-600 rounded transition w-5 h-5 flex items-center justify-center shrink-0" title="Remove unit">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" onclick="addUnitDropdownRow('add-units-list')" class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-hau-maroon hover:text-hau-maroon-light transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add another department / unit
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Category & Areas -->
+                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-150">
+                        <div>
+                            <label for="add-category" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Category</label>
+                            <div class="flex items-center gap-1.5">
+                                <select name="categories[]" id="add-category" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                                    <option value="" disabled selected>Select Category</option>
+                                    <option value="Resurvey Feedback">Resurvey Feedback</option>
+                                    <option value="FUA (Follow-Up Action)">FUA (Follow-Up Action)</option>
+                                    <option value="Self-Survey Findings">Self-Survey Findings</option>
+                                    <option value="Accreditor Recommendation">Accreditor Recommendation</option>
+                                    <option value="Internal Quality Audit">Internal Quality Audit</option>
+                                    <option value="Curriculum & Instruction">Curriculum &amp; Instruction</option>
+                                    <option value="Governance & Leadership">Governance &amp; Leadership</option>
+                                    <option value="Faculty & Staff Development">Faculty &amp; Staff Development</option>
+                                    <option value="Student Services">Student Services</option>
+                                    <option value="General Compliance">General Compliance</option>
+                                </select>
+                                <span class="w-5 h-5 shrink-0 inline-block"></span>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5 flex justify-between items-center">
@@ -619,17 +837,17 @@
                                 <span class="text-[9px] text-amber-600 font-bold normal-case block" id="add-area-notice">⚠️ Select Body first</span>
                             </label>
                             <div id="add-areas-list" class="space-y-1.5">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1.5">
                                     <select name="areas[]" required disabled class="area-select block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
                                         <option value="" disabled selected>Select Accrediting Body first</option>
                                     </select>
-                                    <button type="button" onclick="removeAreaRow(this)" class="p-1 text-gray-400 hover:text-rose-600 rounded transition shrink-0" title="Remove">
+                                    <button type="button" onclick="removeAreaRow(this)" class="p-0.5 text-gray-400 hover:text-rose-600 rounded transition w-5 h-5 flex items-center justify-center shrink-0" title="Remove">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                     </button>
                                 </div>
                             </div>
                             <button type="button" onclick="addAreaRow('add-areas-list')" class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-hau-maroon hover:text-hau-maroon-light transition">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                 Add another area
                             </button>
                         </div>
@@ -747,59 +965,80 @@
                     <div class="border-b border-gray-150 pb-1">
                         <h4 class="text-[10px] font-black text-hau-maroon uppercase tracking-wider">I. Context & Categorization</h4>
                     </div>
-                    <div class="grid grid-cols-3 gap-3">
+
+                    <!-- Row 1: School & Accrediting Body -->
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label for="edit-program_id" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Academic Program</label>
-                            <select name="program_id" id="edit-program_id" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="">Select a Program</option>
-                                @foreach ($programs as $p)
-                                    <option value="{{ $p->id }}" data-college="{{ $p->college->name ?? '' }}">{{ $p->program_code }} &mdash; {{ $p->program_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label for="edit-school" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">School / College</label>
-                            <select name="school" id="edit-school" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="School of Business and Accountancy">School of Business and Accountancy</option>
-                                <option value="School of Engineering and Architecture">School of Engineering and Architecture</option>
-                                <option value="School of Arts and Sciences">School of Arts and Sciences</option>
-                                <option value="School of Education">School of Education</option>
-                                <option value="School of Hospitality and Tourism Management">School of Hospitality and Tourism Management</option>
-                                <option value="School of Nursing and Allied Medical Sciences">School of Nursing and Allied Medical Sciences</option>
-                                <option value="School of Computing">School of Computing</option>
-                                <option value="College of Criminal Justice Education and Forensic Sciences">College of Criminal Justice Education and Forensic Sciences</option>
-                                <option value="Basic Education">Basic Education</option>
-                            </select>
+                            <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">School(s) / College(s)</label>
+                            <div id="edit-schools-list" class="space-y-1.5">
+                                <!-- Dynamically populated via JS -->
+                            </div>
+                            <button type="button" onclick="addSchoolDropdownRow('edit-schools-list')" class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-hau-maroon hover:text-hau-maroon-light transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add another school / college
+                            </button>
                         </div>
                         <div>
                             <label for="edit-accrediting_body" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Accrediting Body</label>
-                            <select name="accrediting_body" id="edit-accrediting_body" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="">Select Accrediting Body</option>
-                                @foreach($dbAccreditingBodies as $ab)
-                                    <option value="{{ $ab->code }}">{{ $ab->code }} &mdash; {{ $ab->name }}</option>
-                                @endforeach
-                            </select>
+                            <div class="flex items-center gap-1.5">
+                                <select name="accrediting_body" id="edit-accrediting_body" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                                    <option value="">Select Accrediting Body</option>
+                                    @foreach($dbAccreditingBodies as $ab)
+                                        <option value="{{ $ab->code }}">{{ $ab->code }} &mdash; {{ $ab->name }}</option>
+                                    @endforeach
+                                </select>
+                                <span class="w-5 h-5 shrink-0 inline-block"></span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3">
+                    <!-- Row 2: Programs & Units Repeaters -->
+                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-150">
+                        <!-- Academic Programs Repeater -->
                         <div>
-                            <label for="edit-resp" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Unit or Department</label>
-                            <select name="responsible_unit_id" id="edit-resp" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="">Select Responsible Department/Unit</option>
-                                @foreach($dbResponsibleUnits as $ru)
-                                    <option value="{{ $ru->responsible_unit_id }}">{{ $ru->name }} @if($ru->code)({{ $ru->code }})@endif</option>
-                                @endforeach
-                            </select>
+                            <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Academic Program(s) (Optional)</label>
+                            <div id="edit-programs-list" class="space-y-1.5">
+                                <!-- Dynamically populated via JS -->
+                            </div>
+                            <button type="button" onclick="addProgramDropdownRow('edit-programs-list')" class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-hau-maroon hover:text-hau-maroon-light transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add another program
+                            </button>
                         </div>
+
+                        <!-- Departments / Units Repeater -->
                         <div>
-                            <label for="edit-laboratory_id" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5 flex justify-between items-center">
-                                <span>Category / Lab</span>
-                                <span class="text-[9px] text-amber-600 font-bold normal-case block" id="edit-lab-notice">⚠️ Select Dept first</span>
-                            </label>
-                            <select name="laboratory_id" id="edit-laboratory_id" disabled class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="">Select Category / Lab</option>
-                            </select>
+                            <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Unit(s) or Department(s)</label>
+                            <div id="edit-units-list" class="space-y-1.5">
+                                <!-- Dynamically populated via JS -->
+                            </div>
+                            <button type="button" onclick="addUnitDropdownRow('edit-units-list')" class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-hau-maroon hover:text-hau-maroon-light transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add another department / unit
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Category & Areas -->
+                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-150">
+                        <div>
+                            <label for="edit-category" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Category</label>
+                            <div class="flex items-center gap-1.5">
+                                <select name="categories[]" id="edit-category" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                                    <option value="" disabled>Select Category</option>
+                                    <option value="Resurvey Feedback">Resurvey Feedback</option>
+                                    <option value="FUA (Follow-Up Action)">FUA (Follow-Up Action)</option>
+                                    <option value="Self-Survey Findings">Self-Survey Findings</option>
+                                    <option value="Accreditor Recommendation">Accreditor Recommendation</option>
+                                    <option value="Internal Quality Audit">Internal Quality Audit</option>
+                                    <option value="Curriculum & Instruction">Curriculum &amp; Instruction</option>
+                                    <option value="Governance & Leadership">Governance &amp; Leadership</option>
+                                    <option value="Faculty & Staff Development">Faculty &amp; Staff Development</option>
+                                    <option value="Student Services">Student Services</option>
+                                    <option value="General Compliance">General Compliance</option>
+                                </select>
+                                <span class="w-5 h-5 shrink-0 inline-block"></span>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5 flex justify-between items-center">
@@ -810,7 +1049,7 @@
                                 <!-- Populated dynamically by openEditModal -->
                             </div>
                             <button type="button" onclick="addAreaRow('edit-areas-list')" class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-hau-maroon hover:text-hau-maroon-light transition">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                 Add another area
                             </button>
                         </div>
@@ -943,6 +1182,12 @@
                         <p class="font-medium text-emerald-700 leading-relaxed">Submitting your Action Plan and Evidence Link will log them for QA Admin approval. Upon Admin review and approval, the task status will automatically update to <strong>Compliant</strong>.</p>
                     </div>
 
+                    <div id="propose-target-container" class="mb-3" style="display: none;">
+                        <label for="propose-target-select" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Target School / Program</label>
+                        <select id="propose-target-select" onchange="onProposeTargetChange(this)" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                        </select>
+                    </div>
+
                     <div>
                         <label for="propose-link" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Document Link (Evidence URL)</label>
                         <input type="url" name="pending_document_link" id="propose-link" required placeholder="e.g., https://drive.google.com/..." class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
@@ -1043,6 +1288,16 @@
                     <p id="detail-action-plan" class="text-xs text-gray-700 bg-gray-50 border border-gray-150 p-3 rounded-lg leading-relaxed mt-1 font-medium whitespace-pre-line"></p>
                 </div>
 
+                <!-- Submissions & SharePoint Links Breakdown Table -->
+                <div class="pt-3 border-t border-gray-150 space-y-2">
+                    <span class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider block flex items-center justify-between">
+                        <span>Assigned Target Submissions &amp; SharePoint Evidence Links</span>
+                    </span>
+                    <div id="detail-assignments-list">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
                 <!-- Grid Details -->
                 <div class="grid grid-cols-2 gap-4 text-xs">
                     <div>
@@ -1087,43 +1342,43 @@
 
     <!-- Manage Categories & Labs Modal -->
     <div id="manage-labs-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full overflow-hidden transform scale-95 transition-all flex flex-col" style="max-width: 500px; max-height: calc(100vh - 80px);">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full overflow-hidden transform scale-95 transition-all flex flex-col" style="max-width: 540px; max-height: calc(100vh - 80px);">
             <div class="bg-hau-maroon px-5 py-3 text-white flex items-center justify-between border-b-2 border-hau-gold shrink-0">
-                <h3 class="text-base font-bold">Manage Categories &amp; Laboratories</h3>
+                <h3 class="text-base font-bold">Manage Categories &amp; Departments</h3>
                 <button onclick="closeModal('manage-labs-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
             </div>
 
             <!-- Tabs Navigation -->
             <div class="flex border-b border-gray-200 bg-gray-50 px-5 shrink-0">
-                <button type="button" onclick="switchManageLabsTab('list')" id="manage-labs-tab-list" class="px-4 py-3 text-xs font-bold text-hau-maroon border-b-2 border-hau-maroon focus:outline-none transition">
-                    Existing Labs &amp; Categories
+                <button type="button" onclick="switchManageLabsTab('list')" id="manage-labs-tab-list" class="px-3 py-3 text-xs font-bold text-hau-maroon border-b-2 border-hau-maroon focus:outline-none transition">
+                    Labs &amp; Categories
                 </button>
-                <button type="button" onclick="switchManageLabsTab('add')" id="manage-labs-tab-add" class="px-4 py-3 text-xs font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition">
+                <button type="button" onclick="switchManageLabsTab('add')" id="manage-labs-tab-add" class="px-3 py-3 text-xs font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition">
                     Add Lab / Category
                 </button>
+                <button type="button" onclick="switchManageLabsTab('depts')" id="manage-labs-tab-depts" class="px-3 py-3 text-xs font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition">
+                    Departments
+                </button>
             </div>
-            
+
             <!-- Panel Container -->
             <div class="flex-1 flex flex-col overflow-hidden min-h-0 bg-white">
-                <!-- Panel: List -->
+
+                <!-- Panel: List (Labs) -->
                 <div id="manage-labs-panel-list" class="p-5 flex flex-col min-h-0 overflow-hidden flex-1">
                     <div class="flex justify-between items-center border-b border-gray-150 pb-1 mb-3 shrink-0">
                         <h4 class="text-[11px] font-black text-hau-maroon uppercase tracking-wider">Existing Labs &amp; Categories</h4>
                         <span id="manage-labs-count" class="text-[10px] font-bold bg-hau-maroon/5 text-hau-maroon px-2 py-0.5 rounded font-mono">0 Total</span>
                     </div>
-                    
-                    <!-- Search bar -->
                     <div class="mb-3 shrink-0">
                         <input type="text" id="manage-labs-search" oninput="filterManageLabsList()" placeholder="Filter categories..." class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
                     </div>
-                    
-                    <!-- Scrollable list -->
                     <div class="flex-1 overflow-y-auto min-h-0 pr-1" id="manage-labs-list-container">
                         <!-- Populated by JS -->
                     </div>
                 </div>
 
-                <!-- Panel: Add -->
+                <!-- Panel: Add Lab -->
                 <div id="manage-labs-panel-add" class="p-5 space-y-4 flex-1 hidden overflow-y-auto">
                     <div class="border-b border-gray-150 pb-1">
                         <h4 class="text-[11px] font-black text-hau-maroon uppercase tracking-wider">Add Lab / Category</h4>
@@ -1135,11 +1390,19 @@
                             <input type="text" name="name" id="new-lab-name" required placeholder="e.g. Cisco Lab 1" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
                         </div>
                         <div>
-                            <label for="new-lab-unit" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Parent Responsible Unit</label>
+                            <label for="new-lab-unit" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Parent Department / Unit</label>
                             <select name="responsible_unit_id" id="new-lab-unit" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
                                 <option value="">Select Parent Unit</option>
-                                @foreach($dbResponsibleUnits as $ru)
-                                    <option value="{{ $ru->responsible_unit_id }}">{{ $ru->name }} @if($ru->code)({{ $ru->code }})@endif</option>
+                                @foreach($dbResponsibleUnits->whereNull('parent_unit_id') as $school)
+                                    @if($school->children->count() > 0)
+                                        <optgroup label="{{ $school->name }}">
+                                            @foreach($school->children->sortBy('name') as $dept)
+                                                <option value="{{ $dept->responsible_unit_id }}">{{ $dept->name }}</option>
+                                            @endforeach
+                                        </optgroup>
+                                    @else
+                                        <option value="{{ $school->responsible_unit_id }}">{{ $school->name }}{{ $school->code ? ' ('.$school->code.')' : '' }}</option>
+                                    @endif
                                 @endforeach
                             </select>
                         </div>
@@ -1148,13 +1411,61 @@
                         </button>
                     </form>
                 </div>
+
+                <!-- Panel: Departments -->
+                <div id="manage-labs-panel-depts" class="p-5 flex flex-col min-h-0 overflow-hidden flex-1 hidden">
+
+                    <!-- Add Department Form -->
+                    <div class="border-b border-gray-150 pb-3 mb-4 shrink-0">
+                        <h4 class="text-[11px] font-black text-hau-maroon uppercase tracking-wider mb-3">Add Department</h4>
+                        <form id="create-dept-form" onsubmit="saveNewDepartment(event)" class="space-y-2">
+                            @csrf
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Parent School</label>
+                                    <select name="parent_unit_id" id="new-dept-school" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                                        <option value="">Select School</option>
+                                        @foreach($dbResponsibleUnits->whereNull('parent_unit_id')->where('college_id', '!=', null)->sortBy('name') as $school)
+                                            <option value="{{ $school->responsible_unit_id }}">{{ $school->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Short Code <span class="text-gray-400 normal-case">(optional)</span></label>
+                                    <input type="text" name="code" id="new-dept-code" placeholder="e.g. SOC-CS" maxlength="20" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Department Name</label>
+                                <input type="text" name="name" id="new-dept-name" required placeholder="e.g. Department of Computer Science" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                            </div>
+                            <button type="submit" id="create-dept-btn" class="w-full py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">
+                                + Add Department
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Departments List -->
+                    <div class="flex justify-between items-center mb-2 shrink-0">
+                        <h4 class="text-[11px] font-black text-hau-maroon uppercase tracking-wider">Existing Departments</h4>
+                        <span id="manage-depts-count" class="text-[10px] font-bold bg-hau-maroon/5 text-hau-maroon px-2 py-0.5 rounded font-mono">0 Total</span>
+                    </div>
+                    <div class="mb-2 shrink-0">
+                        <input type="text" id="manage-depts-search" oninput="filterDeptsList()" placeholder="Filter departments..." class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    </div>
+                    <div class="flex-1 overflow-y-auto min-h-0 pr-1" id="manage-depts-list-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
             </div>
-            
+
             <div class="bg-gray-50 px-5 py-3 flex justify-end border-t border-gray-200 shrink-0">
                 <button type="button" onclick="closeModal('manage-labs-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Done</button>
             </div>
         </div>
     </div>
+
 
 <!-- ================= JAVASCRIPT ================= -->
 <script>
@@ -1176,23 +1487,163 @@
     }
 
     function switchManageLabsTab(tab) {
-        const listTab = document.getElementById('manage-labs-tab-list');
-        const addTab = document.getElementById('manage-labs-tab-add');
-        const listPanel = document.getElementById('manage-labs-panel-list');
-        const addPanel = document.getElementById('manage-labs-panel-add');
-        
+        const listTab   = document.getElementById('manage-labs-tab-list');
+        const addTab    = document.getElementById('manage-labs-tab-add');
+        const deptsTab  = document.getElementById('manage-labs-tab-depts');
+        const listPanel  = document.getElementById('manage-labs-panel-list');
+        const addPanel   = document.getElementById('manage-labs-panel-add');
+        const deptsPanel = document.getElementById('manage-labs-panel-depts');
+
+        const activeClass   = 'px-3 py-3 text-xs font-bold text-hau-maroon border-b-2 border-hau-maroon focus:outline-none transition';
+        const inactiveClass = 'px-3 py-3 text-xs font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition';
+
+        // Reset all
+        [listTab, addTab, deptsTab].forEach(t => { if(t) t.className = inactiveClass; });
+        [listPanel, addPanel, deptsPanel].forEach(p => { if(p) p.classList.add('hidden'); });
+
         if (tab === 'list') {
-            listTab.className = "px-4 py-3 text-xs font-bold text-hau-maroon border-b-2 border-hau-maroon focus:outline-none transition";
-            addTab.className = "px-4 py-3 text-xs font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition";
+            listTab.className = activeClass;
             listPanel.classList.remove('hidden');
-            addPanel.classList.add('hidden');
             loadManageLabsList();
         } else if (tab === 'add') {
-            addTab.className = "px-4 py-3 text-xs font-bold text-hau-maroon border-b-2 border-hau-maroon focus:outline-none transition";
-            listTab.className = "px-4 py-3 text-xs font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition";
+            addTab.className = activeClass;
             addPanel.classList.remove('hidden');
-            listPanel.classList.add('hidden');
+        } else if (tab === 'depts') {
+            deptsTab.className = activeClass;
+            deptsPanel.classList.remove('hidden');
+            loadDeptsList();
         }
+    }
+
+    // ---- Departments CRUD ----
+    let manageDepartmentsData = [];
+
+    function loadDeptsList() {
+        const container = document.getElementById('manage-depts-list-container');
+        container.innerHTML = '<div class="text-center py-6 text-xs text-gray-400">Loading departments...</div>';
+
+        fetch("{{ route('admin.categories.index') }}", {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Only department-level units (those with a parent_unit_id)
+            manageDepartmentsData = (data.responsibleUnits || []).filter(u => u.parent_unit_id != null);
+            renderDeptsList(manageDepartmentsData);
+        })
+        .catch(() => {
+            container.innerHTML = '<div class="text-center py-6 text-xs text-rose-500">Failed to load departments.</div>';
+        });
+    }
+
+    function renderDeptsList(depts) {
+        const container = document.getElementById('manage-depts-list-container');
+        const countEl   = document.getElementById('manage-depts-count');
+        countEl.textContent = depts.length + ' Total';
+
+        if (depts.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-xs text-gray-400">No departments found.</div>';
+            return;
+        }
+
+        // Group by parent school name
+        const grouped = {};
+        depts.forEach(dept => {
+            const schoolName = dept.parent ? dept.parent.name : (dept.college ? dept.college.name : 'Other');
+            if (!grouped[schoolName]) grouped[schoolName] = [];
+            grouped[schoolName].push(dept);
+        });
+
+        let html = '';
+        Object.keys(grouped).sort().forEach(schoolName => {
+            html += `<div class="mb-3">
+                <div class="text-[9px] font-black uppercase tracking-widest text-hau-maroon/60 mb-1.5 px-1">${escapeHtml(schoolName)}</div>
+                <div class="space-y-1.5">`;
+            grouped[schoolName].sort((a,b)=>a.name.localeCompare(b.name)).forEach(dept => {
+                html += `<div class="bg-gray-50 rounded-xl p-2.5 border border-gray-150 flex items-center justify-between gap-3 text-xs dept-item-row" data-search-term="${escapeHtml((dept.name + ' ' + schoolName).toLowerCase())}">
+                    <div>
+                        <div class="font-bold text-gray-900">${escapeHtml(dept.name)}</div>
+                        ${dept.code ? `<div class="text-[10px] text-hau-maroon font-mono mt-0.5">${escapeHtml(dept.code)}</div>` : ''}
+                    </div>
+                    <button type="button" onclick="deleteDepartment(${dept.responsible_unit_id})" class="p-1 text-gray-400 hover:text-rose-600 rounded transition shrink-0" title="Delete Department">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>`;
+            });
+            html += '</div></div>';
+        });
+
+        container.innerHTML = html;
+    }
+
+    function filterDeptsList() {
+        const query = document.getElementById('manage-depts-search').value.toLowerCase();
+        const rows = document.querySelectorAll('#manage-depts-list-container .dept-item-row');
+        rows.forEach(row => {
+            const term = row.getAttribute('data-search-term') || '';
+            row.style.display = term.includes(query) ? '' : 'none';
+        });
+    }
+
+    function saveNewDepartment(e) {
+        e.preventDefault();
+        const form = e.target;
+        const btn = document.getElementById('create-dept-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        const formData = new FormData(form);
+
+        fetch("{{ route('admin.categories.store-unit') }}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || (data.errors ? Object.values(data.errors).flat().join(', ') : 'Validation error'));
+            return data;
+        })
+        .then(data => {
+            alert('Department added successfully!');
+            form.reset();
+            loadDeptsList();
+            // Reload the page dropdowns after a short delay so the new dept appears
+            setTimeout(() => location.reload(), 800);
+        })
+        .catch(err => alert('Error: ' + err.message))
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = '+ Add Department';
+        });
+    }
+
+    function deleteDepartment(id) {
+        if (!confirm('Delete this department? Compliance items assigned to it will lose their department assignment.')) return;
+
+        fetch(`/admin/manage-units/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Error occurred');
+            return data;
+        })
+        .then(() => {
+            alert('Department deleted.');
+            loadDeptsList();
+            setTimeout(() => location.reload(), 800);
+        })
+        .catch(err => alert('Error: ' + err.message));
     }
 
     function loadManageLabsList() {
@@ -1490,7 +1941,7 @@
         const selectedBody = bodySelect ? bodySelect.value : '';
 
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 mt-2';
+        row.className = 'flex items-center gap-1.5';
 
         // Get areas list for selected body
         let areas = [];
@@ -1502,7 +1953,7 @@
         const disabledAttr = !selectedBody ? 'disabled' : '';
         const placeholderText = !selectedBody ? 'Select Accrediting Body first' : 'Select Area';
 
-        let selectHtml = `<select name="areas[]" required ${disabledAttr} class="area-select block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">`;
+        let selectHtml = `<select name="areas[]" required ${disabledAttr} class="area-select block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">`;
         selectHtml += `<option value="" disabled ${!value ? 'selected' : ''}>${placeholderText}</option>`;
         
         areas.forEach(function(areaName) {
@@ -1518,7 +1969,7 @@
         selectHtml += `</select>`;
 
         row.innerHTML = selectHtml +
-            '<button type="button" onclick="removeAreaRow(this)" class="p-1.5 text-gray-400 hover:text-rose-600 rounded transition shrink-0" title="Remove">' +
+            '<button type="button" onclick="removeAreaRow(this)" class="p-0.5 text-gray-400 hover:text-rose-600 rounded transition w-5 h-5 flex items-center justify-center shrink-0" title="Remove">' +
             '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>';
         
         container.appendChild(row);
@@ -1594,7 +2045,21 @@
 
 
 
+    let _currentDetailCard = null;
+    let _currentDetailAssignments = [];
+
+    function openSubmitLinkModal(btn) {
+        const assignmentId = btn.getAttribute('data-assignment-id');
+        if (!_currentDetailCard) return;
+        const assignment = _currentDetailAssignments.find(a => String(a.id) === String(assignmentId));
+        const activeLink = assignment ? (assignment.pending_document_link || assignment.document_link || '') : '';
+        const actionPlan = assignment ? (assignment.action_plan || '') : '';
+        closeModal('detail-modal');
+        openProposeModal(_currentDetailCard, assignmentId, activeLink, actionPlan);
+    }
+
     function openDetailModal(card) {
+        _currentDetailCard = card;
         const id = card.getAttribute('data-id');
         const code = card.getAttribute('data-program-code');
         const title = card.getAttribute('data-title');
@@ -1805,14 +2270,70 @@
             linkContainer.innerHTML = '<span class="italic text-gray-400">No document attached</span>';
         }
 
+        // Render sub-assignments breakdown table
+        const assignmentsList = document.getElementById('detail-assignments-list');
+        let assignments = [];
+        try { assignments = JSON.parse(card.getAttribute('data-assignments') || '[]'); } catch(e) {}
+        _currentDetailAssignments = assignments;
+
+        if (assignmentsList) {
+            if (assignments.length > 0) {
+                let html = '<div class="overflow-x-auto border border-gray-200 rounded-lg"><table class="w-full text-left text-xs">';
+                html += '<thead class="bg-gray-50 text-[10px] uppercase font-bold text-gray-500 border-b border-gray-200"><tr>';
+                html += '<th class="px-3 py-2">Assigned Target</th>';
+                html += '<th class="px-3 py-2">Status</th>';
+                html += '<th class="px-3 py-2">SharePoint Link</th>';
+                html += '<th class="px-3 py-2 text-right">Actions</th>';
+                html += '</tr></thead><tbody class="divide-y divide-gray-150 bg-white">';
+
+                assignments.forEach(function(a) {
+                    const targetName = a.program_code ? (a.program_code + ' — ' + (a.program_name || '')) : (a.school_name ? a.school_name : (a.unit_name || 'Department'));
+                    const activeLink = a.pending_document_link || a.document_link;
+
+                    let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ';
+                    if (a.status === 'Compliant') statusBadge += 'bg-emerald-50 text-emerald-700 border border-emerald-200">Compliant</span>';
+                    else if (a.status === 'Non-Compliant') statusBadge += 'bg-rose-50 text-rose-700 border border-rose-200">Non-Compliant</span>';
+                    else statusBadge += 'bg-amber-50 text-amber-700 border border-amber-200">Pending</span>';
+
+                    let linkHtml = '—';
+                    if (activeLink) {
+                        const linkLabel = a.pending_document_link ? 'Proposed Link 🔗' : 'Evidence Link 🔗';
+                        linkHtml = '<a href="' + escapeHtml(activeLink) + '" target="_blank" class="text-hau-maroon hover:underline font-mono font-semibold truncate block max-w-[170px]" title="' + escapeHtml(activeLink) + '">' + linkLabel + '</a>';
+                    }
+
+                    let actionHtml = '';
+                    if ("{{ $role }}" === 'QA Admin' && a.approval_state === 'Pending Approval') {
+                        actionHtml += '<form method="POST" action="/compliance/' + id + '/approve" class="inline mr-1">' +
+                                      '<input type="hidden" name="_token" value="{{ csrf_token() }}">' +
+                                      '<input type="hidden" name="assignment_id" value="' + a.id + '">' +
+                                      '<button type="submit" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[10px]">Approve</button></form>';
+                    } else if ("{{ $role }}" !== 'QA Admin') {
+                        actionHtml += '<button type="button" data-assignment-id="' + a.id + '" onclick="openSubmitLinkModal(this)" class="px-2 py-0.5 bg-hau-maroon text-white font-bold rounded text-[10px] hover:bg-hau-maroon-dark">Submit Link</button>';
+                    }
+
+                    html += '<tr>';
+                    html += '<td class="px-3 py-2 font-semibold text-gray-800">' + escapeHtml(targetName) + '</td>';
+                    html += '<td class="px-3 py-2">' + statusBadge + '</td>';
+                    html += '<td class="px-3 py-2">' + linkHtml + '</td>';
+                    html += '<td class="px-3 py-2 text-right">' + actionHtml + '</td>';
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table></div>';
+                assignmentsList.innerHTML = html;
+            } else {
+                assignmentsList.innerHTML = '<span class="text-xs text-gray-400 italic">No specific target assignments attached.</span>';
+            }
+        }
+
         // Action buttons inside modal
         const buttonsContainer = document.getElementById('detail-action-buttons');
         const role = "{{ $role }}";
         if (role === 'QA Admin') {
-            buttonsContainer.innerHTML = '<button onclick="closeModal(\'detail-modal\'); openEditModal(document.querySelector(\'[data-id=\\\'' + id + '\\\']\'))" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">Edit Task</button>';
+            buttonsContainer.innerHTML = '<button onclick="closeModal(\'detail-modal\'); openEditModal(_currentDetailCard)" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">Edit Task</button>';
         } else {
             if (approvalState !== 'Pending Approval') {
-                buttonsContainer.innerHTML = '<button onclick="closeModal(\'detail-modal\'); openProposeModal(document.querySelector(\'[data-id=\\\'' + id + '\\\']\'))" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">Submit Action Plan</button>';
+                buttonsContainer.innerHTML = '<button onclick="closeModal(\'detail-modal\'); openProposeModal(_currentDetailCard)" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">Submit Action Plan</button>';
             } else {
                 buttonsContainer.innerHTML = '<button disabled class="px-4 py-2 bg-hau-gold/15 text-hau-maroon text-xs font-bold rounded-lg border border-hau-gold/30 cursor-not-allowed flex items-center gap-1"><svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Awaiting Admin Approval</button>';
             }
@@ -1849,35 +2370,88 @@
         let recommendations = [];
         try { recommendations = JSON.parse(card.getAttribute('data-recommendations') || '[]'); } catch(e) {}
 
-        document.getElementById('edit-program_id').value = programId;
-        document.getElementById('edit-title').value = title;
-        document.getElementById('edit-desc').value = desc;
-        document.getElementById('edit-status').value = status;
-        document.getElementById('edit-priority').value = priority;
-        document.getElementById('edit-due').value = due;
-        
-        document.getElementById('edit-resp').value = responsibleUnitId;
-        updateLaboratories(responsibleUnitId, 'edit-laboratory_id', laboratoryId);
+        // Populate dynamic program & unit dropdowns in Edit Modal
+        const editProgList = document.getElementById('edit-programs-list');
+        const editUnitList = document.getElementById('edit-units-list');
+        if (editProgList) editProgList.innerHTML = '';
+        if (editUnitList) editUnitList.innerHTML = '';
 
-        document.getElementById('edit-contact-person').value = contactPerson;
-        document.getElementById('edit-contact-email').value = contactEmail;
-        if (responsibleUnitId && responsibleUnitsMap[responsibleUnitId] && responsibleUnitsMap[responsibleUnitId].users && responsibleUnitsMap[responsibleUnitId].users.length > 0) {
-            document.getElementById('edit-contact-person').readOnly = true;
-            document.getElementById('edit-contact-email').readOnly = true;
-            document.getElementById('edit-contact-person').classList.add('bg-gray-100', 'cursor-not-allowed');
-            document.getElementById('edit-contact-email').classList.add('bg-gray-100', 'cursor-not-allowed');
+        let assignments = [];
+        try { assignments = JSON.parse(card.getAttribute('data-assignments') || '[]'); } catch(e) {}
+
+        let progAssignments = assignments.filter(a => a.program_id);
+        let unitAssignments = assignments.filter(a => a.unit_id);
+
+        if (progAssignments.length > 0) {
+            progAssignments.forEach(a => addProgramDropdownRow('edit-programs-list', a.program_id));
+        } else if (programId) {
+            addProgramDropdownRow('edit-programs-list', programId);
         } else {
-            document.getElementById('edit-contact-person').readOnly = false;
-            document.getElementById('edit-contact-email').readOnly = false;
-            document.getElementById('edit-contact-person').classList.remove('bg-gray-100', 'cursor-not-allowed');
-            document.getElementById('edit-contact-email').classList.remove('bg-gray-100', 'cursor-not-allowed');
+            addProgramDropdownRow('edit-programs-list');
         }
 
-        document.getElementById('edit-link').value = link;
-        document.getElementById('edit-accrediting_body').value = body;
-        document.getElementById('edit-school').value = school;
-        document.getElementById('edit-action_plan').value = actionPlan;
-        document.getElementById('edit-visit_date').value = visitDate;
+        const respText = card.getAttribute('data-resp') || '';
+        if (respText.includes('All Departments') || respText.includes('All Units')) {
+            addUnitDropdownRow('edit-units-list', 'all');
+        } else {
+            let uniqueUnitIds = [];
+            unitAssignments.forEach(a => {
+                if (a.unit_id && !uniqueUnitIds.includes(String(a.unit_id))) {
+                    uniqueUnitIds.push(String(a.unit_id));
+                }
+            });
+
+            if (uniqueUnitIds.length > 0) {
+                uniqueUnitIds.forEach(uId => addUnitDropdownRow('edit-units-list', uId));
+            } else if (responsibleUnitId) {
+                addUnitDropdownRow('edit-units-list', responsibleUnitId);
+            } else {
+                addUnitDropdownRow('edit-units-list');
+            }
+        }
+
+        // Populate dynamic school dropdowns in Edit Modal
+        const editSchoolList = document.getElementById('edit-schools-list');
+        if (editSchoolList) editSchoolList.innerHTML = '';
+        if (school) {
+            const schoolsArr = school.split(/[,;]+/);
+            schoolsArr.forEach(sch => {
+                sch = sch.trim();
+                if (sch) addSchoolDropdownRow('edit-schools-list', sch);
+            });
+        }
+        if (!editSchoolList || editSchoolList.children.length === 0) {
+            addSchoolDropdownRow('edit-schools-list');
+        }
+
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val || '';
+        };
+
+        setVal('edit-title', title);
+        setVal('edit-desc', desc);
+        setVal('edit-status', status);
+        setVal('edit-priority', priority);
+        setVal('edit-due', due);
+        setVal('edit-resp', responsibleUnitId);
+        setVal('edit-category', category);
+        setVal('edit-contact-person', contactPerson);
+        setVal('edit-contact-email', contactEmail);
+
+        const contactPersonEl = document.getElementById('edit-contact-person');
+        const contactEmailEl = document.getElementById('edit-contact-email');
+        if (contactPersonEl && contactEmailEl) {
+            contactPersonEl.readOnly = false;
+            contactEmailEl.readOnly = false;
+            contactPersonEl.classList.remove('bg-gray-100', 'cursor-not-allowed');
+            contactEmailEl.classList.remove('bg-gray-100', 'cursor-not-allowed');
+        }
+
+        setVal('edit-link', link);
+        setVal('edit-accrediting_body', body);
+        setVal('edit-action_plan', actionPlan);
+        setVal('edit-visit_date', visitDate);
 
         // Populate area rows
         const editAreasList = document.getElementById('edit-areas-list');
@@ -1917,23 +2491,33 @@
 
         // Toggle dropdown helper notices based on loaded data
         toggleDropdownNotice('edit', 'area', !!body);
-        toggleDropdownNotice('edit', 'lab', !!responsibleUnitId);
 
         openModal('edit-modal');
     }
 
-    function openProposeModal(card) {
+    function openProposeModal(card, assignmentId = null, initialLink = '', initialPlan = '') {
         const id = card.getAttribute('data-id');
         const code = card.getAttribute('data-program-code');
         const body = card.getAttribute('data-body') || 'Accreditor';
         const title = card.getAttribute('data-title');
         const reco = card.getAttribute('data-recommendation') || '';
         const pendingStatus = card.getAttribute('data-pending-status') || card.getAttribute('data-status');
-        const pendingLink = card.getAttribute('data-pending-link') || card.getAttribute('data-link');
-        const actionPlan = card.getAttribute('data-action-plan') || '';
+        const pendingLink = initialLink || card.getAttribute('data-pending-link') || card.getAttribute('data-link');
+        const actionPlan = initialPlan || card.getAttribute('data-action-plan') || '';
         const responsibleUnitId = card.getAttribute('data-responsible-unit-id') || '';
         const contactPerson = card.getAttribute('data-contact-person') || '';
         const contactEmail = card.getAttribute('data-contact-email') || '';
+
+        let assignInput = document.getElementById('propose-assignment-id');
+        if (!assignInput) {
+            assignInput = document.createElement('input');
+            assignInput.type = 'hidden';
+            assignInput.name = 'assignment_id';
+            assignInput.id = 'propose-assignment-id';
+            const form = document.getElementById('propose-form');
+            if (form) form.appendChild(assignInput);
+        }
+        assignInput.value = assignmentId || '';
 
         document.getElementById('propose-task-program').innerText = code;
         document.getElementById('propose-task-body').innerText = body;
@@ -1964,9 +2548,54 @@
             document.getElementById('propose-contact-email').classList.remove('bg-gray-100', 'cursor-not-allowed');
         }
 
+        // Setup target selection dropdown if task has target assignments
+        const targetContainer = document.getElementById('propose-target-container');
+        const targetSelect = document.getElementById('propose-target-select');
+        let assignments = [];
+        try { assignments = JSON.parse(card.getAttribute('data-assignments') || '[]'); } catch(e) {}
+
+        if (targetContainer && targetSelect) {
+            targetSelect.innerHTML = '';
+            if (assignments.length > 0) {
+                targetContainer.style.display = 'block';
+                assignments.forEach(function(a) {
+                    const tName = a.program_code ? (a.program_code + ' — ' + (a.program_name || '')) : (a.school_name ? a.school_name : (a.unit_name || 'Department Target'));
+                    const opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = tName + ' (' + (a.status || 'Pending') + ')';
+                    opt.setAttribute('data-link', a.pending_document_link || a.document_link || '');
+                    opt.setAttribute('data-plan', a.action_plan || '');
+                    if (assignmentId && String(a.id) === String(assignmentId)) {
+                        opt.selected = true;
+                    }
+                    targetSelect.appendChild(opt);
+                });
+                if (targetSelect.value) {
+                    assignInput.value = targetSelect.value;
+                    const selectedOpt = targetSelect.options[targetSelect.selectedIndex];
+                    if (selectedOpt && !initialLink) {
+                        document.getElementById('propose-link').value = selectedOpt.getAttribute('data-link') || '';
+                        document.getElementById('propose-action_plan').value = selectedOpt.getAttribute('data-plan') || '';
+                    }
+                }
+            } else {
+                targetContainer.style.display = 'none';
+            }
+        }
+
         document.getElementById('propose-form').action = `/compliance/${id}/submit-update`;
 
         openModal('propose-modal');
+    }
+
+    function onProposeTargetChange(select) {
+        const assignInput = document.getElementById('propose-assignment-id');
+        if (assignInput) assignInput.value = select.value;
+        const selectedOpt = select.options[select.selectedIndex];
+        if (selectedOpt) {
+            document.getElementById('propose-link').value = selectedOpt.getAttribute('data-link') || '';
+            document.getElementById('propose-action_plan').value = selectedOpt.getAttribute('data-plan') || '';
+        }
     }
 
     function applyFilters() {
@@ -2064,76 +2693,42 @@
         }, 100);
     }
 
-    // ── Auto-assign laboratories and contact person when unit/department is selected ──
+    // ── Auto-assign contact person when unit/department is selected ──
     const responsibleUnitsMap = @json($dbResponsibleUnits->keyBy('responsible_unit_id'));
-
-    function updateLaboratories(unitId, labSelectId, selectedLabId = null) {
-        const labSelect = document.getElementById(labSelectId);
-        if (!labSelect) return;
-
-        const modalPrefix = labSelectId.startsWith('edit') ? 'edit' : 'add';
-        toggleDropdownNotice(modalPrefix, 'lab', !!unitId);
-
-        labSelect.innerHTML = '';
-        const unit = responsibleUnitsMap[unitId];
-
-        if (!unit || !unit.laboratories || unit.laboratories.length === 0) {
-            const opt = document.createElement('option');
-            opt.value = '';
-            opt.textContent = 'General (No labs defined)';
-            labSelect.appendChild(opt);
-            labSelect.disabled = true;
-            return;
-        }
-
-        // Enable and add options
-        labSelect.disabled = false;
-        const defaultOpt = document.createElement('option');
-        defaultOpt.value = '';
-        defaultOpt.textContent = 'Select Category / Lab';
-        labSelect.appendChild(defaultOpt);
-
-        unit.laboratories.forEach(lab => {
-            const opt = document.createElement('option');
-            opt.value = lab.laboratory_id;
-            opt.textContent = lab.name;
-            if (selectedLabId && Number(lab.laboratory_id) === Number(selectedLabId)) {
-                opt.selected = true;
-            }
-            labSelect.appendChild(opt);
-        });
-    }
 
     function resolveContact(unitId, contactPersonId, contactEmailId) {
         const contactPerson = document.getElementById(contactPersonId);
-        const contactEmail = document.getElementById(contactEmailId);
+        const contactEmail  = document.getElementById(contactEmailId);
         if (!contactPerson || !contactEmail) return;
 
-        const unit = responsibleUnitsMap[unitId];
+        let unit = responsibleUnitsMap[unitId];
+
+        // Ensure fields are always editable by the user
+        contactPerson.readOnly = false;
+        contactEmail.readOnly  = false;
+        contactPerson.classList.remove('bg-gray-100', 'cursor-not-allowed');
+        contactEmail.classList.remove('bg-gray-100', 'cursor-not-allowed');
+
         if (unit && unit.users && unit.users.length > 0) {
             const user = unit.users[0];
-            contactPerson.value = user.name || '';
-            contactEmail.value = user.email || '';
-            contactPerson.readOnly = true;
-            contactEmail.readOnly = true;
-            contactPerson.classList.add('bg-gray-100', 'cursor-not-allowed');
-            contactEmail.classList.add('bg-gray-100', 'cursor-not-allowed');
+            contactPerson.value = user.name  || '';
+            contactEmail.value  = user.email || '';
         } else {
             contactPerson.value = '';
-            contactEmail.value = '';
-            contactPerson.readOnly = false;
-            contactEmail.readOnly = false;
-            contactPerson.classList.remove('bg-gray-100', 'cursor-not-allowed');
-            contactEmail.classList.remove('bg-gray-100', 'cursor-not-allowed');
+            contactEmail.value  = '';
         }
     }
 
     function setupAutoContactPopulate() {
-        const addResp = document.getElementById('add-resp');
-        if (addResp) {
-            addResp.addEventListener('change', function() {
-                const unitId = this.value;
-                updateLaboratories(unitId, 'add-laboratory_id');
+        document.addEventListener('change', function(e) {
+            const target = e.target;
+            if (!target || !target.tagName || target.tagName.toLowerCase() !== 'select') return;
+
+            const isAddUnit = target.classList.contains('add-unit-select') || target.id === 'add-resp';
+            const isEditUnit = target.classList.contains('edit-unit-select') || target.id === 'edit-resp';
+
+            if (isAddUnit) {
+                const unitId = target.value;
                 resolveContact(unitId, 'add-contact-person', 'add-contact-email');
 
                 const unit = responsibleUnitsMap[unitId];
@@ -2148,14 +2743,8 @@
                         }
                     }
                 }
-            });
-        }
-
-        const editResp = document.getElementById('edit-resp');
-        if (editResp) {
-            editResp.addEventListener('change', function() {
-                const unitId = this.value;
-                updateLaboratories(unitId, 'edit-laboratory_id');
+            } else if (isEditUnit) {
+                const unitId = target.value;
                 resolveContact(unitId, 'edit-contact-person', 'edit-contact-email');
 
                 const unit = responsibleUnitsMap[unitId];
@@ -2170,8 +2759,8 @@
                         }
                     }
                 }
-            });
-        }
+            }
+        });
 
         const proposeResp = document.getElementById('propose-resp');
         if (proposeResp) {
@@ -2182,7 +2771,34 @@
         }
     }
 
+    function filterProgramsBySchool(programSelectId, schoolName) {
+        const programSelect = document.getElementById(programSelectId);
+        if (!programSelect) return;
+
+        const currentVal = programSelect.value;
+        let hasVisible = false;
+
+        Array.from(programSelect.options).forEach(opt => {
+            if (opt.value === '') {
+                // Always show the placeholder
+                opt.style.display = '';
+                return;
+            }
+            const college = opt.getAttribute('data-college') || '';
+            const matches = !schoolName || college === schoolName;
+            opt.style.display = matches ? '' : 'none';
+            if (matches) hasVisible = true;
+        });
+
+        // If current selection no longer visible, reset to placeholder
+        const currentOpt = programSelect.options[programSelect.selectedIndex];
+        if (currentOpt && currentOpt.value && currentOpt.style.display === 'none') {
+            programSelect.value = '';
+        }
+    }
+
     function setupAutoSchoolPopulate() {
+        // Program → auto-fill School
         const addProgram = document.getElementById('add-program_id');
         if (addProgram) {
             addProgram.addEventListener('change', function() {
@@ -2220,6 +2836,23 @@
                 }
             });
         }
+
+        // School → filter Program list
+        const addSchool = document.getElementById('add-school');
+        if (addSchool) {
+            addSchool.addEventListener('change', function() {
+                filterProgramsBySchool('add-program_id', this.value);
+            });
+            // Apply immediately in case school is pre-filled
+            filterProgramsBySchool('add-program_id', addSchool.value);
+        }
+
+        const editSchool = document.getElementById('edit-school');
+        if (editSchool) {
+            editSchool.addEventListener('change', function() {
+                filterProgramsBySchool('edit-program_id', this.value);
+            });
+        }
     }
 
     function setupAccreditingBodyAreas() {
@@ -2235,6 +2868,88 @@
             editBodySelect.addEventListener('change', function() {
                 updateAreasForModal('edit');
             });
+        }
+    }
+
+    function addSchoolDropdownRow(containerId, selectedVal = '') {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const firstSelect = document.querySelector('.add-school-select') || document.querySelector('select[name="schools[]"]');
+        const optionsHtml = firstSelect ? firstSelect.innerHTML : '<option value="">Select School / College</option>';
+
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-1.5 school-dropdown-row';
+        row.innerHTML = '<select name="schools[]" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">' +
+                        optionsHtml +
+                        '</select>' +
+                        '<button type="button" onclick="removeDropdownRow(this)" class="p-0.5 text-gray-400 hover:text-rose-600 rounded transition w-5 h-5 flex items-center justify-center shrink-0" title="Remove school">' +
+                        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>' +
+                        '</button>';
+
+        container.appendChild(row);
+        if (selectedVal) {
+            row.querySelector('select').value = selectedVal;
+        }
+    }
+
+    function addProgramDropdownRow(containerId, selectedVal = '') {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const firstSelect = document.querySelector('.add-program-select') || document.querySelector('select[name="program_ids[]"]');
+        const optionsHtml = firstSelect ? firstSelect.innerHTML : '<option value="">Select a Program</option>';
+
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-1.5 program-dropdown-row';
+        row.innerHTML = '<select name="program_ids[]" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">' +
+                        optionsHtml +
+                        '</select>' +
+                        '<button type="button" onclick="removeDropdownRow(this)" class="p-0.5 text-gray-400 hover:text-rose-600 rounded transition w-5 h-5 flex items-center justify-center shrink-0" title="Remove program">' +
+                        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>' +
+                        '</button>';
+
+        container.appendChild(row);
+        if (selectedVal) {
+            row.querySelector('select').value = selectedVal;
+        }
+    }
+
+    function addUnitDropdownRow(containerId, selectedVal = '') {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const firstSelect = document.querySelector('.add-unit-select') || document.querySelector('select[name="responsible_unit_ids[]"]');
+        let optionsHtml = firstSelect ? firstSelect.innerHTML : '<option value="">Select Responsible Department/Unit</option>';
+        if (!selectedVal) {
+            optionsHtml = optionsHtml.replace(/\s+selected(=["']selected["'])?/gi, '');
+        }
+
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-1.5 unit-dropdown-row';
+        row.innerHTML = '<select name="responsible_unit_ids[]" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">' +
+                        optionsHtml +
+                        '</select>' +
+                        '<button type="button" onclick="removeDropdownRow(this)" class="p-0.5 text-gray-400 hover:text-rose-600 rounded transition w-5 h-5 flex items-center justify-center shrink-0" title="Remove unit">' +
+                        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>' +
+                        '</button>';
+
+        container.appendChild(row);
+        const sel = row.querySelector('select');
+        if (sel) {
+            sel.value = selectedVal ? String(selectedVal) : '';
+        }
+    }
+
+    function removeDropdownRow(btn) {
+        const row = btn.closest('.school-dropdown-row, .program-dropdown-row, .unit-dropdown-row');
+        if (!row) return;
+        const parent = row.parentElement;
+        if (parent && parent.children.length > 1) {
+            row.remove();
+        } else {
+            const select = row.querySelector('select');
+            if (select) select.value = '';
         }
     }
 

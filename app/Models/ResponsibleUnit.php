@@ -16,6 +16,7 @@ class ResponsibleUnit extends Model
         'code',
         'college_id',
         'unit_id',
+        'parent_unit_id',
     ];
 
     /**
@@ -35,6 +36,22 @@ class ResponsibleUnit extends Model
     }
 
     /**
+     * Get the parent responsible unit (e.g. the school this department belongs to).
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(ResponsibleUnit::class, 'parent_unit_id', 'responsible_unit_id');
+    }
+
+    /**
+     * Get child departments under this responsible unit (school).
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(ResponsibleUnit::class, 'parent_unit_id', 'responsible_unit_id');
+    }
+
+    /**
      * Get the laboratories/categories under this unit.
      */
     public function laboratories(): HasMany
@@ -48,5 +65,13 @@ class ResponsibleUnit extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'responsible_unit_id', 'responsible_unit_id');
+    }
+
+    /**
+     * Get the compliance assignments for this responsible unit.
+     */
+    public function complianceAssignments(): HasMany
+    {
+        return $this->hasMany(ComplianceAssignment::class, 'responsible_unit_id', 'responsible_unit_id');
     }
 }

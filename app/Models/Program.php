@@ -53,6 +53,14 @@ class Program extends Model
     }
 
     /**
+     * Get the compliance assignments for the program.
+     */
+    public function complianceAssignments(): HasMany
+    {
+        return $this->hasMany(ComplianceAssignment::class, 'program_id', 'program_id');
+    }
+
+    /**
      * Get the risk items for the program.
      */
     public function riskItems(): HasMany

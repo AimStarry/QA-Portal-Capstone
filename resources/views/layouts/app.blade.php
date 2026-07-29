@@ -243,7 +243,7 @@
                             </button>
                         </form>
 
-                        <p class="text-center text-[10px] text-hau-gold-light/60 font-medium tracking-wide pb-1">Office of Academic Quality</p>
+                        <p class="text-center text-[10px] text-hau-gold-light/60 font-medium tracking-wide pb-1">Quality Assurance Office</p>
                     </div>
                 </div>
             </div>

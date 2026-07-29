@@ -27,7 +27,7 @@ class AdminCategoryController extends Controller
     {
         $this->enforceAdmin();
 
-        $responsibleUnits = ResponsibleUnit::with(['laboratories', 'college', 'unit'])->orderBy('name')->get();
+        $responsibleUnits = ResponsibleUnit::with(['laboratories', 'college', 'unit', 'parent', 'children'])->orderBy('name')->get();
         $laboratories = Laboratory::with('responsibleUnit')->orderBy('name')->get();
 
         $colleges = College::orderBy('name')->get();
@@ -47,23 +47,32 @@ class AdminCategoryController extends Controller
         $this->enforceAdmin();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:responsible_units,name',
-            'code' => 'nullable|string|max:50',
-            'college_id' => 'nullable|exists:colleges,college_id',
-            'unit_id' => 'nullable|exists:units,unit_id',
+            'name'           => 'required|string|max:255|unique:responsible_units,name',
+            'code'           => 'nullable|string|max:50',
+            'college_id'     => 'nullable|exists:colleges,college_id',
+            'unit_id'        => 'nullable|exists:units,unit_id',
+            'parent_unit_id' => 'nullable|exists:responsible_units,responsible_unit_id',
         ]);
+
+        // If a parent school is given, inherit its college_id automatically
+        if (!empty($validated['parent_unit_id'])) {
+            $parent = ResponsibleUnit::find($validated['parent_unit_id']);
+            if ($parent && $parent->college_id) {
+                $validated['college_id'] = $parent->college_id;
+            }
+        }
 
         $ru = ResponsibleUnit::create($validated);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Responsible Unit created successfully.',
-                'data' => $ru
+                'message' => 'Department created successfully.',
+                'data'    => $ru->load(['parent', 'college'])
             ]);
         }
 
-        return redirect()->route('admin.categories.index')->with('success', 'Responsible Unit created successfully.');
+        return redirect()->route('admin.categories.index')->with('success', 'Department created successfully.');
     }
 
     /**

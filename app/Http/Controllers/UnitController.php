@@ -36,7 +36,13 @@ class UnitController extends Controller
             $validated['logo'] = $request->file('logo')->store('logos/units', 'public');
         }
 
-        Unit::create($validated);
+        $unit = Unit::create($validated);
+
+        // Sync corresponding ResponsibleUnit entry for compliance task assignment dropdowns
+        \App\Models\ResponsibleUnit::updateOrCreate(
+            ['unit_id' => $unit->unit_id],
+            ['name' => $unit->name, 'code' => $unit->code]
+        );
 
         return redirect()->back()->with('success', 'Office/Unit created successfully.');
     }
@@ -48,7 +54,7 @@ class UnitController extends Controller
     {
         $this->enforceAccess();
         $validated = $request->validate([
-            'name'    => 'required|string|max:255|unique:units,name,' . $unit->id,
+            'name'    => ['required', 'string', 'max:255', \Illuminate\Validation\Rule::unique('units', 'name')->ignore($unit->unit_id, 'unit_id')],
             'code'    => 'nullable|string|max:50',
             'head_id' => 'nullable|exists:users,id',
             'logo'    => 'nullable|image|mimes:jpg,jpeg,png,gif,svg,webp|max:10240',
@@ -70,16 +76,22 @@ class UnitController extends Controller
 
         $unit->update($validated);
 
+        // Sync corresponding ResponsibleUnit entry
+        \App\Models\ResponsibleUnit::updateOrCreate(
+            ['unit_id' => $unit->unit_id],
+            ['name' => $unit->name, 'code' => $unit->code]
+        );
+
         // Clear existing Head of Unit mapping for this unit
         \App\Models\User::where('usertype', 'Head of Unit')
-            ->where('unit_id', $unit->id)
+            ->where('unit_id', $unit->unit_id)
             ->update(['unit_id' => null]);
 
         // Assign the new Head of Unit
         if ($headId) {
             \App\Models\User::where('id', $headId)
                 ->where('usertype', 'Head of Unit')
-                ->update(['unit_id' => $unit->id]);
+                ->update(['unit_id' => $unit->unit_id]);
         }
 
         return redirect()->back()->with('success', 'Office/Unit updated successfully.');
@@ -94,6 +106,7 @@ class UnitController extends Controller
         if ($unit->logo) {
             Storage::disk('public')->delete($unit->logo);
         }
+        \App\Models\ResponsibleUnit::where('unit_id', $unit->unit_id)->delete();
         $unit->delete();
 
         return redirect()->back()->with('success', 'Office/Unit deleted successfully.');

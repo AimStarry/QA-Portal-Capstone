@@ -53,7 +53,7 @@
                             @forelse($warningAccreditations as $accred)
                                 <div class="bg-white rounded-xl p-3 border border-hau-maroon/10 shadow-sm space-y-1 hover:border-hau-gold/50 transition">
                                     <div class="flex justify-between items-center text-[10px]">
-                                        <span class="font-bold text-hau-maroon font-mono">{{ $accred->program->program_code }}</span>
+                                        <span class="font-bold text-hau-maroon font-mono">{{ $accred->program?->program_code ?? 'N/A' }}</span>
                                         <span class="font-bold text-rose-600">{{ $accred->status }}</span>
                                     </div>
                                     <p class="text-xs font-bold text-gray-800 leading-tight">Accreditor: {{ $accred->accrediting_body }}</p>
@@ -75,7 +75,7 @@
                             @forelse($overdueCompliance as $task)
                                 <div class="bg-white rounded-xl p-3 border border-hau-maroon/10 shadow-sm space-y-1 hover:border-hau-gold/50 transition">
                                     <div class="flex justify-between items-center text-[10px]">
-                                        <span class="font-bold text-hau-maroon font-mono">{{ $task->program->program_code }}</span>
+                                        <span class="font-bold text-hau-maroon font-mono">{{ $task->program?->program_code ?? ($task->school ?? 'General') }}</span>
                                         <span class="font-bold text-rose-600">Past Due</span>
                                     </div>
                                     <h5 class="text-xs font-bold text-gray-800 leading-tight truncate" title="{{ $task->title }}">{{ $task->title }}</h5>
@@ -97,7 +97,7 @@
                             @forelse($criticalRisks as $risk)
                                 <div class="bg-white rounded-xl p-3 border border-hau-maroon/10 shadow-sm space-y-1 hover:border-hau-gold/50 transition">
                                     <div class="flex justify-between items-center text-[10px]">
-                                        <span class="font-bold text-hau-maroon font-mono">{{ $risk->program->program_code }}</span>
+                                        <span class="font-bold text-hau-maroon font-mono">{{ $risk->program?->program_code ?? 'N/A' }}</span>
                                         <span class="font-black text-rose-600 bg-rose-50 px-1.5 py-0.25 rounded border border-rose-100">Critical</span>
                                     </div>
                                     <p class="text-xs text-gray-700 font-medium line-clamp-2 leading-relaxed" title="{{ $risk->description }}">{{ $risk->description }}</p>
@@ -349,7 +349,7 @@
                     <div class="group p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-hau-maroon/3 transition duration-150 cursor-pointer"
                          onclick="openApprovalDetailModal(this)"
                          data-id="{{ $pending->id }}"
-                         data-program-code="{{ $pending->program->program_code }}"
+                         data-program-code="{{ $pending->program->program_code ?? ($pending->school ?? 'General') }}"
                          data-title="{{ $pending->title }}"
                          data-description="{{ $pending->description }}"
                          data-responsible-unit="{{ $pending->responsible_unit }}"
@@ -382,7 +382,7 @@
                             </div>
                             <div class="min-w-0 space-y-1">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon">{{ $pending->program->program_code }}</span>
+                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon">{{ $pending->program->program_code ?? ($pending->school ?? 'General') }}</span>
                                     @if($pending->accrediting_body)
                                         <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-hau-gold/15 text-hau-maroon-dark">{{ $pending->accrediting_body }}</span>
                                     @endif
@@ -453,14 +453,14 @@
                         <div class="bg-white rounded-xl p-4 border border-hau-maroon/10 shadow-sm space-y-2 flex flex-col justify-between hover:border-hau-gold/50 transition">
                             <div class="space-y-1">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs font-bold text-hau-maroon bg-hau-maroon/5 px-2 py-0.5 rounded font-mono">{{ $task->program->program_code }}</span>
+                                    <span class="text-xs font-bold text-hau-maroon bg-hau-maroon/5 px-2 py-0.5 rounded font-mono">{{ $task->program->program_code ?? ($task->school ?? 'General') }}</span>
                                     <span class="text-[10px] font-black text-rose-600 bg-rose-50 px-1.5 py-0.25 rounded border border-rose-100">Past Due</span>
                                 </div>
                                 <h4 class="text-sm font-bold text-gray-900 leading-snug">{{ $task->title }}</h4>
                                 <p class="text-xs text-gray-500 font-mono mt-1">Deadline: {{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}</p>
                             </div>
                             <div class="pt-3 border-t border-gray-100 flex justify-end">
-                                <a href="{{ route('compliance.index') }}?search={{ $task->program->program_code }}" class="inline-flex items-center gap-1 px-3 py-1 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">
+                                <a href="{{ route('compliance.index') }}?search={{ $task->program->program_code ?? ($task->school ?? '') }}" class="inline-flex items-center gap-1 px-3 py-1 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">
                                     Submit Evidence
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                 </a>

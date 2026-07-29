@@ -25,3 +25,13 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Database — NDA-protected data, never commit
+/database/database.sqlite
+
+# Scratch — one-off dev scripts, not part of the codebase
+/scratch/
+
+# Misc artifacts
+task.md
+print_r())

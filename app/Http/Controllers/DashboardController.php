@@ -48,8 +48,10 @@ class DashboardController extends Controller
 
         $unitFilter = function($q) use ($unitName, $unitCode) {
             $q->where(function($sq) use ($unitName, $unitCode) {
-                if ($unitName) $sq->orWhere('responsible_unit', $unitName);
-                if ($unitCode) $sq->orWhere('responsible_unit', $unitCode);
+                $sq->orWhere('responsible_unit', 'like', '%All Units%')
+                  ->orWhere('responsible_unit', 'like', '%All Departments%');
+                if ($unitName) $sq->orWhere('responsible_unit', 'like', "%{$unitName}%");
+                if ($unitCode) $sq->orWhere('responsible_unit', 'like', "%{$unitCode}%");
             });
         };
 

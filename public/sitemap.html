@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>HAU QA Portal — Full Site Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--m:#7f1d1d;--md:#450a0a;--ml:#991b1b;--g:#d4a017;--gl:#f0c040;--gd:#a07b10;--bg:#f8f6f2;--s:#fff;--s2:#f9fafb;--b:#e5e7eb;--t:#111827;--tm:#6b7280;--tl:#9ca3af;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);}
+.hero{background:linear-gradient(135deg,var(--md),var(--m) 55%,#9b2828);padding:56px 40px 48px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 30px,rgba(255,255,255,.02) 30px,rgba(255,255,255,.02) 60px);}
+.hbadge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,160,23,.15);border:1px solid rgba(212,160,23,.4);color:var(--gl);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:6px 16px;border-radius:100px;margin-bottom:20px;position:relative;}
+.hdot{width:7px;height:7px;background:var(--gl);border-radius:50%;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.85);}}
+.hero h1{font-size:2.8rem;font-weight:900;color:#fff;line-height:1.15;position:relative;letter-spacing:-.02em;}
+.hero h1 span{color:var(--gl);}
+.hero p{margin-top:14px;color:rgba(255,255,255,.65);font-size:1rem;position:relative;}
+.hmeta{margin-top:24px;display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;position:relative;}
+.hchip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 14px;font-size:11.5px;font-weight:600;color:rgba(255,255,255,.85);}
+.hchip svg{width:14px;height:14px;opacity:.75;}
+.legbar{background:var(--s);border-bottom:1px solid var(--b);padding:14px 40px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.06);}
+.legt{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--tl);}
+.legi{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--tm);}
+.legd{width:11px;height:11px;border-radius:3px;}
+.main{max-width:1400px;margin:0 auto;padding:48px 40px 80px;}
+.sh{display:flex;align-items:center;gap:12px;margin-bottom:24px;margin-top:52px;}
+.sh:first-child{margin-top:0;}
+.si{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.si svg{width:20px;height:20px;}
+.st{font-size:1.15rem;font-weight:800;color:var(--t);}
+.sd{font-size:.82rem;font-weight:500;color:var(--tm);margin-top:2px;}
+.sl{flex:1;height:1px;background:var(--b);}
+.vcv{width:2px;height:28px;}
+.rn{background:linear-gradient(135deg,var(--md),var(--m));color:white;border-radius:16px;padding:18px 32px;display:inline-flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(127,29,29,.35);font-weight:800;font-size:.95rem;}
+.rb{font-family:'JetBrains Mono',monospace;font-size:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:3px 10px;border-radius:6px;}
+.tg{display:grid;gap:20px;}
+.tg2{grid-template-columns:repeat(2,1fr);}
+.tg3{grid-template-columns:repeat(3,1fr);}
+.tg4{grid-template-columns:repeat(4,1fr);}
+.pc{background:var(--s);border:1.5px solid var(--b);border-radius:16px;overflow:hidden;transition:box-shadow .2s,transform .2s,border-color .2s;}
+.pc:hover{box-shadow:0 8px 32px rgba(0,0,0,.1);transform:translateY(-2px);border-color:rgba(127,29,29,.25);}
+.pca{height:4px;width:100%;}
+.pch{padding:16px 18px 12px;border-bottom:1px solid var(--b);display:flex;align-items:flex-start;gap:12px;}
+.pci{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pci svg{width:18px;height:18px;}
+.pcn{font-size:.9rem;font-weight:700;color:var(--t);line-height:1.3;}
+.pcr{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm);margin-top:2px;font-weight:500;}
+.pcb{padding:14px 18px;}
+.fl{list-style:none;display:flex;flex-direction:column;gap:6px;}
+.fi{display:flex;align-items:flex-start;gap:8px;font-size:11.5px;color:var(--tm);font-weight:500;line-height:1.5;}
+.fd{width:5px;height:5px;border-radius:50%;background:var(--g);flex-shrink:0;margin-top:5px;}
+.at{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:6px;margin-top:10px;}
+.at.all{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.at.adm{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+.at.gst{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;}
+.at.rol{background:#fdf4ff;color:#6b21a8;border:1px solid #e9d5ff;}
+.si2{margin-top:10px;display:flex;flex-direction:column;gap:4px;}
+.s2i{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:600;color:var(--tm);background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:5px 10px;}
+.s2i.mo{border-left:3px solid #8b5cf6;}
+.s2i.tb{border-left:3px solid #0ea5e9;}
+.s2i.ac{border-left:3px solid #22c55e;}
+.s2i.ex{border-left:3px solid #f59e0b;}
+.af{display:flex;align-items:stretch;gap:0;overflow-x:auto;}
+.as{background:var(--s);border:1.5px solid var(--b);padding:18px 20px;flex:1;min-width:155px;position:relative;transition:background .2s;}
+.as:first-child{border-radius:14px 0 0 14px;}
+.as:last-child{border-radius:0 14px 14px 0;}
+.as:not(:first-child){border-left:none;}
+.as:hover{background:#fafafa;}
+.asn{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.asna{font-size:12.5px;font-weight:700;color:var(--t);line-height:1.35;}
+.asr{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--tl);margin-top:3px;}
+.aar{width:28px;height:28px;border-radius:50%;background:var(--m);display:flex;align-items:center;justify-content:center;position:absolute;right:-14px;top:50%;transform:translateY(-50%);z-index:2;box-shadow:0 2px 8px rgba(127,29,29,.3);}
+.aar svg{width:12px;height:12px;color:white;}
+.at2{height:3px;background:linear-gradient(90deg,var(--m),var(--ml));border-radius:3px 3px 0 0;margin:-18px -20px 14px;}
+.cm{background:linear-gradient(135deg,var(--md),var(--m));}
+.cg{background:linear-gradient(135deg,#b45309,var(--g));}
+.cb{background:linear-gradient(135deg,#1d4ed8,#3b82f6);}
+.ct{background:linear-gradient(135deg,#0f766e,#14b8a6);}
+.cp{background:linear-gradient(135deg,#6d28d9,#8b5cf6);}
+.cr{background:linear-gradient(135deg,#be123c,#f43f5e);}
+.ca{background:linear-gradient(135deg,#b45309,#f59e0b);}
+.cg2{background:linear-gradient(135deg,#166534,#22c55e);}
+.cgr{background:linear-gradient(135deg,#374151,#6b7280);}
+.im{background:rgba(127,29,29,.1);color:var(--m);}
+.ig{background:rgba(212,160,23,.12);color:var(--gd);}
+.ib{background:rgba(59,130,246,.1);color:#1d4ed8;}
+.it{background:rgba(20,184,166,.1);color:#0f766e;}
+.ip{background:rgba(139,92,246,.1);color:#6d28d9;}
+.ir{background:rgba(244,63,94,.1);color:#be123c;}
+.ia{background:rgba(245,158,11,.1);color:#b45309;}
+.ig2{background:rgba(34,197,94,.1);color:#166534;}
+.igr{background:rgba(107,114,128,.1);color:#374151;}
+.rtw{background:var(--s);border:1.5px solid var(--b);border-radius:16px;overflow:hidden;}
+.rt{width:100%;border-collapse:collapse;font-size:12px;}
+.rt th{background:var(--m);color:white;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;padding:12px 16px;text-align:left;}
+.rt th:not(:first-child){text-align:center;}
+.rt td{padding:11px 16px;border-bottom:1px solid var(--b);font-weight:500;color:var(--tm);}
+.rt td:not(:first-child){text-align:center;}
+.rt tr:last-child td{border-bottom:none;}
+.rt tr:hover td{background:#fafafa;}
+.rt .mn{font-weight:700;color:var(--t);font-size:12.5px;}
+.ck{color:#16a34a;font-size:16px;font-weight:900;}
+.ds{color:var(--tl);font-size:16px;}
+.wf{display:flex;align-items:stretch;gap:0;}
+.wfs{flex:1;background:var(--s);border:1.5px solid var(--b);padding:16px;position:relative;min-width:120px;}
+.wfs:first-child{border-radius:14px 0 0 14px;}
+.wfs:last-child{border-radius:0 14px 14px 0;}
+.wfs:not(:first-child){border-left:none;}
+.wfn{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:800;color:var(--gd);text-transform:uppercase;}
+.wfl{font-size:12px;font-weight:700;color:var(--t);margin-top:4px;line-height:1.3;}
+.wfw{font-size:10px;font-weight:600;color:var(--tl);margin-top:4px;}
+.wfa{width:24px;height:24px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;position:absolute;right:-12px;top:50%;transform:translateY(-50%);z-index:2;box-shadow:0 2px 8px rgba(212,160,23,.4);}
+.wfa svg{width:11px;height:11px;color:white;}
+.ng{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.nc{background:var(--s);border:1.5px solid var(--b);border-radius:12px;padding:14px;display:flex;gap:10px;align-items:flex-start;}
+.ni{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ni svg{width:15px;height:15px;}
+.nn{font-size:11.5px;font-weight:700;color:var(--t);}
+.nw{font-size:10px;font-weight:600;color:var(--tl);margin-top:2px;}
+.foot{background:var(--md);color:rgba(255,255,255,.5);text-align:center;font-size:11px;padding:20px 40px;font-weight:500;}
+.foot span{color:var(--gl);font-weight:700;}
+@media(max-width:900px){.hero h1{font-size:2rem;}.main{padding:32px 20px 60px;}.legbar{padding:12px 20px;}.tg3,.tg4{grid-template-columns:repeat(2,1fr);}.af,.wf{flex-direction:column;}.as,.wfs{border-radius:12px!important;border-left:1.5px solid var(--b)!important;margin-bottom:8px;}.aar,.wfa{display:none;}}
+@media(max-width:600px){.tg2,.tg3,.tg4{grid-template-columns:1fr;}.hero{padding:36px 20px 32px;}}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hbadge"><span class="hdot"></span>HAU Quality Assurance Portal</div>
+  <h1>Full <span>Site Map</span></h1>
+  <p>Complete architecture — all pages, routes, modals, workflows &amp; access controls</p>
+  <div class="hmeta">
+    <div class="hchip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>9 Core Modules</div>
+    <div class="hchip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/></svg>5 User Roles</div>
+    <div class="hchip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Laravel · Blade · Vite</div>
+    <div class="hchip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Generated July 2026</div>
+  </div>
+</div>
+<div class="legbar">
+  <span class="legt">Legend</span>
+  <div class="legi"><div class="legd" style="background:#7f1d1d"></div>Core Module</div>
+  <div class="legi"><div class="legd" style="background:#8b5cf6"></div>Modal</div>
+  <div class="legi"><div class="legd" style="background:#0ea5e9"></div>Tab / Sub-View</div>
+  <div class="legi"><div class="legd" style="background:#22c55e"></div>Action / API</div>
+  <div class="legi"><div class="legd" style="background:#f59e0b"></div>Export</div>
+  <div class="legi" style="margin-left:12px"><span style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">ALL USERS</span></div>
+  <div class="legi"><span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">QA ADMIN</span></div>
+  <div class="legi"><span style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">GUEST</span></div>
+  <div class="legi"><span style="background:#fdf4ff;color:#6b21a8;border:1px solid #e9d5ff;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">ROLE-SPECIFIC</span></div>
+</div>
+<div class="main">
+
+<!-- ENTRY -->
+<div class="sh" style="margin-top:0">
+  <div class="si igr"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#374151"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div>
+  <div><div class="st">Entry Point</div><div class="sd">Root URL redirect logic based on auth state</div></div>
+  <div class="sl"></div>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center">
+  <div class="rn">
+    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:rgba(255,255,255,.7)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+    <div><div>https://hau-qa-portal.edu.ph<span style="opacity:.5">/</span></div><div style="font-size:10px;font-weight:500;color:rgba(255,255,255,.55);margin-top:2px">Root URL · Authentication Guard</div></div>
+    <div class="rb">GET /</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:80px">
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <div class="vcv" style="background:#ef4444"></div>
+      <div style="font-size:10px;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:.08em;padding:3px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px">Not Authenticated</div>
+      <div class="vcv" style="background:#ef4444"></div>
+      <div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:8px 18px;font-size:12px;font-weight:700;color:#b91c1c">→ /login</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <div class="vcv" style="background:#22c55e"></div>
+      <div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.08em;padding:3px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px">Authenticated</div>
+      <div class="vcv" style="background:#22c55e"></div>
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:8px 18px;font-size:12px;font-weight:700;color:#166534">→ /dashboard</div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH -->
+<div class="sh">
+  <div class="si ib"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#1d4ed8"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div>
+  <div><div class="st">Authentication &amp; Password Recovery</div><div class="sd">Public-facing — guest only, rate-limited endpoints</div></div>
+  <div class="sl"></div>
+  <span class="at gst" style="white-space:nowrap">Guest Only</span>
+</div>
+<div class="af">
+  <div class="as"><div class="at2"></div><div class="asn">Step 1</div><div class="asna">Login Page</div><div class="asr">GET /login</div><div style="margin-top:8px;font-size:10.5px;color:var(--tm)">Email + password. 10 req/min limit</div><div class="aar"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></div></div>
+  <div class="as"><div class="at2"></div><div class="asn">Step 2 (forgot)</div><div class="asna">Forgot Password</div><div class="asr">GET /forgot-password</div><div style="margin-top:8px;font-size:10.5px;color:var(--tm)">Enter email to receive OTP</div><div class="aar"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></div></div>
+  <div class="as"><div class="at2"></div><div class="asn">Step 3</div><div class="asna">OTP Sent</div><div class="asr">POST /forgot-password</div><div style="margin-top:8px;font-size:10.5px;color:var(--tm)">6-digit OTP. 5 req/5 min limit</div><div class="aar"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></div></div>
+  <div class="as"><div class="at2"></div><div class="asn">Step 4</div><div class="asna">Verify OTP</div><div class="asr">GET /verify-otp</div><div style="margin-top:8px;font-size:10.5px;color:var(--tm)">Enter code. 15 req/min limit</div><div class="aar"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></div></div>
+  <div class="as"><div class="at2"></div><div class="asn">Step 5</div><div class="asna">Reset Password</div><div class="asr">GET /reset-password</div><div style="margin-top:8px;font-size:10.5px;color:var(--tm)">Session-guarded new password form</div><div class="aar"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></div></div>
+  <div class="as"><div class="at2" style="background:linear-gradient(90deg,#166534,#22c55e)"></div><div class="asn" style="color:#166534">Complete</div><div class="asna" style="color:#166534">Password Updated</div><div class="asr">POST /reset-password</div><div style="margin-top:8px;font-size:10.5px;color:var(--tm)">Saved → Redirect to Login</div></div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="sh">
+  <div class="si im"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--m)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg></div>
+  <div><div class="st">Dashboard <span style="font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;color:var(--tm)">/dashboard</span></div><div class="sd">Command center: KPIs, alerts, compliance queue, performance charts</div></div>
+  <div class="sl"></div><span class="at all">All Users</span>
+</div>
+<div class="tg tg3">
+  <div class="pc"><div class="pca cm"></div><div class="pch"><div class="pci im"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div><div><div class="pcn">QA Admin Viewport</div><div class="pcr">Active Role: QA Admin</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Accredited Programs card (filter by body)</li><li class="fi"><div class="fd"></div>Degree Offerings &amp; Monitored Risks cards</li><li class="fi"><div class="fd"></div>University Accreditation Performance panel</li><li class="fi"><div class="fd"></div>Compliance Rates by Body (circular charts)</li><li class="fi"><div class="fd"></div>Recommendation Accomplishment by Type</li><li class="fi"><div class="fd"></div>Pending Compliance Approvals Queue</li></ul><div class="si2"><div class="s2i ac">Approve / Reject compliance inline</div><div class="s2i mo">Approval Detail Modal</div></div><span class="at adm">QA Admin Only</span></div></div>
+  <div class="pc"><div class="pca ct"></div><div class="pch"><div class="pci it"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div><div><div class="pcn">Unit / Dept Viewport</div><div class="pcr">Active Role: Unit or Department</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Own dept compliance tasks</li><li class="fi"><div class="fd"></div>Pending approvals submitted by unit</li><li class="fi"><div class="fd"></div>Rejected proposals needing action</li><li class="fi"><div class="fd"></div>Overdue tasks for assigned unit</li></ul><span class="at rol">Unit / Dept Users</span></div></div>
+  <div class="pc"><div class="pca cr"></div><div class="pch"><div class="pci ir"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div><div><div class="pcn">QA Alerts &amp; Action Center</div><div class="pcr">Dashboard Alert Panel</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Accreditation Expirations column</li><li class="fi"><div class="fd"></div>Overdue Compliance Tasks column</li><li class="fi"><div class="fd"></div>Critical Active Risks column</li><li class="fi"><div class="fd"></div>Bell notification dropdown (header)</li></ul><span class="at adm">QA Admin Only</span></div></div>
+</div>
+
+<!-- PROGRAMS -->
+<div class="sh">
+  <div class="si ib"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#1d4ed8"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div>
+  <div><div class="st">Academic Programs Directory <span style="font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;color:var(--tm)">/programs</span></div><div class="sd">Manage degree programs and office directories across all colleges</div></div>
+  <div class="sl"></div><span class="at rol">Dean / Admin</span>
+</div>
+<div class="tg tg3">
+  <div class="pc"><div class="pca cb"></div><div class="pch"><div class="pci ib"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></div><div><div class="pcn">Programs Directory Index</div><div class="pcr">GET /programs</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>College filter cards with logo &amp; count</li><li class="fi"><div class="fd"></div>Filterable, searchable programs table</li><li class="fi"><div class="fd"></div>View: Academic / Units / All</li><li class="fi"><div class="fd"></div>Offices &amp; Units directory section</li></ul><div class="si2"><div class="s2i mo">Add / Edit Academic Program Modal</div><div class="s2i mo">Manage Schools &amp; Colleges Modal</div><div class="s2i mo">Manage Offices &amp; Units Modal</div><div class="s2i ac">POST /programs/{id}/toggle-accreditable</div><div class="s2i ac">DELETE /programs/{id}</div></div></div></div>
+  <div class="pc"><div class="pca cb"></div><div class="pch"><div class="pci ib"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div><div class="pcn">Program Detail Page</div><div class="pcr">GET /programs/{id}</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Program info: name, code, college, level</li><li class="fi"><div class="fd"></div>Active accreditation certificates linked</li><li class="fi"><div class="fd"></div>Compliance recommendations for program</li></ul><div class="si2"><div class="s2i tb">Graduate Records Tab</div><div class="s2i mo">Log Graduate Record Modal (inline)</div><div class="s2i ac">Edit / Delete Graduate Record Actions</div></div></div></div>
+  <div class="pc"><div class="pca cgr"></div><div class="pch"><div class="pci igr"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div><div><div class="pcn">Schools / Colleges API</div><div class="pcr">POST /colleges · PATCH /colleges/{id}</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Create with name, code, former name</li><li class="fi"><div class="fd"></div>Update details &amp; logo</li><li class="fi"><div class="fd"></div>Former name history (SOC→CICT, SNAMS→CON)</li></ul><span class="at adm">QA Admin Only</span></div></div>
+</div>
+
+<!-- ACCREDITATIONS -->
+<div class="sh">
+  <div class="si ig2"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#166534"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+  <div><div class="st">Accreditations Registry <span style="font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;color:var(--tm)">/accreditations</span></div><div class="sd">Program certificates, levels, accrediting bodies &amp; validity dates</div></div>
+  <div class="sl"></div><span class="at adm">QA Admin Only</span>
+</div>
+<div class="tg tg2">
+  <div class="pc"><div class="pca cg2"></div><div class="pch"><div class="pci ig2"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div><div class="pcn">Accreditations Index</div><div class="pcr">GET /accreditations</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>All certificates — program, body, level, dates</li><li class="fi"><div class="fd"></div>Levels: Candidate, Level I, II, III, IV</li><li class="fi"><div class="fd"></div>Bodies: PAASCU, PACUCOA, AUN-QA, IACBE, ACPHA, ALCUCOA</li><li class="fi"><div class="fd"></div>Status: Active, Expiring Soon, Expired</li><li class="fi"><div class="fd"></div>Filter by college, body, status</li></ul><div class="si2"><div class="s2i mo">Add Accreditation Certificate Modal</div><div class="s2i mo">Edit Accreditation Modal</div><div class="s2i ac">DELETE /accreditations/{id}</div><div class="s2i ac">POST /accrediting-bodies</div></div></div></div>
+  <div class="pc"><div class="pca cg"></div><div class="pch"><div class="pci ig"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg></div><div><div class="pcn">Accreditation Status Logic</div><div class="pcr">Auto-computed statuses</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div><strong style="color:#16a34a">Active</strong> — Within validity period</li><li class="fi"><div class="fd"></div><strong style="color:#d97706">Expiring Soon</strong> — Within 90 days of expiry</li><li class="fi"><div class="fd"></div><strong style="color:#dc2626">Expired</strong> — Past expiry → Dashboard alert</li><li class="fi"><div class="fd"></div><strong style="color:#6b7280">Candidate</strong> — Pending full accreditation</li><li class="fi"><div class="fd"></div>Local: PAASCU, PACUCOA, ALCUCOA</li><li class="fi"><div class="fd"></div>International: AUN-QA, IACBE, ACPHA</li></ul></div></div>
+</div>
+
+<!-- COMPLIANCE -->
+<div class="sh">
+  <div class="si ip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#6d28d9"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+  <div><div class="st">Recommendations &amp; Compliance Tracker <span style="font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;color:var(--tm)">/compliance</span></div><div class="sd">QA checklists, evidence submission, approval workflow &amp; CSV export</div></div>
+  <div class="sl"></div><span class="at all">All Users</span>
+</div>
+<div class="tg tg3">
+  <div class="pc"><div class="pca cp"></div><div class="pch"><div class="pci ip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><div><div class="pcn">Compliance Matrix Index</div><div class="pcr">GET /compliance</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Stats: Total, Compliant, Non-Compliant, Pending, %</li><li class="fi"><div class="fd"></div>Filter by program, body, status, due date</li><li class="fi"><div class="fd"></div>Urgency badges: Overdue (red), Due Soon (amber)</li><li class="fi"><div class="fd"></div>Recommendation checklist sub-items</li><li class="fi"><div class="fd"></div>Approval state badge per record</li></ul><div class="si2"><div class="s2i mo">Log Compliance Task Modal</div><div class="s2i mo">Edit Compliance Record Modal</div></div></div></div>
+  <div class="pc"><div class="pca cp"></div><div class="pch"><div class="pci ip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div><div class="pcn">Compliance Actions</div><div class="pcr">POST Endpoints</div></div></div><div class="pcb"><div class="si2"><div class="s2i ac">POST /compliance/{id}/submit-update</div><div class="s2i ac">POST /compliance/{id}/approve (Admin)</div><div class="s2i ac">POST /compliance/{id}/reject (Admin)</div><div class="s2i ac">POST /compliance/recommendations/{id}/toggle</div><div class="s2i ac">POST /compliance/recommendations/{id}/evidence</div><div class="s2i ex">GET /compliance/export → CSV Download</div></div></div></div>
+  <div class="pc"><div class="pca ca"></div><div class="pch"><div class="pci ia"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div><div class="pcn">Approval Queue</div><div class="pcr">Dashboard + Compliance page</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Queue shown on Dashboard AND Compliance</li><li class="fi"><div class="fd"></div>Clickable row → Approval Detail Modal</li><li class="fi"><div class="fd"></div>Inline Approve / Reject with reason</li></ul><span class="at adm">Admin: Approve / Reject</span></div></div>
+</div>
+<div style="margin-top:20px">
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--tl);margin-bottom:10px">Compliance Approval Workflow</div>
+  <div class="wf">
+    <div class="wfs"><div class="wfn">Step 1</div><div class="wfl">Unit logs task</div><div class="wfw">Unit / Dept User</div><div class="wfa"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></div></div>
+    <div class="wfs"><div class="wfn">Step 2</div><div class="wfl">Submit evidence</div><div class="wfw">Unit / Dept User</div><div class="wfa"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></div></div>
+    <div class="wfs"><div class="wfn">Step 3</div><div class="wfl">Pending Approval</div><div class="wfw">System — awaiting</div><div class="wfa"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></div></div>
+    <div class="wfs"><div class="wfn">Step 4</div><div class="wfl">Admin reviews</div><div class="wfw">QA Admin</div><div class="wfa"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></div></div>
+    <div class="wfs" style="border-left:3px solid #22c55e"><div class="wfn" style="color:#16a34a">Approved</div><div class="wfl" style="color:#16a34a">Marked Compliant</div><div class="wfw">Status updated</div></div>
+    <div class="wfs" style="border-left:3px solid #ef4444"><div class="wfn" style="color:#dc2626">Rejected</div><div class="wfl" style="color:#dc2626">Returns to Unit</div><div class="wfw">Unit notified</div></div>
+  </div>
+</div>
+
+<!-- RISK -->
+<div class="sh">
+  <div class="si ir"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#be123c"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
+  <div><div class="st">Risk Monitor <span style="font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;color:var(--tm)">/risk</span></div><div class="sd">QA vulnerability risks per program with severity scoring and action plans</div></div>
+  <div class="sl"></div><span class="at adm">QA Admin Only</span>
+</div>
+<div class="tg tg2">
+  <div class="pc"><div class="pca cr"></div><div class="pch"><div class="pci ir"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div><div><div class="pcn">Risk Index</div><div class="pcr">GET /risk</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Risk log with description &amp; status</li><li class="fi"><div class="fd"></div>Severity: Low, Medium, High, Critical</li><li class="fi"><div class="fd"></div>Action plan / mitigation notes</li><li class="fi"><div class="fd"></div>Critical risks surface on Dashboard</li></ul><div class="si2"><div class="s2i mo">Add Risk Entry Modal</div><div class="s2i mo">Edit Risk Modal</div><div class="s2i ac">DELETE /risk/{id}</div></div></div></div>
+  <div class="pc"><div class="pca ca"></div><div class="pch"><div class="pci ia"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div><div><div class="pcn">Risk Severity Levels</div><div class="pcr">Classification</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div><strong style="color:#16a34a">Low</strong> — Minor, no immediate impact</li><li class="fi"><div class="fd"></div><strong style="color:#d97706">Medium</strong> — Action plan advised</li><li class="fi"><div class="fd"></div><strong style="color:#dc2626">High</strong> — Active mitigation required</li><li class="fi"><div class="fd"></div><strong style="color:#7f1d1d">Critical</strong> — Urgent; flagged on Dashboard</li></ul></div></div>
+</div>
+
+<!-- GRADUATES -->
+<div class="sh">
+  <div class="si it"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#0f766e"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg></div>
+  <div><div class="st">Graduates Tracker <span style="font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;color:var(--tm)">/graduates</span></div><div class="sd">Graduate counts and employment stats per program and academic year</div></div>
+  <div class="sl"></div><span class="at rol">Dean / Admin</span>
+</div>
+<div class="tg tg2">
+  <div class="pc"><div class="pca ct"></div><div class="pch"><div class="pci it"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg></div><div><div class="pcn">Graduate Records Index</div><div class="pcr">GET /graduates</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Graduate counts per program per academic year</li><li class="fi"><div class="fd"></div>Employment / licensure pass rate logging</li><li class="fi"><div class="fd"></div>Filter by year and college</li></ul><div class="si2"><div class="s2i mo">Log / Edit Graduate Record Modal</div><div class="s2i ac">DELETE /graduates/{id}</div></div></div></div>
+  <div class="pc"><div class="pca ct"></div><div class="pch"><div class="pci it"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><div><div class="pcn">Graduate Records on Program Page</div><div class="pcr">Tab on /programs/{id}</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Graduates tab on Program Detail page</li><li class="fi"><div class="fd"></div>Inline Log button for that program</li><li class="fi"><div class="fd"></div>Edit / Delete row actions</li></ul></div></div>
+</div>
+
+<!-- USERS -->
+<div class="sh">
+  <div class="si im"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--m)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
+  <div><div class="st">User Account Management <span style="font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;color:var(--tm)">/users</span></div><div class="sd">Admin-only CRUD for user accounts and role assignments</div></div>
+  <div class="sl"></div><span class="at adm">QA Admin Only</span>
+</div>
+<div class="tg tg2">
+  <div class="pc"><div class="pca cm"></div><div class="pch"><div class="pci im"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/></svg></div><div><div class="pcn">User Accounts Index</div><div class="pcr">GET /users</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>List all users — name, email, role badge</li><li class="fi"><div class="fd"></div>Filter and search by role or name</li></ul><div class="si2"><div class="s2i mo">Add New User Modal</div><div class="s2i mo">Edit User / Role Modal</div><div class="s2i ac">DELETE /users/{id}</div></div></div></div>
+  <div class="pc"><div class="pca cg"></div><div class="pch"><div class="pci ig"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg></div><div><div class="pcn">User Roles &amp; Permissions</div><div class="pcr">Usertype values</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div><strong>QA Admin</strong> — Full access; role switcher</li><li class="fi"><div class="fd"></div><strong>Dean</strong> — Programs, Graduates, Compliance (own college)</li><li class="fi"><div class="fd"></div><strong>Principal</strong> — Programs, Graduates, Compliance</li><li class="fi"><div class="fd"></div><strong>Head of Unit</strong> — Units directory, Compliance</li><li class="fi"><div class="fd"></div><strong>Unit/Dept User</strong> — Compliance submission only</li></ul><div class="si2"><div class="s2i ac">POST /switch-role — Viewport Switcher</div></div></div></div>
+</div>
+
+<!-- ADMIN SYSTEM -->
+<div class="sh">
+  <div class="si ia"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#b45309"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+  <div><div class="st">Admin &amp; System Management <span style="font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;color:var(--tm)">/admin/categories</span></div><div class="sd">Organizational structure — categories, responsible units, accrediting bodies</div></div>
+  <div class="sl"></div><span class="at adm">QA Admin Only</span>
+</div>
+<div class="tg tg4">
+  <div class="pc"><div class="pca ca"></div><div class="pch"><div class="pci ia"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg></div><div><div class="pcn">Categories &amp; Labs</div><div class="pcr">/admin/manage-categories</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Create compliance categories / labs</li><li class="fi"><div class="fd"></div>Assign to responsible unit</li><li class="fi"><div class="fd"></div>Delete category / lab</li></ul><div class="si2"><div class="s2i ac">POST /admin/manage-categories</div><div class="s2i ac">DELETE /admin/manage-categories/{id}</div></div></div></div>
+  <div class="pc"><div class="pca ca"></div><div class="pch"><div class="pci ia"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div><div><div class="pcn">Responsible Units</div><div class="pcr">/admin/manage-units</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Create responsible unit / dept</li><li class="fi"><div class="fd"></div>Set parent unit hierarchy</li><li class="fi"><div class="fd"></div>Link to college or office</li></ul><div class="si2"><div class="s2i ac">POST /admin/manage-units</div><div class="s2i ac">DELETE /admin/manage-units/{id}</div></div></div></div>
+  <div class="pc"><div class="pca cgr"></div><div class="pch"><div class="pci igr"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg></div><div><div class="pcn">Offices &amp; Units</div><div class="pcr">/units</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Create admin / support units</li><li class="fi"><div class="fd"></div>Update unit details</li><li class="fi"><div class="fd"></div>Delete unit</li></ul><div class="si2"><div class="s2i ac">POST · PATCH · DELETE /units/{id}</div></div></div></div>
+  <div class="pc"><div class="pca cg2"></div><div class="pch"><div class="pci ig2"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04"/></svg></div><div><div class="pcn">Accrediting Bodies</div><div class="pcr">/accrediting-bodies</div></div></div><div class="pcb"><ul class="fl"><li class="fi"><div class="fd"></div>Register accrediting agencies</li><li class="fi"><div class="fd"></div>PAASCU, PACUCOA, AUN-QA, IACBE, ACPHA, ALCUCOA</li></ul><div class="si2"><div class="s2i ac">POST /accrediting-bodies</div></div></div></div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="sh">
+  <div class="si ib"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#1d4ed8"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
+  <div><div class="st">Notification System</div><div class="sd">In-app bell notifications triggered by system events</div></div>
+  <div class="sl"></div>
+</div>
+<div class="ng">
+  <div class="nc"><div class="ni" style="background:#fef3c7"><svg style="color:#b45309" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg></div><div><div class="nn">Pending Compliance Approvals</div><div class="nw">QA Admin — updates awaiting review</div></div></div>
+  <div class="nc"><div class="ni" style="background:#fef2f2"><svg style="color:#b91c1c" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4"/></svg></div><div><div class="nn">Accreditation Warning</div><div class="nw">QA Admin — Expired or Expiring Soon</div></div></div>
+  <div class="nc"><div class="ni" style="background:#fef2f2"><svg style="color:#b91c1c" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div><div class="nn">Overdue Compliance Tasks</div><div class="nw">All roles — past due date tasks</div></div></div>
+  <div class="nc"><div class="ni" style="background:#fef2f2"><svg style="color:#b91c1c" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg></div><div><div class="nn">Rejected Proposals</div><div class="nw">Unit users — Admin rejected submission</div></div></div>
+  <div class="nc"><div class="ni" style="background:#ecfdf5"><svg style="color:#166534" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2m-6 9l2 2 4-4"/></svg></div><div><div class="nn">Checklist Item Checked Off</div><div class="nw">QA Admin — unit completed item</div></div></div>
+  <div class="nc"><div class="ni" style="background:#f0f9ff"><svg style="color:#0369a1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div><div><div class="nn">Mark as Read</div><div class="nw">POST /notifications/{id}/read</div></div></div>
+</div>
+
+<!-- ACCESS MATRIX -->
+<div class="sh">
+  <div class="si im"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--m)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944"/></svg></div>
+  <div><div class="st">Access Control Matrix</div><div class="sd">Module-level permission overview for all user roles</div></div>
+  <div class="sl"></div>
+</div>
+<div class="rtw">
+  <table class="rt">
+    <thead><tr><th>Module / Page</th><th>Guest</th><th>QA Admin</th><th>Dean / Principal</th><th>Head of Unit</th><th>Unit / Dept User</th></tr></thead>
+    <tbody>
+      <tr><td class="mn">Login &amp; Password Reset</td><td><span class="ck">✓</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">Dashboard</td><td><span class="ds">—</span></td><td><span class="ck">✓ Full</span></td><td><span class="ck">✓ Limited</span></td><td><span class="ck">✓ Limited</span></td><td><span class="ck">✓ Limited</span></td></tr>
+      <tr><td class="mn">Academic Programs Directory</td><td><span class="ds">—</span></td><td><span class="ck">✓ Full</span></td><td><span class="ck">✓ View / Add</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">Offices &amp; Units Directory</td><td><span class="ds">—</span></td><td><span class="ck">✓ Full</span></td><td><span class="ds">—</span></td><td><span class="ck">✓ View</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">Accreditations Registry</td><td><span class="ds">—</span></td><td><span class="ck">✓ Full</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">Compliance — View</td><td><span class="ds">—</span></td><td><span class="ck">✓</span></td><td><span class="ck">✓</span></td><td><span class="ck">✓</span></td><td><span class="ck">✓</span></td></tr>
+      <tr><td class="mn">Compliance — Submit Evidence</td><td><span class="ds">—</span></td><td><span class="ck">✓</span></td><td><span class="ck">✓</span></td><td><span class="ck">✓</span></td><td><span class="ck">✓</span></td></tr>
+      <tr><td class="mn">Compliance — Approve / Reject</td><td><span class="ds">—</span></td><td><span class="ck">✓ Admin only</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">Risk Monitor</td><td><span class="ds">—</span></td><td><span class="ck">✓ Full</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">Graduates Tracker</td><td><span class="ds">—</span></td><td><span class="ck">✓ Full</span></td><td><span class="ck">✓ View / Log</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">User Account Management</td><td><span class="ds">—</span></td><td><span class="ck">✓ Full</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">Admin — Categories &amp; Units</td><td><span class="ds">—</span></td><td><span class="ck">✓ Full</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">Viewport / Role Switcher</td><td><span class="ds">—</span></td><td><span class="ck">✓ Admin only</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td><td><span class="ds">—</span></td></tr>
+      <tr><td class="mn">Notifications (Bell)</td><td><span class="ds">—</span></td><td><span class="ck">✓ All types</span></td><td><span class="ck">✓ Overdue</span></td><td><span class="ck">✓ Overdue</span></td><td><span class="ck">✓ Rejected</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<div class="foot">
+  <strong>Holy Angel University — QA Accreditation Portal</strong> &nbsp;·&nbsp; Office of Academic Quality &nbsp;·&nbsp; Site Map generated <span>July 2026</span> &nbsp;·&nbsp; Built with <span>Laravel · Blade · Vite</span>
+</div>
+</body>
+</html>

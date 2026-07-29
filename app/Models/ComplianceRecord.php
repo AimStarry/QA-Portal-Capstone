@@ -35,7 +35,6 @@ class ComplianceRecord extends Model
         'school',
         'recommendation',
         'category',
-        'laboratory_id',
         'area',
         'action_plan',
         'visit_date',
@@ -55,16 +54,17 @@ class ComplianceRecord extends Model
         return $this->belongsTo(ResponsibleUnit::class, 'responsible_unit_id', 'responsible_unit_id');
     }
 
+
     /**
-     * Get the laboratory associated with the compliance record.
+     * Get the assignments (departments/programs) for this compliance record.
      */
-    public function laboratory(): BelongsTo
+    public function assignments(): HasMany
     {
-        return $this->belongsTo(Laboratory::class, 'laboratory_id', 'laboratory_id');
+        return $this->hasMany(ComplianceAssignment::class, 'compliance_record_id', 'compliance_record_id');
     }
 
     /**
-     * Get the program associated with the compliance record.
+     * Get the program associated with the compliance record (legacy / primary).
      */
     public function program(): BelongsTo
     {
