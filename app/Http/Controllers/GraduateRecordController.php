@@ -164,4 +164,21 @@ class GraduateRecordController extends Controller
 
         return redirect()->route('graduates.index')->with('success', 'Graduate count record deleted successfully.');
     }
+
+    /**
+     * Remove multiple specified resources from storage.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $this->enforceAccess('destroy');
+
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:graduate_records,graduate_record_id',
+        ]);
+
+        $count = GraduateRecord::whereKey($validated['ids'])->delete();
+
+        return redirect()->route('graduates.index')->with('success', "{$count} graduate records deleted successfully.");
+    }
 }

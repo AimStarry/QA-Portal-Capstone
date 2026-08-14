@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'HAU QA Portal') }} - Quality Assurance & Accreditation</title>
+    <title>{{ config('app.name', 'OIE - QA Portal') }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/hau_logo.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('images/hau_logo.png') }}">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700&display=swap" rel="stylesheet" />
 
     <!-- Style and JS Compilation -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -146,11 +148,11 @@
                 </div>
 
                 <!-- Navigation Links based on Active Role -->
-                <div class="flex-1 flex flex-col justify-between overflow-y-auto px-4 py-6">
+                <div class="flex-1 flex flex-col justify-between overflow-y-auto overflow-x-hidden px-4 py-6">
                     <nav class="space-y-2">
                         <!-- 1. Dashboard (Shared) -->
-                        <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('dashboard') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                            <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('dashboard') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('dashboard') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                            <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('dashboard') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"></path>
                             </svg>
                             Dashboard
@@ -158,8 +160,8 @@
 
                         @if(in_array(auth()->user()->usertype, ['Dean', 'Principal']) || (auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin'))
                             <!-- 2. Programs -->
-                            <a href="{{ route('programs.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('programs.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('programs.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('programs.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('programs.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('programs.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                                 </svg>
                                 Academic Programs
@@ -168,8 +170,8 @@
 
                         @if(auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin')
                             <!-- 3. Accreditations -->
-                            <a href="{{ route('accreditations.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('accreditations.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('accreditations.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('accreditations.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('accreditations.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('accreditations.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                                 Accreditations
@@ -177,8 +179,8 @@
                         @endif
 
                         <!-- 4. Compliance (Shared) -->
-                        <a href="{{ route('compliance.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('compliance.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                            <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('compliance.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <a href="{{ route('compliance.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('compliance.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                            <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('compliance.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                             </svg>
                             Compliance Tracker
@@ -186,8 +188,8 @@
 
                         @if(in_array(auth()->user()->usertype, ['Dean', 'Principal']) || (auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin'))
                             <!-- 5. Graduates -->
-                            <a href="{{ route('graduates.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('graduates.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('graduates.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('graduates.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('graduates.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('graduates.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v7"></path>
@@ -198,52 +200,56 @@
 
                         @if(auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin')
                             <!-- 6. Risk Monitor -->
-                            <a href="{{ route('risk.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('risk.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('risk.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('risk.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('risk.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('risk.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                                 </svg>
                                 Risk Monitor
                             </a>
 
                             <!-- 7. User Accounts -->
-                            <a href="{{ route('users.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('users.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('users.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('users.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('users.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('users.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                                 </svg>
                                 User Accounts
                             </a>
-
-
                         @endif
                     </nav>
 
-                    <!-- Sidebar Footer: User Info + Logout -->
-                    <div class="mt-auto pt-4 border-t border-white/10 space-y-3">
-                        <!-- Signed-in user info -->
-                        <div class="flex items-center gap-3 px-2">
-                            <div class="w-8 h-8 rounded-full bg-hau-gold flex items-center justify-center text-hau-maroon font-bold text-xs flex-shrink-0">
-                                {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    <!-- Sidebar Footer: User Identity & System Info -->
+                    <div class="mt-auto pt-4 border-t border-white/15 space-y-3">
+                        <!-- Signed-in User Card -->
+                        <div class="group flex items-center gap-3 p-3 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md shadow-md hover:bg-white/15 transition-all duration-200">
+                            <!-- Avatar Pill with Gold Accent Ring -->
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 rounded-xl text-hau-maroon font-black text-base shadow-sm flex items-center justify-center ring-2 ring-hau-gold/60" style="background: linear-gradient(135deg, #D4AF37 0%, #F3E5AB 100%);">
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                                </div>
                             </div>
-                            <div class="min-w-0">
-                                <p class="text-white text-xs font-semibold truncate">{{ auth()->user()->name ?? 'User' }}</p>
-                                <p class="text-hau-gold-light text-[10px] truncate">{{ ucwords(str_replace('_', ' ', auth()->user()->usertype ?? '')) }}</p>
+
+                            <!-- User Info -->
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-white text-xs font-bold truncate tracking-tight group-hover:text-hau-gold transition-colors">{{ auth()->user()->name ?? 'User' }}</p>
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-hau-gold/20 text-hau-gold border border-hau-gold/30 uppercase tracking-wider">
+                                        {{ ucwords(str_replace('_', ' ', auth()->user()->usertype ?? 'User')) }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Logout Button -->
-                        <form action="{{ route('logout') }}" method="POST">
-                            @csrf
-                            <button type="submit"
-                                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 group hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30"
-                                style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 40%, #b91c1c 100%); border: 1px solid rgba(255,255,255,0.15);">
-                                <svg class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                </svg>
-                                Sign Out
-                            </button>
-                        </form>
-
-                        <p class="text-center text-[10px] text-hau-gold-light/60 font-medium tracking-wide pb-1">Office of Academic Quality</p>
+                        <!-- Institutional Branding Footer -->
+                        <div class="text-center pt-1 pb-1">
+                            <div class="inline-flex items-center justify-center gap-1.5">
+                                <span class="w-1 h-1 rounded-full bg-hau-gold"></span>
+                                <p class="text-[10px] text-hau-gold font-extrabold tracking-widest uppercase">Holy Angel University</p>
+                                <span class="w-1 h-1 rounded-full bg-hau-gold"></span>
+                            </div>
+                            <p class="text-[9px] text-white/50 font-medium tracking-wide mt-0.5">Quality Assurance Office &middot; Portal</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -318,27 +324,60 @@
                             </div>
                         </div>
 
-
-                        <div class="w-8 h-8 rounded-full bg-hau-maroon text-white flex items-center justify-center font-bold text-xs shadow-xs border border-hau-gold/30" title="{{ auth()->user()->name }} ({{ auth()->user()->usertype }})">
-                            @if(auth()->user()->usertype === 'QA Admin')
-                                QA
-                            @elseif(auth()->user()->usertype === 'Dean')
-                                DN
-                            @elseif(auth()->user()->usertype === 'Principal')
-                                PC
-                            @else
-                                HU
-                            @endif
-                        </div>
-
-                        <form action="{{ route('logout') }}" method="POST" class="inline flex items-center">
-                            @csrf
-                            <button type="submit" class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition focus:outline-none" title="Sign Out">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        <!-- Interactive Header User Profile Dropdown Trigger -->
+                        <div class="relative">
+                            <button id="profile-dropdown-btn" onclick="toggleProfileDropdown()" class="flex items-center gap-2.5 px-3 py-1.5 bg-gray-50 border border-gray-200/90 rounded-full shadow-2xs hover:bg-gray-100/90 hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 cursor-pointer group">
+                                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-hau-maroon to-hau-maroon-dark text-white flex items-center justify-center font-bold text-xs shadow-xs ring-2 ring-hau-gold/40 flex-shrink-0">
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                                </div>
+                                <div class="hidden sm:flex flex-col text-left pr-0.5 min-w-0">
+                                    <span class="text-xs font-bold text-gray-800 leading-tight truncate max-w-[130px]">{{ auth()->user()->name }}</span>
+                                    <span class="text-[10px] text-hau-maroon font-semibold leading-tight truncate">{{ auth()->user()->usertype }}</span>
+                                </div>
+                                <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
-                        </form>
+
+                            <!-- Profile Dropdown Panel -->
+                            <div id="profile-dropdown" class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-200/90 py-2.5 z-50 hidden transform origin-top-right transition-all">
+                                <!-- User Overview -->
+                                <div class="px-4 py-2 border-b border-gray-100 flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-hau-maroon to-hau-maroon-dark text-white flex items-center justify-center font-black text-sm shadow-sm ring-2 ring-hau-gold/40 flex-shrink-0">
+                                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <h4 class="text-xs font-bold text-gray-900 truncate leading-snug">{{ auth()->user()->name }}</h4>
+                                        <p class="text-[11px] text-gray-500 truncate">{{ auth()->user()->email ?? '' }}</p>
+                                        <span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-extrabold text-hau-maroon bg-hau-maroon/5 border border-hau-maroon/10 rounded-md">
+                                            {{ auth()->user()->usertype }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Session Status & Info -->
+                                <div class="px-4 py-2 bg-gray-50/70 border-b border-gray-100 flex items-center justify-between text-[11px]">
+                                    <span class="text-gray-500 font-medium">Session Status</span>
+                                    <span class="flex items-center gap-1.5 font-bold text-emerald-600">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        Active
+                                    </span>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="p-1.5">
+                                    <form action="{{ route('logout') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors duration-150 cursor-pointer">
+                                            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                            </svg>
+                                            <span>Sign Out</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -379,6 +418,30 @@
                         @if($role === 'QA Admin')
                             <a href="{{ route('risk.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('risk.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Risk Monitor</a>
                         @endif
+
+                        <!-- Mobile Drawer Footer: User Info + Logout -->
+                        <div class="mt-auto pt-4 border-t border-white/10 space-y-3">
+                            <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs shadow-inner">
+                                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-hau-gold to-amber-500 flex items-center justify-center text-hau-maroon font-black text-sm shadow-md flex-shrink-0 ring-2 ring-white/20">
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-white text-xs font-bold truncate leading-tight">{{ auth()->user()->name ?? 'User' }}</p>
+                                    <p class="text-hau-gold-light text-[10px] font-medium truncate mt-0.5">{{ ucwords(str_replace('_', ' ', auth()->user()->usertype ?? '')) }}</p>
+                                </div>
+                            </div>
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all cursor-pointer"
+                                    style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 45%, #b91c1c 100%); border: 1px solid rgba(255,255,255,0.2);">
+                                    <svg class="w-4 h-4 text-hau-gold-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                    </svg>
+                                    <span>Sign Out</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -410,7 +473,7 @@
                     </div>
                 @endif
 
-                @if ($errors->any())
+                @if (isset($errors) && $errors->any())
                     <div id="toast-error" class="mb-6 flex flex-col p-4 text-rose-800 border-l-4 border-rose-500 bg-rose-50 rounded-xl shadow-xs" role="alert">
                         <div class="flex items-center">
                             <svg class="flex-shrink-0 w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -491,10 +554,27 @@
 
         function toggleNotifications() {
             const dropdown = document.getElementById('notif-dropdown');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            if (profileDropdown && !profileDropdown.classList.contains('hidden')) {
+                profileDropdown.classList.add('hidden');
+            }
             if (dropdown.classList.contains('hidden')) {
                 dropdown.classList.remove('hidden');
             } else {
                 dropdown.classList.add('hidden');
+            }
+        }
+
+        function toggleProfileDropdown() {
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const notifDropdown = document.getElementById('notif-dropdown');
+            if (notifDropdown && !notifDropdown.classList.contains('hidden')) {
+                notifDropdown.classList.add('hidden');
+            }
+            if (profileDropdown.classList.contains('hidden')) {
+                profileDropdown.classList.remove('hidden');
+            } else {
+                profileDropdown.classList.add('hidden');
             }
         }
 
@@ -535,12 +615,18 @@
             .catch(err => console.error('Error marking notification as read:', err));
         }
 
-        // Close dropdown when clicking outside
+        // Close dropdowns when clicking outside
         document.addEventListener('click', (event) => {
             const dropdown = document.getElementById('notif-dropdown');
             const btn = document.getElementById('notif-bell-btn');
             if (dropdown && btn && !btn.contains(event.target) && !dropdown.contains(event.target)) {
                 dropdown.classList.add('hidden');
+            }
+
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const profileBtn = document.getElementById('profile-dropdown-btn');
+            if (profileDropdown && profileBtn && !profileBtn.contains(event.target) && !profileDropdown.contains(event.target)) {
+                profileDropdown.classList.add('hidden');
             }
         });
 

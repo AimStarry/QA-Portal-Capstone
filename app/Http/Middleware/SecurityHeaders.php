@@ -29,21 +29,33 @@ class SecurityHeaders
         // XSS protection header for older browsers
         $response->headers->set('X-XSS-Protection', '1; mode=block');
 
+        // Strict-Transport-Security (HSTS) — force HTTPS
+        $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+
         // Permissions policy — disable unused browser features
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
         // Content Security Policy — restrict where resources can load from
-        // 'unsafe-inline' is required for Vite/Tailwind inline styles and Chart.js inline scripts
         $response->headers->set(
             'Content-Security-Policy',
             "default-src 'self'; " .
             "script-src 'self' 'unsafe-inline' https://fonts.bunny.net; " .
             "style-src 'self' 'unsafe-inline' https://fonts.bunny.net; " .
-            "font-src 'self' https://fonts.bunny.net; " .
+            "font-src 'self' https://fonts.bunny.net data:; " .
             "img-src 'self' data: blob:; " .
             "connect-src 'self'; " .
+            "media-src 'self'; " .
+            "object-src 'none'; " .
+            "base-uri 'self'; " .
+            "form-action 'self'; " .
             "frame-ancestors 'none';"
         );
+
+        // Remove X-Powered-By header to prevent software fingerprinting
+        $response->headers->remove('X-Powered-By');
+        if (function_exists('header_remove')) {
+            @header_remove('X-Powered-By');
+        }
 
         return $response;
     }

@@ -200,7 +200,7 @@ class HauRealDataSeeder extends Seeder
             'BSMA',     // Bachelor of Science in Management Accounting
             'MSA',      // Master of Science in Accountancy
             'MPA',      // Master in Public Administration
-            'DBA',      // Doctor of Business Administration
+            'DBM',      // Doctor of Business Management
             'MSEM',     // Master of Science in Engineering Management
             'MEIE',     // Master in Engineering Program major in Industrial Engineering
             'MSECE',    // Master of Science in Electronics and Communications Engineering

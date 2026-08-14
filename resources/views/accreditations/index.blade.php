@@ -357,7 +357,7 @@
                         <option value="">Select a Program</option>
                         @foreach ($programs as $p)
                             <option value="{{ $p->id }}" {{ !$p->is_accreditable ? 'disabled' : '' }}>
-                                {{ $p->program_code }} &mdash; {{ $p->program_name }} {{ !$p->is_accreditable ? '(Non-Accreditable - Baseline Deficient)' : '' }}
+                                {{ $p->program_code }} &mdash; {{ $p->program_name }} {{ !$p->is_accreditable ? '(Non-Accreditable)' : '' }}
                             </option>
                         @endforeach
                     </select>
@@ -431,7 +431,7 @@
                     <select name="program_id" id="edit-program_id" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
                         @foreach ($programs as $p)
                             <option value="{{ $p->id }}" {{ !$p->is_accreditable ? 'disabled' : '' }}>
-                                {{ $p->program_code }} &mdash; {{ $p->program_name }} {{ !$p->is_accreditable ? '(Non-Accreditable - Baseline Deficient)' : '' }}
+                                {{ $p->program_code }} &mdash; {{ $p->program_name }} {{ !$p->is_accreditable ? '(Non-Accreditable)' : '' }}
                             </option>
                         @endforeach
                     </select>

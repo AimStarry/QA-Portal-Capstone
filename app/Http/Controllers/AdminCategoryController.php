@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ResponsibleUnit;
-use App\Models\Laboratory;
 use App\Models\College;
 use App\Models\Unit;
 
@@ -21,22 +20,23 @@ class AdminCategoryController extends Controller
     }
 
     /**
-     * List all Categories/Laboratories and Responsible Units.
+     * List all Responsible Units.
      */
     public function index(Request $request)
     {
         $this->enforceAdmin();
 
-        $responsibleUnits = ResponsibleUnit::with(['laboratories', 'college', 'unit'])->orderBy('name')->get();
-        $laboratories = Laboratory::with('responsibleUnit')->orderBy('name')->get();
+        $responsibleUnits = ResponsibleUnit::with(['college', 'unit', 'parent', 'children'])->orderBy('name')->get();
+        $colleges         = College::orderBy('name')->get();
+        $units            = Unit::orderBy('name')->get();
 
-        $colleges = College::orderBy('name')->get();
-        $units = Unit::orderBy('name')->get();
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'responsibleUnits' => $responsibleUnits,
+            ]);
+        }
 
-        return response()->json([
-            'responsibleUnits' => $responsibleUnits,
-            'laboratories' => $laboratories
-        ]);
+        return view('admin.categories.index', compact('responsibleUnits', 'colleges', 'units'));
     }
 
     /**
@@ -47,23 +47,32 @@ class AdminCategoryController extends Controller
         $this->enforceAdmin();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:responsible_units,name',
-            'code' => 'nullable|string|max:50',
-            'college_id' => 'nullable|exists:colleges,college_id',
-            'unit_id' => 'nullable|exists:units,unit_id',
+            'name'           => 'required|string|max:255|unique:responsible_units,name',
+            'code'           => 'nullable|string|max:50',
+            'college_id'     => 'nullable|exists:colleges,college_id',
+            'unit_id'        => 'nullable|exists:units,unit_id',
+            'parent_unit_id' => 'nullable|exists:responsible_units,responsible_unit_id',
         ]);
+
+        // If a parent school is given, inherit its college_id automatically
+        if (!empty($validated['parent_unit_id'])) {
+            $parent = ResponsibleUnit::find($validated['parent_unit_id']);
+            if ($parent && $parent->college_id) {
+                $validated['college_id'] = $parent->college_id;
+            }
+        }
 
         $ru = ResponsibleUnit::create($validated);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Responsible Unit created successfully.',
-                'data' => $ru
+                'message' => 'Department created successfully.',
+                'data'    => $ru->load(['parent', 'college'])
             ]);
         }
 
-        return redirect()->route('admin.categories.index')->with('success', 'Responsible Unit created successfully.');
+        return redirect()->route('admin.categories.index')->with('success', 'Department created successfully.');
     }
 
     /**
@@ -74,75 +83,22 @@ class AdminCategoryController extends Controller
         $this->enforceAdmin();
 
         $unit = ResponsibleUnit::findOrFail($id);
-        $unit->delete();
+
+        try {
+            $unit->delete();
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+            return redirect()->route('admin.categories.index')->with('error', $e->getMessage());
+        }
 
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Responsible Unit deleted successfully.'
-            ]);
+            return response()->json(['success' => true, 'message' => 'Responsible Unit deleted successfully.']);
         }
 
         return redirect()->route('admin.categories.index')->with('success', 'Responsible Unit deleted successfully.');
     }
-
-    /**
-     * Store a new Category/Laboratory.
-     */
-    public function storeCategory(Request $request)
-    {
-        $this->enforceAdmin();
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'responsible_unit_id' => 'required|exists:responsible_units,responsible_unit_id',
-        ]);
-
-        $exists = Laboratory::where('name', $validated['name'])
-            ->where('responsible_unit_id', $validated['responsible_unit_id'])
-            ->exists();
-
-        if ($exists) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This category/laboratory already exists under the selected unit.'
-                ], 422);
-            }
-            return back()->withErrors(['name' => 'This category/laboratory already exists under the selected unit.']);
-        }
-
-        $lab = Laboratory::create($validated);
-
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Category / Laboratory created successfully.',
-                'data' => $lab
-            ]);
-        }
-
-        return redirect()->route('admin.categories.index')->with('success', 'Category / Laboratory created successfully.');
-    }
-
-    /**
-     * Delete a Category/Laboratory.
-     */
-    public function destroyCategory(Request $request, $id)
-    {
-        $this->enforceAdmin();
-
-        $lab = Laboratory::findOrFail($id);
-        $lab->delete();
-
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Category / Laboratory deleted successfully.'
-            ]);
-        }
-
-        return redirect()->route('admin.categories.index')->with('success', 'Category / Laboratory deleted successfully.');
-    }
 }
+
 

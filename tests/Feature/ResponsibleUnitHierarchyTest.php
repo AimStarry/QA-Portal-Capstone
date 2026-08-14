@@ -7,7 +7,6 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\College;
 use App\Models\ResponsibleUnit;
-use App\Models\Laboratory;
 use App\Models\Program;
 
 class ResponsibleUnitHierarchyTest extends TestCase
@@ -54,12 +53,6 @@ class ResponsibleUnitHierarchyTest extends TestCase
 
         $this->staff->update(['responsible_unit_id' => $this->unit->responsible_unit_id]);
 
-        // Seed Laboratory
-        $this->lab = Laboratory::create([
-            'name' => 'Ada Lovelace Computer Laboratory',
-            'responsible_unit_id' => $this->unit->responsible_unit_id,
-        ]);
-
         // Seed Academic Program
         $this->program = Program::create([
             'program_code' => 'BSCS',
@@ -79,9 +72,12 @@ class ResponsibleUnitHierarchyTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get(route('admin.categories.index'));
         $response->assertStatus(200);
-        $response->assertJsonStructure([
-            'responsibleUnits',
-            'laboratories'
+        $response->assertViewIs('admin.categories.index');
+
+        $jsonResponse = $this->actingAs($this->admin)->getJson(route('admin.categories.index'));
+        $jsonResponse->assertStatus(200);
+        $jsonResponse->assertJsonStructure([
+            'responsibleUnits'
         ]);
     }
 
@@ -96,20 +92,6 @@ class ResponsibleUnitHierarchyTest extends TestCase
         $this->assertDatabaseHas('responsible_units', [
             'name' => 'Guidance and Counselling Office',
             'code' => 'GUIDANCE',
-        ]);
-    }
-
-    public function test_admin_can_create_laboratory()
-    {
-        $response = $this->actingAs($this->admin)->post(route('admin.categories.store'), [
-            'name' => 'Alan Turing Network Lab',
-            'responsible_unit_id' => $this->unit->responsible_unit_id,
-        ]);
-
-        $response->assertRedirect(route('admin.categories.index'));
-        $this->assertDatabaseHas('laboratories', [
-            'name' => 'Alan Turing Network Lab',
-            'responsible_unit_id' => $this->unit->responsible_unit_id,
         ]);
     }
 
@@ -132,7 +114,7 @@ class ResponsibleUnitHierarchyTest extends TestCase
             'status' => 'Pending',
             'priority' => 'High',
             'responsible_unit_id' => $this->unit->responsible_unit_id,
-            'laboratory_id' => $this->lab->laboratory_id,
+            'categories' => ['Resurvey Feedback'],
             'accrediting_body' => 'PACUCOA',
             'school' => 'School of Computing',
             'recommendations' => ['Draw topological map'],
@@ -143,9 +125,8 @@ class ResponsibleUnitHierarchyTest extends TestCase
         $this->assertDatabaseHas('compliance_records', [
             'title' => 'Submit network schema diagrams',
             'responsible_unit_id' => $this->unit->responsible_unit_id,
-            'laboratory_id' => $this->lab->laboratory_id,
             'responsible_unit' => 'School of Computing',
-            'category' => 'Ada Lovelace Computer Laboratory',
+            'category' => 'Resurvey Feedback',
         ]);
     }
 }

@@ -49,9 +49,9 @@ class AccreditabilityPipelineTest extends TestCase
     }
 
     /**
-     * Test program becomes non-accreditable when a deficient compliance record is created.
+     * Test program accreditable status is independent of compliance records.
      */
-    public function test_program_becomes_non_accreditable_on_deficient_compliance_record()
+    public function test_program_remains_accreditable_on_deficient_compliance_record()
     {
         $this->assertTrue($this->program->is_accreditable);
 
@@ -68,30 +68,6 @@ class AccreditabilityPipelineTest extends TestCase
             'categories' => ['Category 1'],
             'areas' => ['Area 1'],
         ]);
-
-        $this->program->refresh();
-        $this->assertFalse($this->program->is_accreditable);
-    }
-
-    /**
-     * Test program becomes accreditable when all compliance records are Compliant.
-     */
-    public function test_program_becomes_accreditable_when_all_records_are_compliant()
-    {
-        $record = ComplianceRecord::create([
-            'program_id' => $this->program->program_id,
-            'title' => 'Test Record',
-            'status' => 'Pending',
-            'accrediting_body' => 'PAASCU',
-            'school' => 'School of Computing',
-            'responsible_unit_id' => $this->ru->responsible_unit_id,
-        ]);
-
-        $this->program->refresh();
-        $this->assertFalse($this->program->is_accreditable);
-
-        // Update record to Compliant
-        $record->update(['status' => 'Compliant']);
 
         $this->program->refresh();
         $this->assertTrue($this->program->is_accreditable);
@@ -120,37 +96,5 @@ class AccreditabilityPipelineTest extends TestCase
             'program_id' => $this->program->program_id,
             'level_or_tier' => 'Level 1',
         ]);
-    }
-
-
-    /**
-     * Test warning flash is triggered when a program with an active accreditation receives a deficient record.
-     */
-    public function test_warning_flashed_when_program_with_active_accreditation_gets_deficient_record()
-    {
-        // Create an active accreditation for program
-        Accreditation::create([
-            'program_id' => $this->program->program_id,
-            'accrediting_body' => 'PAASCU',
-            'type' => 'Local',
-            'level_or_tier' => 'Level 1',
-            'status' => 'Active',
-        ]);
-
-        // Log deficient compliance task
-        $response = $this->actingAs($this->admin)->post('/compliance', [
-            'program_id' => $this->program->program_id,
-            'title' => 'Sample Deficient Record',
-            'status' => 'Pending',
-            'accrediting_body' => 'PAASCU',
-            'school' => 'School of Computing',
-            'responsible_unit' => 'Quality Assurance Office',
-            'responsible_unit_id' => $this->ru->responsible_unit_id,
-            'recommendations' => ['Rec 1'],
-            'categories' => ['Category 1'],
-            'areas' => ['Area 1'],
-        ]);
-
-        $response->assertSessionHas('warning');
     }
 }

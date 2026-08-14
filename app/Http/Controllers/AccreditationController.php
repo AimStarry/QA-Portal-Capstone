@@ -141,4 +141,18 @@ class AccreditationController extends Controller
 
         return redirect()->route('accreditations.index')->with('success', 'Accreditation deleted successfully.');
     }
+
+    public function bulkDestroy(\Illuminate\Http\Request $request)
+    {
+        $this->enforceAdmin();
+
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:accreditations,accreditation_id',
+        ]);
+
+        $count = Accreditation::whereKey($validated['ids'])->delete();
+
+        return redirect()->route('accreditations.index')->with('success', "{$count} accreditations deleted successfully.");
+    }
 }

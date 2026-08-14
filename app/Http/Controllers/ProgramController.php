@@ -245,7 +245,13 @@ class ProgramController extends Controller
     public function destroy(Program $program)
     {
         $this->enforceAccess('destroy', $program);
-        $program->delete();
+
+        // Fix #11: The Program model's deleting observer will throw if dependents exist
+        try {
+            $program->delete();
+        } catch (\RuntimeException $e) {
+            return redirect()->route('programs.index')->with('error', $e->getMessage());
+        }
 
         return redirect()->route('programs.index')->with('success', 'Academic program deleted successfully.');
     }
@@ -262,5 +268,40 @@ class ProgramController extends Controller
 
         $status = $program->is_accreditable ? 'marked as accreditable' : 'marked as non-accreditable';
         return redirect()->back()->with('success', "Program {$program->program_code} successfully {$status}.");
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $user = auth()->user();
+        if ($user->usertype !== 'QA Admin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:programs,program_id',
+        ]);
+
+        $deletedCount = 0;
+        $failedCount = 0;
+
+        foreach ($validated['ids'] as $id) {
+            $program = Program::find($id);
+            if ($program) {
+                try {
+                    $program->delete();
+                    $deletedCount++;
+                } catch (\Throwable $e) {
+                    $failedCount++;
+                }
+            }
+        }
+
+        $msg = "{$deletedCount} academic programs deleted successfully.";
+        if ($failedCount > 0) {
+            $msg .= " {$failedCount} programs could not be deleted because they have associated records.";
+        }
+
+        return redirect()->route('programs.index')->with($failedCount > 0 ? 'warning' : 'success', $msg);
     }
 }

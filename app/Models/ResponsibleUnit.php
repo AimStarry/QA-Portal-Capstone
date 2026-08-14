@@ -16,7 +16,27 @@ class ResponsibleUnit extends Model
         'code',
         'college_id',
         'unit_id',
+        'parent_unit_id',
     ];
+
+    /**
+     * Guard against deleting a responsible unit that still has users or compliance assignments.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (ResponsibleUnit $unit) {
+            if ($unit->users()->exists()) {
+                throw new \RuntimeException(
+                    "Cannot delete unit '{$unit->name}': it still has users assigned to it. Reassign them first."
+                );
+            }
+            if ($unit->complianceAssignments()->exists()) {
+                throw new \RuntimeException(
+                    "Cannot delete unit '{$unit->name}': it has existing compliance assignments. Remove them first."
+                );
+            }
+        });
+    }
 
     /**
      * Get the college associated with the responsible unit.
@@ -35,11 +55,19 @@ class ResponsibleUnit extends Model
     }
 
     /**
-     * Get the laboratories/categories under this unit.
+     * Get the parent responsible unit (e.g. the school this department belongs to).
      */
-    public function laboratories(): HasMany
+    public function parent(): BelongsTo
     {
-        return $this->hasMany(Laboratory::class, 'responsible_unit_id', 'responsible_unit_id');
+        return $this->belongsTo(ResponsibleUnit::class, 'parent_unit_id', 'responsible_unit_id');
+    }
+
+    /**
+     * Get child departments under this responsible unit (school).
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(ResponsibleUnit::class, 'parent_unit_id', 'responsible_unit_id');
     }
 
     /**
@@ -48,5 +76,13 @@ class ResponsibleUnit extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'responsible_unit_id', 'responsible_unit_id');
+    }
+
+    /**
+     * Get the compliance assignments for this responsible unit.
+     */
+    public function complianceAssignments(): HasMany
+    {
+        return $this->hasMany(ComplianceAssignment::class, 'responsible_unit_id', 'responsible_unit_id');
     }
 }

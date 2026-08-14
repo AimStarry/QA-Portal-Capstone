@@ -42,7 +42,7 @@ class StoreAccreditationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'program_id.exists' => 'This program is marked as non-accreditable (compliance items are deficient). It cannot undergo review or receive accreditation status.',
+            'program_id.exists' => 'This program is marked as non-accreditable. It cannot undergo review or receive accreditation status.',
         ];
     }
 }

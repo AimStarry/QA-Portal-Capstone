@@ -105,12 +105,37 @@
         </div>
     </div>
 
+    <!-- Bulk Action Bar -->
+    @if ($role === 'QA Admin')
+        <div id="bulk-action-bar" class="hidden bg-hau-maroon text-white px-5 py-3 rounded-xl shadow-md flex items-center justify-between border-l-4 border-hau-gold transition-all duration-200">
+            <div class="flex items-center gap-3">
+                <span class="text-xs sm:text-sm font-semibold"><span id="selected-count" class="font-bold text-hau-gold">0</span> items selected</span>
+                <button type="button" onclick="deselectAll()" class="text-xs text-hau-gold hover:underline">Deselect All</button>
+            </div>
+            <form id="bulk-delete-form" action="{{ route('graduates.bulk-destroy') }}" method="POST" onsubmit="return confirm('Are you sure you want to delete the selected graduate records?')">
+                @csrf
+                <div id="bulk-ids-container"></div>
+                <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow flex items-center gap-1.5 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Delete Selected (<span class="selected-count-badge">0</span>)
+                </button>
+            </form>
+        </div>
+    @endif
+
     <!-- Table Container -->
     <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        @if ($role === 'QA Admin')
+                            <th scope="col" class="px-4 py-3.5 text-center w-10">
+                                <input type="checkbox" id="select-all-cb" onclick="toggleSelectAll(this)" class="rounded border-gray-300 text-hau-maroon focus:ring-hau-maroon cursor-pointer" title="Select All">
+                            </th>
+                        @endif
                         <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Program</th>
                         <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Level</th>
                         <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">School Year</th>
@@ -134,6 +159,11 @@
                             data-term="{{ $g->term }}"
                             data-count="{{ $g->graduates_count }}">
                             
+                            @if ($role === 'QA Admin')
+                                <td class="px-4 py-4 text-center">
+                                    <input type="checkbox" class="row-cb rounded border-gray-300 text-hau-maroon focus:ring-hau-maroon cursor-pointer" value="{{ $g->getKey() }}" onchange="updateBulkBar()">
+                                </td>
+                            @endif
                             <td class="px-6 py-4">
                                 <div class="font-bold text-hau-maroon text-sm hover:underline">
                                     <a href="{{ route('programs.show', $g->program_id) }}">{{ $g->program->program_code }}</a>
@@ -422,6 +452,49 @@
             if (emptyPlaceholder) emptyPlaceholder.classList.add('hidden');
             if (noMatchesPlaceholder) noMatchesPlaceholder.classList.add('hidden');
         }
+
+        updateBulkBar();
+    }
+
+    function toggleSelectAll(master) {
+        const checkboxes = document.querySelectorAll('#graduate-rows tr:not(.hidden) .row-cb');
+        checkboxes.forEach(cb => cb.checked = master.checked);
+        updateBulkBar();
+    }
+
+    function updateBulkBar() {
+        const selected = document.querySelectorAll('#graduate-rows tr:not(.hidden) .row-cb:checked');
+        const bar = document.getElementById('bulk-action-bar');
+        if (!bar) return;
+        const countSpan = document.getElementById('selected-count');
+        const badgeSpans = document.querySelectorAll('.selected-count-badge');
+        const container = document.getElementById('bulk-ids-container');
+        
+        if (selected.length > 0) {
+            bar.classList.remove('hidden');
+            if (countSpan) countSpan.textContent = selected.length;
+            badgeSpans.forEach(b => b.textContent = selected.length);
+            
+            container.innerHTML = '';
+            selected.forEach(cb => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ids[]';
+                input.value = cb.value;
+                container.appendChild(input);
+            });
+        } else {
+            bar.classList.add('hidden');
+            const master = document.getElementById('select-all-cb');
+            if (master) master.checked = false;
+        }
+    }
+
+    function deselectAll() {
+        const master = document.getElementById('select-all-cb');
+        if (master) master.checked = false;
+        document.querySelectorAll('.row-cb').forEach(cb => cb.checked = false);
+        updateBulkBar();
     }
 </script>
 @endsection

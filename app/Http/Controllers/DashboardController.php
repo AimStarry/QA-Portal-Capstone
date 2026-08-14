@@ -8,6 +8,7 @@ use App\Models\ComplianceRecord;
 use App\Models\RecommendationItem;
 use App\Models\RiskItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -25,6 +26,26 @@ class DashboardController extends Controller
             session(['active_role' => 'Unit or Department']);
         }
 
+        // Cache key scoped per user + role so different users get their own cache.
+        // TTL = 2 minutes. Heavy aggregate stats (20+ queries) are cached;
+        // live action items (pending approvals, overdue, recent) are always fresh.
+        $statsCacheKey = 'dashboard_stats_' . $user->id . '_' . $role;
+
+        $stats = Cache::remember($statsCacheKey, now()->addMinutes(2), function () use ($user, $role) {
+
+        $collegeId = $user->college_id;
+        $unitName = $user->unit->name ?? '';
+        $unitCode = $user->unit->code ?? '';
+
+        $unitFilter = function($q) use ($unitName, $unitCode) {
+            $q->where(function($sq) use ($unitName, $unitCode) {
+                $sq->orWhere('responsible_unit', 'like', '%All Units%')
+                  ->orWhere('responsible_unit', 'like', '%All Departments%');
+                if ($unitName) $sq->orWhere('responsible_unit', 'like', "%{$unitName}%");
+                if ($unitCode) $sq->orWhere('responsible_unit', 'like', "%{$unitCode}%");
+            });
+        };
+
         // Initialize variables with university-wide counts as fallback
         $totalPrograms = Program::count();
         $totalAccreditations = Accreditation::count();
@@ -36,22 +57,9 @@ class DashboardController extends Controller
         $liveAccreditableCount = Program::where('is_accreditable', true)->count();
         $liveLocallyAccreditedCount = Program::whereHas('accreditations', fn($q) => $q->where('type', 'Local')->where('status', 'Active'))->count();
         $liveInternationallyAccreditedCount = Program::whereHas('accreditations', fn($q) => $q->where('type', 'International')->where('status', 'Active'))->count();
-        // Accredited = accreditable programs with at least one real active accreditation (not just Candidate/Associate)
         $liveAccreditedCount = Program::whereHas('accreditations', fn($q) => $q->where('status', 'Active')
                 ->whereNotIn('level_or_tier', ['Candidate', 'Associate']))
             ->count();
-
-        // Define query scopes / filters
-        $collegeId = $user->college_id;
-        $unitName = $user->unit->name ?? '';
-        $unitCode = $user->unit->code ?? '';
-
-        $unitFilter = function($q) use ($unitName, $unitCode) {
-            $q->where(function($sq) use ($unitName, $unitCode) {
-                if ($unitName) $sq->orWhere('responsible_unit', $unitName);
-                if ($unitCode) $sq->orWhere('responsible_unit', $unitCode);
-            });
-        };
 
         // 1. Core Counts Scoping
         if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
@@ -65,7 +73,6 @@ class DashboardController extends Controller
             $liveAccreditableCount = Program::where('college_id', $collegeId)->where('is_accreditable', true)->count();
             $liveLocallyAccreditedCount = Program::where('college_id', $collegeId)->whereHas('accreditations', fn($q) => $q->where('type', 'Local')->where('status', 'Active'))->count();
             $liveInternationallyAccreditedCount = Program::where('college_id', $collegeId)->whereHas('accreditations', fn($q) => $q->where('type', 'International')->where('status', 'Active'))->count();
-            // Accredited = accreditable programs with at least one real active accreditation (not just Candidate/Associate)
             $liveAccreditedCount = Program::where('college_id', $collegeId)
                 ->whereHas('accreditations', fn($q) => $q->where('status', 'Active')
                     ->whereNotIn('level_or_tier', ['Candidate', 'Associate']))
@@ -73,7 +80,6 @@ class DashboardController extends Controller
         }
 
         // 2. Percentage accomplishment by type
-        // Base records for checking items:
         if ($user->usertype === 'QA Admin') {
             $baseRecordsQuery = ComplianceRecord::query();
         } elseif ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
@@ -102,49 +108,29 @@ class DashboardController extends Controller
 
         // 3. Compliance rates per body
         $bodies = (clone $baseRecordsQuery)->distinct()->pluck('accrediting_body')->filter()->values();
-        $bodyComplianceRates = [];
-        foreach ($bodies as $body) {
-            $recordIds = (clone $baseRecordsQuery)->where('accrediting_body', $body)->pluck('compliance_record_id');
-            $totalItems = RecommendationItem::whereIn('compliance_record_id', $recordIds)->count();
-            $completedItems = RecommendationItem::whereIn('compliance_record_id', $recordIds)->where('is_completed', true)->count();
-            $bodyComplianceRates[$body] = $totalItems > 0 ? round(($completedItems / $totalItems) * 100) : 0;
-        }
+        $scopeKey = 'body_rates_' . $user->usertype . '_' . ($user->college_id ?? 0) . '_' . ($user->unit_id ?? 0);
+        $bodyComplianceRates = Cache::remember($scopeKey, now()->addMinutes(5), function () use ($bodies, $baseRecordsQuery) {
+            $rates = [];
+            foreach ($bodies as $body) {
+                $recordIds      = (clone $baseRecordsQuery)->where('accrediting_body', $body)->pluck('compliance_record_id');
+                $totalItems     = RecommendationItem::whereIn('compliance_record_id', $recordIds)->count();
+                $completedItems = RecommendationItem::whereIn('compliance_record_id', $recordIds)->where('is_completed', true)->count();
+                $rates[$body] = $totalItems > 0 ? round(($completedItems / $totalItems) * 100) : 0;
+            }
+            return $rates;
+        });
 
-        // 4. Accredited programs list — only is_accreditable programs with any active accreditation (excluding Candidate/Associate)
-        if ($user->usertype === 'QA Admin') {
-            $accreditedPrograms = Program::whereHas('accreditations', function($q) {
-                    $q->where('status', 'Active')
-                      ->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
-                })->with(['college', 'accreditations' => function($q) {
-                    $q->where('status', 'Active')
-                      ->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
-                }])->get();
-        } elseif ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
-            $accreditedPrograms = Program::where('college_id', $collegeId)
-                ->whereHas('accreditations', function($q) {
-                    $q->where('status', 'Active')
-                      ->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
-                })->with(['college', 'accreditations' => function($q) {
-                    $q->where('status', 'Active')
-                      ->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
-                }])->get();
-        } else {
-            $accreditedPrograms = collect();
-        }
+        $allAccreditingBodies = Accreditation::where('status', 'Active')->distinct()->pluck('accrediting_body')->filter()->values()->toArray();
 
-        $allAccreditingBodies = Accreditation::where('status', 'Active')->distinct()->pluck('accrediting_body')->filter()->values();
-        $totalAccreditedProgramsCount = $accreditedPrograms->count();
-
-        // Calculate dynamic unique accredited programs count (excluding Candidate/Associate)
         $programsCountsQuery = Program::whereHas('accreditations', function($q) {
-                $q->where('status', 'Active')
-                  ->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
+                $q->where('status', 'Active')->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
             });
         if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
             $programsCountsQuery->where('college_id', $collegeId);
         }
+        $totalAccreditedProgramsCount = (clone $programsCountsQuery)->count();
         $accreditationCounts = [
-            '' => (clone $programsCountsQuery)->count(),
+            '' => $totalAccreditedProgramsCount,
         ];
         foreach ($allAccreditingBodies as $body) {
             $accreditationCounts[$body] = (clone $programsCountsQuery)
@@ -155,7 +141,79 @@ class DashboardController extends Controller
                 })->count();
         }
 
-        // 5. Overdue compliance
+        // 5. Levels summary
+        $levelsQuery = Accreditation::selectRaw('level_or_tier, count(*) as count');
+        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $levelsQuery->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
+        }
+        $levelsSummary = $levelsQuery->groupBy('level_or_tier')->orderBy('count', 'desc')->get()
+            ->map(fn($item) => [
+                'level_or_tier' => $item->level_or_tier ?: 'No Level Set',
+                'count' => (int) $item->count,
+            ])->all();
+
+        return compact(
+            'totalPrograms', 'totalAccreditations', 'totalAccreditingBodies', 'totalRisks',
+            'activeAccreditations', 'bodyComplianceRates',
+            'allAccreditingBodies', 'totalAccreditedProgramsCount', 'localPercentage',
+            'intlPercentage', 'regulatoryPercentage', 'levelsSummary', 'liveOfferingsCount',
+            'liveAccreditableCount', 'liveAccreditedCount', 'liveLocallyAccreditedCount',
+            'liveInternationallyAccreditedCount', 'accreditationCounts'
+        );
+        }); // end Cache::remember
+
+        // Extract cached stats into local variables
+        extract($stats);
+
+        // Define user scope variables
+        $collegeId = $user->college_id;
+        $unitName = $user->unit->name ?? '';
+        $unitCode = $user->unit->code ?? '';
+
+        $unitFilter = function($q) use ($unitName, $unitCode) {
+            $q->where(function($sq) use ($unitName, $unitCode) {
+                $sq->orWhere('responsible_unit', 'like', '%All Units%')
+                  ->orWhere('responsible_unit', 'like', '%All Departments%');
+                if ($unitName) $sq->orWhere('responsible_unit', 'like', "%{$unitName}%");
+                if ($unitCode) $sq->orWhere('responsible_unit', 'like', "%{$unitCode}%");
+            });
+        };
+
+        // Fetch live accredited programs list
+        if ($user->usertype === 'QA Admin') {
+            $accreditedPrograms = Program::whereHas('accreditations', function($q) {
+                    $q->where('status', 'Active')->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
+                })->with(['college', 'accreditations' => function($q) {
+                    $q->where('status', 'Active')->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
+                }])->get();
+        } elseif ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+            $accreditedPrograms = Program::where('college_id', $collegeId)
+                ->whereHas('accreditations', function($q) {
+                    $q->where('status', 'Active')->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
+                })->with(['college', 'accreditations' => function($q) {
+                    $q->where('status', 'Active')->whereNotIn('level_or_tier', ['Candidate', 'Associate']);
+                }])->get();
+        } else {
+            $accreditedPrograms = collect();
+        }
+
+        // Define query scopes / filters (needed for live queries below)
+        $collegeId = $user->college_id;
+        $unitName = $user->unit->name ?? '';
+        $unitCode = $user->unit->code ?? '';
+
+        $unitFilter = function($q) use ($unitName, $unitCode) {
+            $q->where(function($sq) use ($unitName, $unitCode) {
+                $sq->orWhere('responsible_unit', 'like', '%All Units%')
+                  ->orWhere('responsible_unit', 'like', '%All Departments%');
+                if ($unitName) $sq->orWhere('responsible_unit', 'like', "%{$unitName}%");
+                if ($unitCode) $sq->orWhere('responsible_unit', 'like', "%{$unitCode}%");
+            });
+        };
+
+        // --- Live (uncached) queries below: always fresh ---
+
+        // Overdue compliance
         $overdueQuery = ComplianceRecord::with('program')
             ->whereIn('status', ['Non-Compliant', 'Pending'])
             ->where('approval_state', '!=', 'Pending Approval')
@@ -175,14 +233,6 @@ class DashboardController extends Controller
             $recentRecsQuery->whereHas('complianceRecord', $unitFilter);
         }
         $recentlyCompletedRecommendations = $recentRecsQuery->orderBy('completed_at', 'desc')->take(10)->get();
-
-        // 7. Levels summary
-        $levelsQuery = Accreditation::selectRaw('level_or_tier, count(*) as count');
-        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
-            $levelsQuery->whereHas('program', fn($q) => $q->where('college_id', $collegeId));
-        }
-        $levelsSummary = $levelsQuery->groupBy('level_or_tier')->orderBy('count', 'desc')->get();
-
 
         // 8. Viewport Specific Queries
         if ($role === 'QA Admin') {

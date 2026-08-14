@@ -119,6 +119,20 @@ class AuthAndScopingTest extends TestCase
     }
 
     /**
+     * Test login authentication with email.
+     */
+    public function test_user_can_login_with_email()
+    {
+        $response = $this->post('/login', [
+            'login' => 'deansoc@hau.edu.ph',
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($this->deanSoc);
+    }
+
+    /**
      * Test Dean program scoping.
      */
     public function test_dean_can_only_view_own_programs()

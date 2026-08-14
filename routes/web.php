@@ -51,14 +51,22 @@ Route::middleware('auth')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Core Resources (CRUD)
+    Route::post('/programs/bulk-destroy', [ProgramController::class, 'bulkDestroy'])->name('programs.bulk-destroy');
     Route::resource('programs', ProgramController::class)->except(['create', 'edit']);
+
+    Route::post('/accreditations/bulk-destroy', [AccreditationController::class, 'bulkDestroy'])->name('accreditations.bulk-destroy');
     Route::resource('accreditations', AccreditationController::class)->except(['create', 'edit', 'show']);
-    Route::resource('risk', RiskController::class)->except(['create', 'edit', 'show']);
+
+    Route::post('/graduates/bulk-destroy', [GraduateRecordController::class, 'bulkDestroy'])->name('graduates.bulk-destroy');
     Route::resource('graduates', GraduateRecordController::class)->except(['create', 'edit', 'show']);
 
+    Route::post('/risk/bulk-destroy', [RiskController::class, 'bulkDestroy'])->name('risk.bulk-destroy');
+    Route::resource('risk', RiskController::class)->except(['create', 'edit', 'show']);
+
+    Route::post('/compliance/bulk-destroy', [ComplianceController::class, 'bulkDestroy'])->name('compliance.bulk-destroy');
     Route::get('/compliance/export', [ComplianceController::class, 'exportCsv'])->name('compliance.export');
-    Route::resource('compliance', ComplianceController::class)->except(['create', 'edit', 'show']);
+    // Fix #22: 'show' is now enabled — /compliance/{id} is a shareable permalink
+    Route::resource('compliance', ComplianceController::class)->except(['create', 'edit']);
     Route::post('/compliance/{id}/submit-update', [ComplianceController::class, 'submitUpdate'])->name('compliance.submit-update');
     Route::post('/compliance/{id}/approve', [ComplianceController::class, 'approve'])->name('compliance.approve');
     Route::post('/compliance/{id}/reject', [ComplianceController::class, 'reject'])->name('compliance.reject');
@@ -84,8 +92,6 @@ Route::middleware('auth')->group(function () {
 
     // Admin Categories & Responsible Units Management
     Route::get('/admin/categories', [\App\Http\Controllers\AdminCategoryController::class, 'index'])->name('admin.categories.index');
-    Route::post('/admin/manage-categories', [\App\Http\Controllers\AdminCategoryController::class, 'storeCategory'])->name('admin.categories.store');
-    Route::delete('/admin/manage-categories/{id}', [\App\Http\Controllers\AdminCategoryController::class, 'destroyCategory'])->name('admin.categories.destroy');
     Route::post('/admin/manage-units', [\App\Http\Controllers\AdminCategoryController::class, 'storeUnit'])->name('admin.categories.store-unit');
     Route::delete('/admin/manage-units/{id}', [\App\Http\Controllers\AdminCategoryController::class, 'destroyUnit'])->name('admin.categories.destroy-unit');
 

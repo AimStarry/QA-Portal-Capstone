@@ -7,7 +7,6 @@ use App\Models\College;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\ResponsibleUnit;
-use App\Models\Laboratory;
 
 class ResponsibleUnitSeeder extends Seeder
 {
@@ -51,29 +50,6 @@ class ResponsibleUnitSeeder extends Seeder
                     $user->update(['responsible_unit_id' => $ru->responsible_unit_id]);
                 }
             }
-        }
-
-        // 4. Create some default laboratories under units
-        // E.g. Under SOC (School of Computing)
-        $socRu = ResponsibleUnit::where('code', 'SOC')->first();
-        if ($socRu) {
-            Laboratory::firstOrCreate([
-                'name' => 'Ada Lovelace Computer Laboratory',
-                'responsible_unit_id' => $socRu->responsible_unit_id,
-            ]);
-            Laboratory::firstOrCreate([
-                'name' => 'Alan Turing Network Laboratory',
-                'responsible_unit_id' => $socRu->responsible_unit_id,
-            ]);
-        }
-
-        // Under SNAMS
-        $snamsRu = ResponsibleUnit::where('code', 'SNAMS')->first();
-        if ($snamsRu) {
-            Laboratory::firstOrCreate([
-                'name' => 'Nursing Simulation Laboratory',
-                'responsible_unit_id' => $snamsRu->responsible_unit_id,
-            ]);
         }
     }
 }

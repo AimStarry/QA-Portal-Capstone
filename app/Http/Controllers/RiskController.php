@@ -106,7 +106,14 @@ class RiskController extends Controller
 
         $riskItems = $query->orderBy('status', 'asc')->get();
 
+        $role = session('active_role', 'QA Admin');
+        if ($user->usertype !== 'QA Admin') {
+            $role = 'Unit or Department';
+            session(['active_role' => 'Unit or Department']);
+        }
+
         return view('risk.index', compact(
+            'role',
             'riskItems',
             'programs',
             'totalRisks',
@@ -170,5 +177,22 @@ class RiskController extends Controller
         $risk->delete();
 
         return redirect()->route('risk.index')->with('success', 'QA Risk profile removed successfully.');
+    }
+
+    /**
+     * Remove multiple specified resources from storage.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $this->enforceAccess('destroy');
+
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:risk_items,risk_item_id',
+        ]);
+
+        $count = RiskItem::whereKey($validated['ids'])->delete();
+
+        return redirect()->route('risk.index')->with('success', "{$count} QA risk profiles removed successfully.");
     }
 }
