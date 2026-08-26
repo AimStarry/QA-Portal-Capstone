@@ -28,6 +28,7 @@ class PasswordResetMail extends Mailable
     public function build()
     {
         return $this->subject('Your HAU QA Portal Password Reset Code')
-                    ->view('emails.otp-reset');
+                    ->view('emails.otp-reset')
+                    ->text('emails.otp-reset-plain');
     }
 }

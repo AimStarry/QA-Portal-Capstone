@@ -65,4 +65,17 @@ class User extends Authenticatable
     {
         return $this->belongsTo(ResponsibleUnit::class, 'responsible_unit_id', 'responsible_unit_id');
     }
+
+    /**
+     * Get QA Admin recipients for system email notifications.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     */
+    public static function getQaAdminRecipients()
+    {
+        return static::where('usertype', 'QA Admin')
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->get();
+    }
 }

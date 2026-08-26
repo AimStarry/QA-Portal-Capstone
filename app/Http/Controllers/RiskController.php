@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Program;
 use App\Models\RiskItem;
+use App\Models\User;
+use App\Mail\QaAdminAlertMail;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class RiskController extends Controller
 {
@@ -139,7 +143,39 @@ class RiskController extends Controller
             'status' => ['required', Rule::in(['Identified', 'Mitigated', 'Monitoring'])],
         ]);
 
-        RiskItem::create($validated);
+        $risk = RiskItem::create($validated);
+        $risk->load('program');
+
+        // Dispatch email notification to QA Admins
+        $recipients = User::getQaAdminRecipients();
+        foreach ($recipients as $recipient) {
+            try {
+                $badgeType = match($risk->likelihood) {
+                    'High' => 'danger',
+                    'Medium' => 'warning',
+                    default => 'info',
+                };
+
+                Mail::to($recipient->email)->send(new QaAdminAlertMail(
+                    subjectTitle: "[QA Portal] New Risk Profile: " . ($risk->program?->program_code ?? 'General') . " - {$risk->status}",
+                    badge: "Risk: {$risk->status}",
+                    headline: 'New QA Risk Profile Logged',
+                    messageBody: "A new risk item has been logged for academic program \"{$risk->program?->program_name}\" (" . ($risk->program?->program_code ?? 'N/A') . ").",
+                    details: [
+                        'Program' => ($risk->program?->program_code ? "[{$risk->program->program_code}] " : '') . ($risk->program?->program_name ?? 'N/A'),
+                        'Risk Description' => $risk->description,
+                        'Likelihood / Impact' => "{$risk->likelihood} Likelihood / {$risk->impact} Impact",
+                        'Status' => $risk->status,
+                        'Mitigation Plan' => $risk->mitigation_plan ?? 'None specified',
+                    ],
+                    actionUrl: route('risk.index'),
+                    actionText: 'Open Risk Monitor',
+                    badgeType: $badgeType
+                ));
+            } catch (\Throwable $e) {
+                Log::error("Failed to send risk logged email to QA Admin ({$recipient->email}): " . $e->getMessage());
+            }
+        }
 
         return redirect()->route('risk.index')->with('success', 'QA Risk profile logged successfully.');
     }
@@ -162,6 +198,38 @@ class RiskController extends Controller
         ]);
 
         $risk->update($validated);
+        $risk->load('program');
+
+        // Dispatch email notification to QA Admins
+        $recipients = User::getQaAdminRecipients();
+        foreach ($recipients as $recipient) {
+            try {
+                $badgeType = match($risk->likelihood) {
+                    'High' => 'danger',
+                    'Medium' => 'warning',
+                    default => 'info',
+                };
+
+                Mail::to($recipient->email)->send(new QaAdminAlertMail(
+                    subjectTitle: "[QA Portal] Risk Profile Updated: " . ($risk->program?->program_code ?? 'General') . " - {$risk->status}",
+                    badge: "Risk: {$risk->status}",
+                    headline: 'QA Risk Profile Updated',
+                    messageBody: "The risk profile for \"{$risk->program?->program_name}\" (" . ($risk->program?->program_code ?? 'N/A') . ") was updated.",
+                    details: [
+                        'Program' => ($risk->program?->program_code ? "[{$risk->program->program_code}] " : '') . ($risk->program?->program_name ?? 'N/A'),
+                        'Risk Description' => $risk->description,
+                        'Likelihood / Impact' => "{$risk->likelihood} Likelihood / {$risk->impact} Impact",
+                        'Status' => $risk->status,
+                        'Mitigation Plan' => $risk->mitigation_plan ?? 'None specified',
+                    ],
+                    actionUrl: route('risk.index'),
+                    actionText: 'Open Risk Monitor',
+                    badgeType: $badgeType
+                ));
+            } catch (\Throwable $e) {
+                Log::error("Failed to send risk updated email to QA Admin ({$recipient->email}): " . $e->getMessage());
+            }
+        }
 
         return redirect()->route('risk.index')->with('success', 'QA Risk profile updated successfully.');
     }

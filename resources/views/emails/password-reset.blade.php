@@ -21,17 +21,48 @@
             border: 1px border-gray-200;
         }
         .header {
-            background-color: #7A1A2C; /* HAU Maroon */
+            background: linear-gradient(135deg, #800000 0%, #5c0000 100%);
             padding: 30px 40px;
             text-align: center;
-            border-bottom: 4px solid #D6A628; /* HAU Gold */
+            border-bottom: 3px solid #D4AF37;
+        }
+        .header-logo-container {
+            margin-bottom: 12px;
+        }
+        .header-logo-badge {
+            display: inline-block;
+            width: 56px;
+            height: 56px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            border: 2.5px solid #D4AF37;
+            overflow: hidden;
+            padding: 2px;
+            box-sizing: border-box;
+            vertical-align: middle;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        .header-logo-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+            display: block;
         }
         .header h1 {
             color: #ffffff;
             margin: 0;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
             letter-spacing: -0.5px;
+        }
+        .header p {
+            margin: 5px 0 0;
+            font-size: 11px;
+            color: #f3e4b2;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
         }
         .content {
             padding: 40px;
@@ -53,7 +84,7 @@
             margin: 35px 0;
         }
         .btn {
-            background-color: #7A1A2C;
+            background: linear-gradient(135deg, #800000 0%, #5c0000 100%);
             color: #ffffff !important;
             padding: 14px 30px;
             text-decoration: none;
@@ -61,11 +92,11 @@
             font-weight: bold;
             font-size: 15px;
             display: inline-block;
-            box-shadow: 0 4px 6px rgba(122, 26, 44, 0.2);
+            box-shadow: 0 4px 12px rgba(128, 0, 0, 0.25);
             transition: background-color 0.2s;
         }
         .btn:hover {
-            background-color: #5d1321;
+            background-color: #5c0000;
         }
         .footer {
             background-color: #f9fafb;
@@ -73,7 +104,7 @@
             text-align: center;
             font-size: 12px;
             color: #9ca3af;
-            border-t: 1px solid #e5e7eb;
+            border-top: 1px solid #e5e7eb;
         }
         .footer p {
             margin: 4px 0;
@@ -84,7 +115,17 @@
 
 <div class="container">
     <div class="header">
-        <h1>HAU QA PORTAL</h1>
+        <div class="header-logo-container">
+            <div class="header-logo-badge">
+                @if(isset($message) && method_exists($message, 'embed') && file_exists(public_path('images/hau_logo.png')))
+                    <img src="{{ $message->embed(public_path('images/hau_logo.png')) }}" alt="HAU Logo" width="50" height="50">
+                @else
+                    <img src="{{ asset('images/hau_logo.png') }}" alt="HAU Logo" width="50" height="50">
+                @endif
+            </div>
+        </div>
+        <h1>HAU QA Portal</h1>
+        <p>Quality Assurance Office</p>
     </div>
     <div class="content">
         <h2>Hello, {{ $user->first_name ?? $user->name }}!</h2>

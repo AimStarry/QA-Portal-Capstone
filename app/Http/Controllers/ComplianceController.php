@@ -8,8 +8,12 @@ use App\Models\ComplianceAssignment;
 use App\Models\RecommendationItem;
 use App\Models\Notification;
 use App\Models\User;
+use App\Mail\QaAdminAlertMail;
 use App\Services\ComplianceService;
+use App\Services\RiskAutoLogService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class ComplianceController extends Controller
 {
@@ -308,6 +312,9 @@ class ComplianceController extends Controller
         $this->service->syncAssignments($compliance, $programIds, $unitIds, $isAllUnits, $validated, true);
         $this->service->createRecommendationItems($compliance, $recommendations);
 
+        // Auto-log or resolve risk based on the compliance record status
+        RiskAutoLogService::syncFromCompliance($compliance);
+
         return redirect()->route('compliance.index')->with('success', $message);
     }
 
@@ -347,6 +354,9 @@ class ComplianceController extends Controller
 
         $this->service->syncAssignments($compliance, $programIds, $unitIds, $isAllUnits, $validated, false);
         $this->service->syncRecommendationItems($compliance, $recommendations);
+
+        // Auto-log or resolve risk based on updated compliance status
+        RiskAutoLogService::syncFromCompliance($compliance->fresh());
 
         return redirect()->route('compliance.index')->with('success', 'Compliance task updated successfully.');
     }
@@ -415,6 +425,46 @@ class ComplianceController extends Controller
         }
 
         $compliance->update($compliancePayload);
+
+        // Dispatch in-app notification to QA Admins
+        $adminUsers = User::where('usertype', 'QA Admin')->get();
+        foreach ($adminUsers as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type'    => 'action_plan_submitted',
+                'message' => "Unit submitted action plan & evidence link for \"{$compliance->title}\".",
+                'link'    => route('compliance.index'),
+                'is_read' => false,
+            ]);
+        }
+
+        // Dispatch email notification to QA Admins
+        $recipients = User::getQaAdminRecipients();
+        $submitterName = auth()->user()?->name ?? 'Department/Unit User';
+        $unitName = $compliance->responsible_unit ?? ($compliance->program->program_name ?? 'Responsible Unit');
+
+        foreach ($recipients as $recipient) {
+            try {
+                Mail::to($recipient->email)->send(new QaAdminAlertMail(
+                    subjectTitle: "[QA Portal] Action Plan Submitted: {$compliance->title}",
+                    badge: 'Pending Review',
+                    headline: 'Action Plan & Evidence Link Submitted',
+                    messageBody: "A unit has submitted an action plan and evidence documentation for compliance task \"{$compliance->title}\". This submission is now awaiting QA Admin review and approval.",
+                    details: [
+                        'Compliance Task' => $compliance->title,
+                        'Unit / Program' => $unitName,
+                        'Submitted By' => $submitterName . (auth()->user()?->email ? ' (' . auth()->user()->email . ')' : ''),
+                        'Action Plan' => $validated['action_plan'],
+                        'Evidence Link' => $validated['pending_document_link'] ?? 'N/A',
+                    ],
+                    actionUrl: route('compliance.index'),
+                    actionText: 'Review in Compliance Tracker',
+                    badgeType: 'warning'
+                ));
+            } catch (\Throwable $e) {
+                Log::error("Failed to send action plan submission email to QA Admin ({$recipient->email}): " . $e->getMessage());
+            }
+        }
 
         return redirect()->route('compliance.index')->with('success', 'Action plan & evidence link submitted. Awaiting QA Admin review.');
     }
@@ -527,42 +577,50 @@ class ComplianceController extends Controller
 
     public function toggleRecommendation(Request $request, $id)
     {
+        $user = auth()->user();
+        if ($user->usertype !== 'QA Admin') {
+            abort(403, 'Only QA Admin can directly mark recommendations as completed. Units may submit evidence for review.');
+        }
+
         $item       = RecommendationItem::with(['complianceRecord.program', 'complianceRecord.assignments'])->findOrFail($id);
         $compliance = $item->complianceRecord;
-        $user       = auth()->user();
 
-        if (!$this->userCanAccessRecord($compliance->load(['program', 'assignments.program', 'assignments.responsibleUnit']), $user)) {
-            abort(403, 'You do not have permission to update this recommendation item.');
-        }
-
+        $newCompletedState = !$item->is_completed;
         $item->update([
-            'is_completed' => !$item->is_completed,
-            'completed_at' => !$item->is_completed ? now() : null,
+            'is_completed'  => $newCompletedState,
+            'completed_at'  => $newCompletedState ? now() : null,
+            'status'        => $newCompletedState ? 'approved' : ($item->evidence_link ? 'under_review' : 'pending'),
+            'admin_remarks' => $newCompletedState ? null : $item->admin_remarks,
         ]);
-
-        if ($item->is_completed && $user->usertype !== 'QA Admin') {
-            $adminUsers = User::where('usertype', 'QA Admin')->get();
-            foreach ($adminUsers as $admin) {
-                Notification::create([
-                    'user_id' => $admin->id,
-                    'type'    => 'recommendation_completed',
-                    'message' => "Unit checked off recommendation: \"{$item->text}\" on compliance task \"{$compliance->title}\".",
-                    'link'    => route('compliance.index'),
-                    'is_read' => false,
-                ]);
-            }
-        }
 
         $total     = $compliance->recommendationItems()->count();
         $completed = $compliance->recommendationItems()->where('is_completed', true)->count();
         $rate      = $total > 0 ? round(($completed / $total) * 100) : 0;
 
+        // Auto-update overall compliance record status if all recommendations are completed
+        if ($total > 0 && $completed === $total) {
+            $compliance->update([
+                'status'         => 'Compliant',
+                'workflow_stage' => 'compliant',
+            ]);
+        } elseif ($compliance->status === 'Compliant' && $completed < $total) {
+            $compliance->update([
+                'status'         => 'Pending',
+                'workflow_stage' => 'admin_reviewing',
+            ]);
+        }
+
+        // Auto-log or resolve risk based on the compliance record status
+        RiskAutoLogService::syncFromCompliance($compliance->fresh());
+
         return response()->json([
             'success'          => true,
             'is_completed'     => $item->is_completed,
+            'status'           => $item->status,
             'completed_count'  => $completed,
             'total_count'      => $total,
             'completion_rate'  => $rate,
+            'overall_status'   => $compliance->fresh()->status,
         ]);
     }
 
@@ -580,12 +638,165 @@ class ComplianceController extends Controller
             'evidence_link' => 'required|url|max:2048',
         ]);
 
-        $item->update(['evidence_link' => $validated['evidence_link']]);
+        $item->update([
+            'evidence_link' => $validated['evidence_link'],
+            'status'        => ($item->status === 'approved' && $user->usertype !== 'QA Admin') ? 'under_review' : ($item->status === 'approved' ? 'approved' : 'under_review'),
+            'admin_remarks' => null, // Clear past rejection remarks on new submission
+        ]);
+
+        // Dispatch in-app notification to QA Admins
+        if ($user->usertype !== 'QA Admin') {
+            $adminUsers = User::where('usertype', 'QA Admin')->get();
+            foreach ($adminUsers as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'type'    => 'action_plan_submitted',
+                    'message' => "Unit submitted evidence for recommendation \"{$item->text}\" on \"{$compliance->title}\".",
+                    'link'    => route('compliance.index'),
+                    'is_read' => false,
+                ]);
+            }
+
+            // Dispatch email alert to QA Admins
+            $recipients = User::getQaAdminRecipients();
+            $submitterName = $user->name ?: 'Unit User';
+            $unitName = $compliance->responsible_unit ?? ($compliance->program->program_name ?? 'Responsible Unit');
+
+            foreach ($recipients as $recipient) {
+                try {
+                    Mail::to($recipient->email)->send(new QaAdminAlertMail(
+                        subjectTitle: "[QA Portal] Recommendation Evidence Submitted: {$compliance->title}",
+                        badge: 'Evidence Under Review',
+                        headline: 'Recommendation Evidence Submitted',
+                        messageBody: "A unit has submitted evidence documentation for a specific recommendation on \"{$compliance->title}\".",
+                        details: [
+                            'Compliance Task' => $compliance->title,
+                            'Unit / Program' => $unitName,
+                            'Submitted By' => $submitterName . ($user->email ? " ({$user->email})" : ''),
+                            'Recommendation' => $item->text,
+                            'Evidence Link' => $validated['evidence_link'],
+                        ],
+                        actionUrl: route('compliance.index'),
+                        actionText: 'Review in Compliance Tracker',
+                        badgeType: 'warning'
+                    ));
+                } catch (\Throwable $e) {
+                    Log::error("Failed to send recommendation evidence submission email to QA Admin ({$recipient->email}): " . $e->getMessage());
+                }
+            }
+        }
 
         return response()->json([
             'success'       => true,
+            'status'        => $item->status,
             'evidence_link' => $item->evidence_link,
+            'message'       => 'Evidence link submitted for review.',
         ]);
+    }
+
+    public function approveRecommendationItem(Request $request, $id)
+    {
+        if (auth()->user()->usertype !== 'QA Admin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $item       = RecommendationItem::with(['complianceRecord.program', 'complianceRecord.assignments'])->findOrFail($id);
+        $compliance = $item->complianceRecord;
+
+        $item->update([
+            'status'        => 'approved',
+            'is_completed'  => true,
+            'completed_at'  => now(),
+            'admin_remarks' => null,
+        ]);
+
+        $total     = $compliance->recommendationItems()->count();
+        $completed = $compliance->recommendationItems()->where('is_completed', true)->count();
+        $rate      = $total > 0 ? round(($completed / $total) * 100) : 0;
+
+        // If all items are completed, mark the whole task as Compliant
+        if ($total > 0 && $completed === $total) {
+            $compliance->update([
+                'status'         => 'Compliant',
+                'workflow_stage' => 'compliant',
+            ]);
+        }
+
+        RiskAutoLogService::syncFromCompliance($compliance->fresh());
+
+        $this->notifyContactUser($compliance, 'approved',
+            "Your evidence for recommendation: \"{$item->text}\" on \"{$compliance->title}\" was accepted and approved."
+        );
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'          => true,
+                'status'           => 'approved',
+                'is_completed'     => true,
+                'completed_count'  => $completed,
+                'total_count'      => $total,
+                'completion_rate'  => $rate,
+                'overall_status'   => $compliance->fresh()->status,
+                'message'          => 'Recommendation approved successfully.',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Recommendation item approved.');
+    }
+
+    public function rejectRecommendationItem(Request $request, $id)
+    {
+        if (auth()->user()->usertype !== 'QA Admin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'admin_remarks' => 'required|string|max:1000',
+        ]);
+
+        $item       = RecommendationItem::with(['complianceRecord.program', 'complianceRecord.assignments'])->findOrFail($id);
+        $compliance = $item->complianceRecord;
+
+        $item->update([
+            'status'        => 'needs_revision',
+            'is_completed'  => false,
+            'completed_at'  => null,
+            'admin_remarks' => $validated['admin_remarks'],
+        ]);
+
+        $total     = $compliance->recommendationItems()->count();
+        $completed = $compliance->recommendationItems()->where('is_completed', true)->count();
+        $rate      = $total > 0 ? round(($completed / $total) * 100) : 0;
+
+        // If compliance record was previously marked Compliant, revert to Pending since an item needs revision
+        if ($compliance->status === 'Compliant') {
+            $compliance->update([
+                'status'         => 'Pending',
+                'workflow_stage' => 'admin_reviewing',
+            ]);
+        }
+
+        RiskAutoLogService::syncFromCompliance($compliance->fresh());
+
+        $this->notifyContactUser($compliance, 'rejected',
+            "Revision requested on recommendation \"{$item->text}\" for \"{$compliance->title}\". Remark: {$validated['admin_remarks']}"
+        );
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'          => true,
+                'status'           => 'needs_revision',
+                'is_completed'     => false,
+                'admin_remarks'    => $item->admin_remarks,
+                'completed_count'  => $completed,
+                'total_count'      => $total,
+                'completion_rate'  => $rate,
+                'overall_status'   => $compliance->fresh()->status,
+                'message'          => 'Revision requested for recommendation item.',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Revision requested on recommendation item. Submitting unit has been notified.');
     }
 
     public function destroy($id)
