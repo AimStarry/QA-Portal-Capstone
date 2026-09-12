@@ -14,21 +14,6 @@
         </button>
     </div>
 
-    <!-- Alert Notifications -->
-    @if(session('success'))
-        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 text-xs font-semibold flex items-center gap-2">
-            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 text-xs font-semibold flex items-center gap-2">
-            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
-
     <!-- Users Table Directory -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
@@ -121,157 +106,342 @@
 </div>
 
 <!-- ================= CREATE USER MODAL ================= -->
-<div id="add-user-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs hidden transition duration-150">
-    <div class="bg-white rounded-3xl shadow-xl border border-gray-200 w-full max-w-lg overflow-hidden transform scale-95 transition duration-150">
-        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="font-black text-base text-gray-900 uppercase tracking-wider">Create User Account</h3>
-            <button onclick="closeModal('add-user-modal')" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+<div id="add-user-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden transition duration-150">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-2xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col max-h-[92vh]">
+
+        <!-- Rich Dark Maroon Header -->
+        <div class="modal-dark-header flex items-center justify-between text-white border-b border-black/20 shrink-0 shadow-md"
+             style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Create User Account</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Set up credentials and assign institutional department access</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('add-user-modal')" 
+                class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer focus:outline-none shrink-0" 
+                style="color: #ffffff;"
+                title="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
-        <form action="{{ route('users.store') }}" method="POST" class="p-6 space-y-4">
+
+        <form action="{{ route('users.store') }}" method="POST" class="p-6 space-y-6 overflow-y-auto flex-1">
             @csrf
             
-            <div>
-                <label for="add-username" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Username</label>
-                <input type="text" name="username" id="add-username" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="add-first_name" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">First Name</label>
-                    <input type="text" name="first_name" id="add-first_name" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+            <!-- Section 1: User Identity & Contact -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        Personal & Login Information
+                    </span>
                 </div>
-                <div>
-                    <label for="add-last_name" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Last Name</label>
-                    <input type="text" name="last_name" id="add-last_name" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="add-first_name" class="block text-xs font-semibold text-gray-700 mb-1.5">First Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="first_name" id="add-first_name" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400"
+                            placeholder="e.g. Juan">
+                    </div>
+                    <div>
+                        <label for="add-last_name" class="block text-xs font-semibold text-gray-700 mb-1.5">Last Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="last_name" id="add-last_name" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400"
+                            placeholder="e.g. Dela Cruz">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="add-username" class="block text-xs font-semibold text-gray-700 mb-1.5">Username <span class="text-rose-500">*</span></label>
+                        <input type="text" name="username" id="add-username" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400"
+                            placeholder="e.g. jdelacruz">
+                    </div>
+                    <div>
+                        <label for="add-email" class="block text-xs font-semibold text-gray-700 mb-1.5">Email Address <span class="text-rose-500">*</span></label>
+                        <input type="email" name="email" id="add-email" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400" 
+                            placeholder="e.g. jdelacruz@hau.edu.ph">
+                    </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="add-password" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Password</label>
-                    <input type="password" name="password" id="add-password" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" placeholder="Min. 8 chars (letters, mixed case, numbers, symbols)">
+            <!-- Section 2: Role & Department Scope -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        Role & Institutional Scope
+                    </span>
                 </div>
-                <div>
-                    <label for="add-email" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Email Address</label>
-                    <input type="email" name="email" id="add-email" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" placeholder="e.g. user@hau.edu.ph">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="add-usertype" class="block text-xs font-semibold text-gray-700 mb-1.5">User Role <span class="text-rose-500">*</span></label>
+                        <select name="usertype" id="add-usertype" required onchange="toggleScopeInputs('add')" 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
+                            <option value="Dean" selected>Dean</option>
+                            <option value="Principal">Principal</option>
+                            <option value="Head of Unit">Head of Unit</option>
+                            @if(auth()->user()->username === 'admin')
+                                <option value="QA Admin">QA Admin</option>
+                            @endif
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Scoping field -->
+                    <div>
+                        <div id="add-college-group">
+                            <label for="add-college" class="block text-xs font-semibold text-gray-700 mb-1.5">Assigned School / College <span class="text-rose-500">*</span></label>
+                            <select name="college_id" id="add-college" 
+                                class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
+                                <option value="">-- Choose School --</option>
+                                @foreach($colleges as $col)
+                                    <option value="{{ $col->college_id }}">{{ $col->name }} ({{ $col->code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div id="add-unit-group" class="hidden">
+                            <label for="add-unit" class="block text-xs font-semibold text-gray-700 mb-1.5">Assigned Support Office / Unit <span class="text-rose-500">*</span></label>
+                            <select name="unit_id" id="add-unit" 
+                                class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
+                                <option value="">-- Choose Unit --</option>
+                                @foreach($units as $un)
+                                    <option value="{{ $un->unit_id }}">{{ $un->name }} ({{ $un->code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div id="add-admin-group" class="hidden">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Access Scope</label>
+                            <div class="px-3.5 py-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-900 font-medium flex items-center gap-2">
+                                <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                University-Wide Access (All Colleges & Units)
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div>
-                <label for="add-usertype" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">User Role</label>
-                <select name="usertype" id="add-usertype" required onchange="toggleScopeInputs('add')" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                    <option value="Dean" selected>Dean</option>
-                    <option value="Principal">Principal</option>
-                    <option value="Head of Unit">Head of Unit</option>
-                    @if(auth()->user()->username === 'admin')
-                        <option value="QA Admin">QA Admin</option>
-                    @endif
-                </select>
+            <!-- Section 3: Password / Credentials -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Security Credentials
+                    </span>
+                </div>
+
+                <div>
+                    <label for="add-password" class="block text-xs font-semibold text-gray-700 mb-1.5">Initial Password <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <input type="password" name="password" id="add-password" required 
+                            class="block w-full px-3.5 pr-11 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400" 
+                            placeholder="Minimum 8 characters">
+                        
+                        <!-- Eye Toggle Button -->
+                        <button type="button" onclick="togglePasswordVisibility('add-password', 'add-eye-icon')" 
+                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-700 transition cursor-pointer focus:outline-none" 
+                            title="Show / Hide Password">
+                            <svg id="add-eye-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-1">Users will use this temporary password to log in and can change it anytime.</p>
+                </div>
             </div>
 
-            <!-- Scoping fields -->
-            <div id="add-college-group">
-                <label for="add-college" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Assigned School / College</label>
-                <select name="college_id" id="add-college" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                    <option value="">-- Choose School --</option>
-                    @foreach($colleges as $col)
-                        <option value="{{ $col->id }}">{{ $col->name }} ({{ $col->code }})</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div id="add-unit-group" class="hidden">
-                <label for="add-unit" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Assigned Support Office / Unit</label>
-                <select name="unit_id" id="add-unit" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                    <option value="">-- Choose Unit --</option>
-                    @foreach($units as $un)
-                        <option value="{{ $un->id }}">{{ $un->name }} ({{ $un->code }})</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="bg-gray-50 -mx-6 -mb-6 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeModal('add-user-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon text-white text-sm font-bold rounded-lg hover:bg-hau-maroon-dark transition">Save Account</button>
+            <!-- Modal Action Buttons -->
+            <div class="bg-gray-50 -mx-6 -mb-6 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 mt-6 shrink-0">
+                <button type="button" onclick="closeModal('add-user-modal')" 
+                    class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-100 transition cursor-pointer shadow-xs">
+                    Cancel
+                </button>
+                <button type="submit" 
+                    class="inline-flex items-center gap-2 px-5 py-2 bg-hau-maroon text-white text-sm font-bold rounded-xl hover:bg-hau-maroon-dark transition cursor-pointer shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Save Account
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- ================= EDIT USER MODAL ================= -->
-<div id="edit-user-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs hidden transition duration-150">
-    <div class="bg-white rounded-3xl shadow-xl border border-gray-200 w-full max-w-lg overflow-hidden transform scale-95 transition duration-150">
-        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="font-black text-base text-gray-900 uppercase tracking-wider">Edit User Account</h3>
-            <button onclick="closeModal('edit-user-modal')" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+<div id="edit-user-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden transition duration-150">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-2xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col max-h-[92vh]">
+
+        <!-- Rich Dark Maroon Header -->
+        <div class="modal-dark-header flex items-center justify-between text-white border-b border-black/20 shrink-0 shadow-md"
+             style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Edit User Account</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Update user credentials, role permissions, and assigned department</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('edit-user-modal')" 
+                class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer focus:outline-none shrink-0" 
+                style="color: #ffffff;"
+                title="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
-        <form id="edit-user-form" action="" method="POST" class="p-6 space-y-4">
+
+        <form id="edit-user-form" action="" method="POST" class="p-6 space-y-6 overflow-y-auto flex-1">
             @csrf
             @method('PUT')
             
-            <div>
-                <label for="edit-username" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Username</label>
-                <input type="text" name="username" id="edit-username" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="edit-first_name" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">First Name</label>
-                    <input type="text" name="first_name" id="edit-first_name" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+            <!-- Section 1: User Identity & Contact -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        Personal & Login Information
+                    </span>
                 </div>
-                <div>
-                    <label for="edit-last_name" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Last Name</label>
-                    <input type="text" name="last_name" id="edit-last_name" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-first_name" class="block text-xs font-semibold text-gray-700 mb-1.5">First Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="first_name" id="edit-first_name" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400">
+                    </div>
+                    <div>
+                        <label for="edit-last_name" class="block text-xs font-semibold text-gray-700 mb-1.5">Last Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="last_name" id="edit-last_name" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-username" class="block text-xs font-semibold text-gray-700 mb-1.5">Username <span class="text-rose-500">*</span></label>
+                        <input type="text" name="username" id="edit-username" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400">
+                    </div>
+                    <div>
+                        <label for="edit-email" class="block text-xs font-semibold text-gray-700 mb-1.5">Email Address <span class="text-rose-500">*</span></label>
+                        <input type="email" name="email" id="edit-email" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400">
+                    </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="edit-password" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Password <span class="text-[9px] text-gray-450 lowercase normal-case">(leave blank to keep)</span></label>
-                    <input type="password" name="password" id="edit-password" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" placeholder="Min. 8 chars (letters, mixed case, numbers, symbols)">
+            <!-- Section 2: Role & Department Scope -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        Role & Institutional Scope
+                    </span>
                 </div>
-                <div>
-                    <label for="edit-email" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Email Address</label>
-                    <input type="email" name="email" id="edit-email" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" placeholder="e.g. user@hau.edu.ph">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-usertype" class="block text-xs font-semibold text-gray-700 mb-1.5">User Role <span class="text-rose-500">*</span></label>
+                        <select name="usertype" id="edit-usertype" required onchange="toggleScopeInputs('edit')" 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
+                            <option value="Dean">Dean</option>
+                            <option value="Principal">Principal</option>
+                            <option value="Head of Unit">Head of Unit</option>
+                            @if(auth()->user()->username === 'admin')
+                                <option value="QA Admin">QA Admin</option>
+                            @endif
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Scoping field -->
+                    <div>
+                        <div id="edit-college-group">
+                            <label for="edit-college" class="block text-xs font-semibold text-gray-700 mb-1.5">Assigned School / College <span class="text-rose-500">*</span></label>
+                            <select name="college_id" id="edit-college" 
+                                class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
+                                <option value="">-- Choose School --</option>
+                                @foreach($colleges as $col)
+                                    <option value="{{ $col->college_id }}">{{ $col->name }} ({{ $col->code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div id="edit-unit-group" class="hidden">
+                            <label for="edit-unit" class="block text-xs font-semibold text-gray-700 mb-1.5">Assigned Support Office / Unit <span class="text-rose-500">*</span></label>
+                            <select name="unit_id" id="edit-unit" 
+                                class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
+                                <option value="">-- Choose Unit --</option>
+                                @foreach($units as $un)
+                                    <option value="{{ $un->unit_id }}">{{ $un->name }} ({{ $un->code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div id="edit-admin-group" class="hidden">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Access Scope</label>
+                            <div class="px-3.5 py-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-900 font-medium flex items-center gap-2">
+                                <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                University-Wide Access (All Colleges & Units)
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div>
-                <label for="edit-usertype" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">User Role</label>
-                <select name="usertype" id="edit-usertype" required onchange="toggleScopeInputs('edit')" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                    <option value="Dean">Dean</option>
-                    <option value="Principal">Principal</option>
-                    <option value="Head of Unit">Head of Unit</option>
-                    @if(auth()->user()->username === 'admin')
-                        <option value="QA Admin">QA Admin</option>
-                    @endif
-                </select>
+            <!-- Section 3: Password / Security -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Security & Password Reset
+                    </span>
+                    <span class="text-[11px] font-medium text-gray-400 italic">Optional</span>
+                </div>
+
+                <div>
+                    <label for="edit-password" class="block text-xs font-semibold text-gray-700 mb-1.5">
+                        New Password
+                    </label>
+                    <div class="relative">
+                        <input type="password" name="password" id="edit-password" 
+                            class="block w-full px-3.5 pr-11 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400" 
+                            placeholder="Leave blank to keep current password">
+                        
+                        <!-- Eye Toggle Button -->
+                        <button type="button" onclick="togglePasswordVisibility('edit-password', 'edit-eye-icon')" 
+                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-700 transition cursor-pointer focus:outline-none" 
+                            title="Show / Hide Password">
+                            <svg id="edit-eye-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-1">Only fill this field if you wish to reset or change this user's password.</p>
+                </div>
             </div>
 
-            <!-- Scoping fields -->
-            <div id="edit-college-group">
-                <label for="edit-college" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Assigned School / College</label>
-                <select name="college_id" id="edit-college" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                    <option value="">-- Choose School --</option>
-                    @foreach($colleges as $col)
-                        <option value="{{ $col->id }}">{{ $col->name }} ({{ $col->code }})</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div id="edit-unit-group" class="hidden">
-                <label for="edit-unit" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Assigned Support Office / Unit</label>
-                <select name="unit_id" id="edit-unit" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                    <option value="">-- Choose Unit --</option>
-                    @foreach($units as $un)
-                        <option value="{{ $un->id }}">{{ $un->name }} ({{ $un->code }})</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="bg-gray-50 -mx-6 -mb-6 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeModal('edit-user-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon text-white text-sm font-bold rounded-lg hover:bg-hau-maroon-dark transition">Update Account</button>
+            <!-- Modal Action Buttons -->
+            <div class="bg-gray-50 -mx-6 -mb-6 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 mt-6 shrink-0">
+                <button type="button" onclick="closeModal('edit-user-modal')" 
+                    class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-100 transition cursor-pointer shadow-xs">
+                    Cancel
+                </button>
+                <button type="submit" 
+                    class="inline-flex items-center gap-2 px-5 py-2 bg-hau-maroon text-white text-sm font-bold rounded-xl hover:bg-hau-maroon-dark transition cursor-pointer shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Update Account
+                </button>
             </div>
         </form>
     </div>
@@ -305,6 +475,15 @@
         document.getElementById('add-usertype').value = 'Dean';
         document.getElementById('add-college').value = '';
         document.getElementById('add-unit').value = '';
+        
+        // Reset password visibility to hidden
+        const pwdInput = document.getElementById('add-password');
+        if (pwdInput) pwdInput.type = 'password';
+        const eyeIcon = document.getElementById('add-eye-icon');
+        if (eyeIcon) {
+            eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>`;
+        }
+
         toggleScopeInputs('add');
         openModal('add-user-modal');
     }
@@ -328,6 +507,14 @@
         document.getElementById('edit-college').value = collegeId;
         document.getElementById('edit-unit').value = unitId;
 
+        // Reset password visibility to hidden
+        const pwdInput = document.getElementById('edit-password');
+        if (pwdInput) pwdInput.type = 'password';
+        const eyeIcon = document.getElementById('edit-eye-icon');
+        if (eyeIcon) {
+            eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>`;
+        }
+
         toggleScopeInputs('edit');
         document.getElementById('edit-user-form').action = `/users/${id}`;
         openModal('edit-user-modal');
@@ -337,20 +524,42 @@
         const role = document.getElementById(prefix + '-usertype').value;
         const collegeGroup = document.getElementById(prefix + '-college-group');
         const unitGroup = document.getElementById(prefix + '-unit-group');
+        const adminGroup = document.getElementById(prefix + '-admin-group');
 
         if (role === 'Dean' || role === 'Principal') {
-            collegeGroup.classList.remove('hidden');
-            unitGroup.classList.add('hidden');
-            document.getElementById(prefix + '-unit').value = '';
+            if (collegeGroup) collegeGroup.classList.remove('hidden');
+            if (unitGroup) unitGroup.classList.add('hidden');
+            if (adminGroup) adminGroup.classList.add('hidden');
+            const unitEl = document.getElementById(prefix + '-unit');
+            if (unitEl) unitEl.value = '';
         } else if (role === 'Head of Unit') {
-            collegeGroup.classList.add('hidden');
-            unitGroup.classList.remove('hidden');
-            document.getElementById(prefix + '-college').value = '';
+            if (collegeGroup) collegeGroup.classList.add('hidden');
+            if (unitGroup) unitGroup.classList.remove('hidden');
+            if (adminGroup) adminGroup.classList.add('hidden');
+            const collegeEl = document.getElementById(prefix + '-college');
+            if (collegeEl) collegeEl.value = '';
         } else {
-            collegeGroup.classList.add('hidden');
-            unitGroup.classList.add('hidden');
-            document.getElementById(prefix + '-college').value = '';
-            document.getElementById(prefix + '-unit').value = '';
+            if (collegeGroup) collegeGroup.classList.add('hidden');
+            if (unitGroup) unitGroup.classList.add('hidden');
+            if (adminGroup) adminGroup.classList.remove('hidden');
+            const collegeEl = document.getElementById(prefix + '-college');
+            if (collegeEl) collegeEl.value = '';
+            const unitEl = document.getElementById(prefix + '-unit');
+            if (unitEl) unitEl.value = '';
+        }
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (!input || !icon) return;
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path>`;
+        } else {
+            input.type = 'password';
+            icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>`;
         }
     }
 </script>

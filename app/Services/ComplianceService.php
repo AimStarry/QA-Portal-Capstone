@@ -113,7 +113,7 @@ class ComplianceService
     }
 
     /**
-     * Sync school, program, and unit assignments for a compliance record.
+     * Sync school, program, and unit assignments for a compliance record using N x M combination matrix.
      */
     public function syncAssignments(
         ComplianceRecord $compliance,
@@ -134,67 +134,70 @@ class ComplianceService
             $schoolsList = array_values(array_filter(array_map('trim', explode(';', $validated['school']))));
         }
 
-        $assignedColleges = !empty($programIds)
-            ? Program::whereIn('program_id', $programIds)->with('college')->get()->pluck('college.name')->filter()->toArray()
-            : [];
-        $filteredSchools = array_diff($schoolsList, $assignedColleges);
+        // Build desired target matrix pairs: [ ['school_name' => ..., 'responsible_unit_id' => ..., 'program_id' => ...] ]
+        $targetPairs = [];
 
-        if ($isCreate) {
-            foreach ($filteredSchools as $sName) {
-                $compliance->assignments()->create([
-                    'school_name'           => $sName,
-                    'responsible_unit_id'   => $validated['responsible_unit_id'] ?? null,
-                    'status'                => $status,
-                    'approval_state'        => $approvalState,
-                    'document_link'         => $docLink,
-                    'pending_document_link'  => $pendingDoc,
-                    'workflow_stage'        => $workflowStage,
-                ]);
+        if (!empty($schoolsList) && !empty($unitIds)) {
+            // Case 1: N Schools x M Units (Cartesian Matrix)
+            foreach ($schoolsList as $sName) {
+                foreach ($unitIds as $uId) {
+                    $targetPairs[] = [
+                        'school_name'         => $sName,
+                        'responsible_unit_id' => $uId,
+                        'program_id'          => null,
+                    ];
+                }
             }
-        } else {
-            $existing = $compliance->assignments()->whereNotNull('school_name')->pluck('school_name')->toArray();
-            foreach (array_diff($filteredSchools, $existing) as $sName) {
-                $compliance->assignments()->create([
+        } elseif (!empty($schoolsList) && empty($unitIds)) {
+            // Case 2: N Schools only (Unit self-reported by school)
+            foreach ($schoolsList as $sName) {
+                $targetPairs[] = [
                     'school_name'         => $sName,
                     'responsible_unit_id' => $validated['responsible_unit_id'] ?? null,
-                    'status'              => $status,
-                    'approval_state'      => 'None',
-                    'document_link'       => $validated['document_link'] ?? null,
-                    'workflow_stage'      => $workflowStage,
-                ]);
+                    'program_id'          => null,
+                ];
             }
-            $compliance->assignments()->whereNotNull('school_name')->whereNotIn('school_name', $filteredSchools)->delete();
-        }
-
-        if ($isCreate) {
-            foreach ($programIds as $pId) {
-                $compliance->assignments()->create([
-                    'program_id'            => $pId,
-                    'status'                => $status,
-                    'approval_state'        => $approvalState,
-                    'document_link'         => $docLink,
-                    'pending_document_link'  => $pendingDoc,
-                    'workflow_stage'        => $workflowStage,
-                ]);
-            }
-        } else {
-            $existing = $compliance->assignments()->whereNotNull('program_id')->pluck('program_id')->toArray();
-            foreach (array_diff($programIds, $existing) as $pId) {
-                $compliance->assignments()->create([
-                    'program_id'     => $pId,
-                    'status'         => $status,
-                    'approval_state' => 'None',
-                    'document_link'   => $validated['document_link'] ?? null,
-                    'workflow_stage' => $workflowStage,
-                ]);
-            }
-            $compliance->assignments()->whereNotNull('program_id')->whereNotIn('program_id', $programIds)->delete();
-        }
-
-        if ($isCreate) {
+        } elseif (empty($schoolsList) && !empty($unitIds)) {
+            // Case 3: M Units only (Institutional / General school)
+            $generalSchool = !empty($validated['school']) ? $validated['school'] : 'General';
             foreach ($unitIds as $uId) {
+                $targetPairs[] = [
+                    'school_name'         => $generalSchool,
+                    'responsible_unit_id' => $uId,
+                    'program_id'          => null,
+                ];
+            }
+        }
+
+        // Also incorporate specific program targets if provided
+        if (!empty($programIds)) {
+            if (!empty($unitIds)) {
+                foreach ($programIds as $pId) {
+                    foreach ($unitIds as $uId) {
+                        $targetPairs[] = [
+                            'school_name'         => null,
+                            'responsible_unit_id' => $uId,
+                            'program_id'          => $pId,
+                        ];
+                    }
+                }
+            } else {
+                foreach ($programIds as $pId) {
+                    $targetPairs[] = [
+                        'school_name'         => null,
+                        'responsible_unit_id' => $validated['responsible_unit_id'] ?? null,
+                        'program_id'          => $pId,
+                    ];
+                }
+            }
+        }
+
+        if ($isCreate) {
+            foreach ($targetPairs as $pair) {
                 $compliance->assignments()->create([
-                    'responsible_unit_id'   => $uId,
+                    'school_name'           => $pair['school_name'],
+                    'responsible_unit_id'   => $pair['responsible_unit_id'],
+                    'program_id'            => $pair['program_id'],
                     'status'                => $status,
                     'approval_state'        => $approvalState,
                     'document_link'         => $docLink,
@@ -203,27 +206,36 @@ class ComplianceService
                 ]);
             }
         } else {
-            $existing = $compliance->assignments()
-                ->whereNull('school_name')->whereNull('program_id')->whereNotNull('responsible_unit_id')
-                ->pluck('responsible_unit_id')->toArray();
-            foreach (array_diff($unitIds, $existing) as $uId) {
-                $compliance->assignments()->create([
-                    'responsible_unit_id' => $uId,
-                    'status'              => $status,
-                    'approval_state'      => 'None',
-                    'document_link'       => $validated['document_link'] ?? null,
-                    'workflow_stage'      => $workflowStage,
-                ]);
-            }
-            $compliance->assignments()
-                ->whereNull('school_name')->whereNull('program_id')->whereNotNull('responsible_unit_id')
-                ->whereNotIn('responsible_unit_id', $unitIds)->delete();
+            $existingAssignments = $compliance->assignments()->get();
+            $keptAssignmentIds = [];
 
-            if (!empty($validated['responsible_unit_id'])) {
-                $compliance->assignments()->whereNull('responsible_unit_id')->update([
-                    'responsible_unit_id' => $validated['responsible_unit_id'],
-                ]);
+            foreach ($targetPairs as $pair) {
+                // Find existing match
+                $existing = $existingAssignments->first(function ($a) use ($pair) {
+                    $schoolMatches = (string)$a->school_name === (string)$pair['school_name'];
+                    $unitMatches   = (int)$a->responsible_unit_id === (int)$pair['responsible_unit_id'];
+                    $progMatches   = (int)$a->program_id === (int)$pair['program_id'];
+                    return $schoolMatches && $unitMatches && $progMatches;
+                });
+
+                if ($existing) {
+                    $keptAssignmentIds[] = $existing->id;
+                } else {
+                    $newAss = $compliance->assignments()->create([
+                        'school_name'           => $pair['school_name'],
+                        'responsible_unit_id'   => $pair['responsible_unit_id'],
+                        'program_id'            => $pair['program_id'],
+                        'status'                => $status,
+                        'approval_state'        => 'None',
+                        'document_link'         => $validated['document_link'] ?? null,
+                        'workflow_stage'        => $workflowStage,
+                    ]);
+                    $keptAssignmentIds[] = $newAss->id;
+                }
             }
+
+            // Remove assignments no longer present in target pairs
+            $compliance->assignments()->whereNotIn('id', $keptAssignmentIds)->delete();
         }
     }
 

@@ -33,6 +33,8 @@ class StoreAccreditationRequest extends FormRequest
             'last_visit' => 'nullable|date',
             'expiry_date' => 'nullable|date',
             'status' => ['required', Rule::in(['Active', 'Expiring Soon', 'Expired', 'Pending'])],
+            'certificate_link' => 'nullable|url|max:2048',
+            'certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ];
     }
 

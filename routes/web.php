@@ -48,8 +48,9 @@ Route::middleware('auth')->group(function () {
         return back()->with('success', "Switched viewport to: {$role}");
     })->name('switch-role');
 
-    // Dashboard
+    // Dashboard & Reports
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/reports/export-full', [\App\Http\Controllers\ReportController::class, 'exportFullReport'])->name('reports.export-full');
 
     Route::post('/programs/bulk-destroy', [ProgramController::class, 'bulkDestroy'])->name('programs.bulk-destroy');
     Route::resource('programs', ProgramController::class)->except(['create', 'edit']);
@@ -72,6 +73,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/compliance/{id}/reject', [ComplianceController::class, 'reject'])->name('compliance.reject');
     Route::post('/compliance/recommendations/{id}/toggle', [ComplianceController::class, 'toggleRecommendation'])->name('compliance.toggle-recommendation');
     Route::post('/compliance/recommendations/{id}/evidence', [ComplianceController::class, 'updateEvidence'])->name('compliance.recommendations.evidence');
+    Route::post('/compliance/recommendations/{id}/approve', [ComplianceController::class, 'approveRecommendationItem'])->name('compliance.recommendations.approve');
+    Route::post('/compliance/recommendations/{id}/reject', [ComplianceController::class, 'rejectRecommendationItem'])->name('compliance.recommendations.reject');
 
     Route::post('/programs/{program}/toggle-accreditable', [ProgramController::class, 'toggleAccreditable'])->name('programs.toggle-accreditable');
 

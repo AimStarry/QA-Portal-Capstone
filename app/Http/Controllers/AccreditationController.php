@@ -6,8 +6,10 @@ use App\Models\Program;
 use App\Models\Accreditation;
 use App\Models\ComplianceRecord;
 use App\Models\RecommendationItem;
+use App\Services\RiskAutoLogService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\StoreAccreditationRequest;
 use App\Http\Requests\UpdateAccreditationRequest;
 
@@ -61,8 +63,8 @@ class AccreditationController extends Controller
         $regCompleted = RecommendationItem::whereIn('compliance_record_id', $regRecords)->where('is_completed', true)->count();
         $regulatoryPercentage = $regTotalItems > 0 ? round(($regCompleted / $regTotalItems) * 100) : 0;
 
-        // Start querying accreditations with program relation
-        $query = Accreditation::with('program');
+        // Start querying accreditations with program and college relations
+        $query = Accreditation::with('program.college');
 
         // Apply server-side filters if query params are present
         if ($request->filled('search')) {
@@ -73,13 +75,20 @@ class AccreditationController extends Controller
                   ->orWhere('level_or_tier', 'like', "%{$search}%")
                   ->orWhereHas('program', function ($pq) use ($search) {
                       $pq->where('program_code', 'like', "%{$search}%")
-                        ->orWhere('program_name', 'like', "%{$search}%");
+                        ->orWhere('program_name', 'like', "%{$search}%")
+                        ->orWhereHas('college', function ($cq) use ($search) {
+                            $cq->where('name', 'like', "%{$search}%")
+                               ->orWhere('code', 'like', "%{$search}%");
+                        });
                   });
             });
         }
 
-        if ($request->input('paascu') == '1') {
-            $query->where('accrediting_body', 'PAASCU');
+        if ($request->filled('college')) {
+            $collegeId = $request->input('college');
+            $query->whereHas('program', function ($pq) use ($collegeId) {
+                $pq->where('college_id', $collegeId);
+            });
         }
 
         if ($request->filled('status')) {
@@ -92,10 +101,12 @@ class AccreditationController extends Controller
 
         $accreditations = $query->orderBy('expiry_date', 'asc')->get();
         $accreditingBodies = \App\Models\AccreditingBody::orderBy('code')->get();
+        $colleges = \App\Models\College::orderBy('name')->get();
 
         return view('accreditations.index', compact(
             'accreditations',
             'programs',
+            'colleges',
             'totalPrograms',
             'activeAccreditations',
             'paascuProgramsCount',
@@ -114,7 +125,15 @@ class AccreditationController extends Controller
     {
         $validated = $request->validated();
 
-        Accreditation::create($validated);
+        if ($request->hasFile('certificate_file')) {
+            $path = $request->file('certificate_file')->store('certificates', 'public');
+            $validated['certificate_file'] = $path;
+        }
+
+        $accreditation = Accreditation::create($validated);
+
+        // Auto-log or resolve risk based on the accreditation status
+        RiskAutoLogService::syncFromAccreditation($accreditation);
 
         return redirect()->route('accreditations.index')->with('success', 'Accreditation added successfully.');
     }
@@ -126,7 +145,23 @@ class AccreditationController extends Controller
     {
         $validated = $request->validated();
 
+        if ($request->boolean('remove_certificate_file') && $accreditation->certificate_file) {
+            Storage::disk('public')->delete($accreditation->certificate_file);
+            $validated['certificate_file'] = null;
+        }
+
+        if ($request->hasFile('certificate_file')) {
+            if ($accreditation->certificate_file) {
+                Storage::disk('public')->delete($accreditation->certificate_file);
+            }
+            $path = $request->file('certificate_file')->store('certificates', 'public');
+            $validated['certificate_file'] = $path;
+        }
+
         $accreditation->update($validated);
+
+        // Auto-log or resolve risk based on the updated accreditation status
+        RiskAutoLogService::syncFromAccreditation($accreditation->fresh());
 
         return redirect()->route('accreditations.index')->with('success', 'Accreditation updated successfully.');
     }
@@ -137,6 +172,9 @@ class AccreditationController extends Controller
     public function destroy(Accreditation $accreditation)
     {
         $this->enforceAdmin();
+        if ($accreditation->certificate_file) {
+            Storage::disk('public')->delete($accreditation->certificate_file);
+        }
         $accreditation->delete();
 
         return redirect()->route('accreditations.index')->with('success', 'Accreditation deleted successfully.');

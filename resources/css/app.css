@@ -4,6 +4,8 @@ html {
     font-size: 18px;
 }
 
+@source '../views/**/*.blade.php';
+@source '../../app/**/*.php';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
@@ -17,6 +19,36 @@ html {
     --color-hau-gold: #D4AF37;
     --color-hau-gold-light: #f3e4b2;
     --color-hau-gold-dark: #a6831c;
+}
+
+/* Modal Dark Maroon Header Styles - Guarantees Crisp White Icons, Titles, Subtitles, and Close Buttons */
+.modal-dark-header {
+    background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%) !important;
+    padding: 1.25rem 1.5rem !important;
+    color: #ffffff !important;
+}
+.modal-dark-header h3,
+.modal-dark-header [data-modal-title] {
+    color: #ffffff !important;
+}
+.modal-dark-header p,
+.modal-dark-header [data-modal-subtitle] {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+.modal-dark-header svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+}
+.modal-dark-header .modal-icon-badge {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+.modal-dark-header .modal-close-btn {
+    color: #ffffff !important;
+}
+.modal-dark-header .modal-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Recommendation Checklist Styles */

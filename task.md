@@ -15,7 +15,7 @@
 - [x] Add due date urgency badges (Overdue / Due Soon)
 - [x] Add overall checklist compliance rate statistic card
 - [x] Fix graduates logging: Add modal, inline log button, edit/delete actions directly on Program Show Graduates tab
-- [x] Remove CSV Export button and controller export functionality
+- [x] Add formatted CSV Export button and controller export functionality for compliance
 - [x] Rename all occurrences of "Responsible Unit" labels to "Unit or Department"
 - [x] Rebuild Vite assets
 - [x] Verify everything works (Vite compile & Browser testing)

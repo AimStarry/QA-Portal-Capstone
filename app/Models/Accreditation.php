@@ -22,7 +22,33 @@ class Accreditation extends Model
         'last_visit',
         'expiry_date',
         'status',
+        'certificate_link',
+        'certificate_file',
     ];
+
+    protected $appends = [
+        'certificate_url',
+        'is_certificate_file',
+    ];
+
+    /**
+     * Get the resolved certificate URL (file asset URL or cloud link).
+     */
+    public function getCertificateUrlAttribute(): ?string
+    {
+        if ($this->certificate_file) {
+            return asset('storage/' . $this->certificate_file);
+        }
+        return $this->certificate_link;
+    }
+
+    /**
+     * Check if the certificate is a locally stored file (PDF/Image).
+     */
+    public function getIsCertificateFileAttribute(): bool
+    {
+        return !empty($this->certificate_file);
+    }
 
     protected $casts = [
         'last_visit' => 'date',

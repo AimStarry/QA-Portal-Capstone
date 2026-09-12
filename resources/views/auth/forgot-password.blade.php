@@ -50,7 +50,7 @@
             Enter your registered email address, and we'll send you a 6-digit verification code to reset your account password.
         </p>
 
-        <form action="{{ route('password.email') }}" method="POST" class="space-y-4">
+        <form action="{{ route('password.email') }}" method="POST" class="space-y-4" data-no-draft="true">
             @csrf
             <div>
                 <label for="email" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Email Address</label>

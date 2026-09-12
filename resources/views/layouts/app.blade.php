@@ -186,7 +186,7 @@
                             Compliance Tracker
                         </a>
 
-                        @if(in_array(auth()->user()->usertype, ['Dean', 'Principal']) || (auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin'))
+                        @if(auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin')
                             <!-- 5. Graduates -->
                             <a href="{{ route('graduates.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('graduates.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
                                 <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('graduates.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -215,6 +215,16 @@
                                 User Accounts
                             </a>
                         @endif
+
+                        <!-- 8. Comprehensive Report Export -->
+                        <div class="pt-2">
+                            <a href="{{ route('reports.export-full') }}" class="flex items-center px-4 py-2.5 text-xs font-bold rounded-xl text-hau-gold hover:bg-hau-gold/20 transition duration-150 group border border-hau-gold/40 bg-hau-gold/10 shadow-xs" title="Download complete multi-tab audit report (.xlsx)">
+                                <svg class="mr-2.5 w-4 h-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 text-hau-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span>Full System Report</span>
+                            </a>
+                        </div>
                     </nav>
 
                     <!-- Sidebar Footer: User Identity & System Info -->
@@ -259,7 +269,7 @@
         <div class="flex flex-col w-0 flex-1 overflow-hidden">
             
             <!-- Top Mobile Bar & Portal Title & Role Switcher -->
-            <header class="relative z-10 flex-shrink-0 flex h-16 bg-white shadow border-b border-gray-200">
+            <header class="relative z-30 flex-shrink-0 flex h-16 bg-white shadow-xs border-b border-gray-200">
                 <!-- Mobile Navigation Toggle -->
                 <div class="lg:hidden pl-4 flex items-center">
                     <button type="button" onclick="toggleMobileMenu()" class="text-gray-500 hover:text-hau-maroon focus:outline-none">
@@ -411,13 +421,20 @@
                             <a href="{{ route('accreditations.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('accreditations.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Accreditations</a>
                         @endif
                         <a href="{{ route('compliance.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('compliance.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Compliance Tracker</a>
-                        @if(in_array(auth()->user()->usertype, ['Dean', 'Principal']) || $role === 'QA Admin')
+                        @if($role === 'QA Admin')
                             <a href="{{ route('graduates.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('graduates.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Graduates Tracker</a>
                         @endif
 
                         @if($role === 'QA Admin')
                             <a href="{{ route('risk.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('risk.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Risk Monitor</a>
                         @endif
+
+                        <a href="{{ route('reports.export-full') }}" class="flex items-center px-4 py-2.5 text-xs font-bold rounded-xl text-hau-gold bg-hau-gold/10 border border-hau-gold/30">
+                            <svg class="mr-2.5 w-4 h-4 text-hau-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Full System Report</span>
+                        </a>
 
                         <!-- Mobile Drawer Footer: User Info + Logout -->
                         <div class="mt-auto pt-4 border-t border-white/10 space-y-3">
@@ -514,27 +531,28 @@
 
     <!-- Custom Confirm Modal -->
     <div id="custom-confirm-modal" class="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden opacity-0 transition-opacity duration-200">
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-150 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200">
-            <div class="p-6">
-                <div class="flex items-start gap-4">
-                    <!-- Warning Icon -->
-                    <div class="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0 text-rose-600 border border-rose-100">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200">
+            <div class="modal-dark-header relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+                <div class="flex items-center gap-3.5">
+                    <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                        <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                         </svg>
                     </div>
-                    <!-- Content -->
-                    <div class="space-y-1.5 flex-1">
-                        <h4 class="text-base font-bold text-gray-900 font-sans">Are you sure?</h4>
-                        <p id="custom-confirm-message" class="text-xs text-gray-500 font-medium leading-relaxed"></p>
+                    <div>
+                        <h4 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Confirm Action</h4>
+                        <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Please review before continuing</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-150">
-                <button id="custom-confirm-cancel" type="button" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition">
+            <div class="p-6">
+                <p id="custom-confirm-message" class="text-xs text-gray-600 font-medium leading-relaxed"></p>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
+                <button id="custom-confirm-cancel" type="button" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">
                     Cancel
                 </button>
-                <button id="custom-confirm-btn" type="button" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-sm transition">
+                <button id="custom-confirm-btn" type="button" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">
                     Confirm Delete
                 </button>
             </div>

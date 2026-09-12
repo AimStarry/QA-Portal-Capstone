@@ -38,8 +38,8 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 2. Call the real database seeder
-        $this->call(HauRealDataSeeder::class);
+        // 2. Call mock database seeder
+        $this->call(MockDataSeeder::class);
         $this->call(ResponsibleUnitSeeder::class);
     }
 }

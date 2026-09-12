@@ -17,9 +17,11 @@ class RecommendationItem extends Model
     protected $fillable = [
         'compliance_record_id',
         'text',
+        'status',
         'is_completed',
         'completed_at',
         'evidence_link',
+        'admin_remarks',
     ];
 
     protected $casts = [

@@ -9,20 +9,13 @@ use Illuminate\Http\Request;
 class GraduateRecordController extends Controller
 {
     /**
-     * Enforce access control.
+     * Enforce access control: only QA Admin has access.
      */
-    private function enforceAccess($action)
+    private function enforceAccess($action = null)
     {
         $user = auth()->user();
-        if ($user->usertype === 'Head of Unit') {
-            abort(403, 'Unauthorized action. Support Units do not have access to graduate records.');
-        }
-
-        // Restrict write actions to QA Admin only
-        if (in_array($action, ['store', 'update', 'destroy'])) {
-            if ($user->usertype !== 'QA Admin') {
-                abort(403, 'Unauthorized action. Only QA Admins can manage graduate records.');
-            }
+        if (!$user || $user->usertype !== 'QA Admin') {
+            abort(403, 'Unauthorized action. Only QA Admins can access the Graduates Tracker.');
         }
     }
 

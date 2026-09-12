@@ -104,4 +104,134 @@ class ComplianceRecord extends Model
         if ($total === 0) return 0;
         return (int) round(($this->completedRecommendationsCount() / $total) * 100);
     }
+
+    /**
+     * Get the structured Cross-Tab Matrix Grid data (Schools as rows, Assigned Units as columns).
+     */
+    public function getMatrixGridData(): array
+    {
+        $assignments = $this->assignments;
+        
+        // 1. Extract Target Schools list (Rows)
+        $schools = [];
+        foreach ($assignments as $a) {
+            if (!empty($a->school_name)) {
+                $schools[] = trim($a->school_name);
+            } elseif ($a->program && $a->program->college) {
+                $schools[] = trim($a->program->college->name);
+            }
+        }
+        if (empty($schools) && !empty($this->school) && $this->school !== 'General') {
+            $schools = array_filter(array_map('trim', explode(';', $this->school)));
+        }
+        $schools = array_values(array_unique(array_filter($schools)));
+        if (empty($schools)) {
+            $schools = ['General'];
+        }
+
+        // 2. Extract Assigned Support Units list (Columns)
+        $units = [];
+        $seenUnitKeys = [];
+        foreach ($assignments as $a) {
+            if ($a->responsible_unit_id && $a->responsibleUnit) {
+                $uid = (int) $a->responsible_unit_id;
+                if (!isset($seenUnitKeys[$uid])) {
+                    $seenUnitKeys[$uid] = true;
+                    $units[] = [
+                        'id'   => $uid,
+                        'name' => $a->responsibleUnit->name,
+                        'code' => $a->responsibleUnit->code ?? $a->responsibleUnit->name,
+                    ];
+                }
+            }
+        }
+        if (empty($units) && $this->responsible_unit_id && $this->responsibleUnitRelation) {
+            $units[] = [
+                'id'   => (int) $this->responsible_unit_id,
+                'name' => $this->responsibleUnitRelation->name,
+                'code' => $this->responsibleUnitRelation->code ?? $this->responsibleUnitRelation->name,
+            ];
+        }
+        if (empty($units)) {
+            $units[] = [
+                'id'   => null,
+                'name' => 'General Evidence',
+                'code' => 'GEN',
+            ];
+        }
+
+        // 3. Build the Grid Matrix [School => [Unit => Cell]]
+        $matrix = [];
+        $totalCells = 0;
+        $completedCells = 0;
+
+        foreach ($schools as $school) {
+            $rowCells = [];
+            $rowCompleted = 0;
+            $rowTotal = count($units);
+
+            foreach ($units as $u) {
+                $unitId = $u['id'];
+                
+                // Find matching assignment
+                $match = $assignments->first(function ($a) use ($school, $unitId) {
+                    $schoolMatches = false;
+                    if (!empty($a->school_name)) {
+                        $schoolMatches = (strcasecmp(trim($a->school_name), trim($school)) === 0);
+                    } elseif ($a->program && $a->program->college) {
+                        $schoolMatches = (strcasecmp(trim($a->program->college->name), trim($school)) === 0);
+                    } elseif ($school === 'General') {
+                        $schoolMatches = empty($a->school_name) && empty($a->program_id);
+                    }
+
+                    $unitMatches = false;
+                    if ($unitId !== null) {
+                        $unitMatches = ((int) $a->responsible_unit_id === $unitId);
+                    } else {
+                        $unitMatches = empty($a->responsible_unit_id);
+                    }
+
+                    return $schoolMatches && $unitMatches;
+                });
+
+                // Fallback for non-cartesian legacy items
+                if (!$match && count($units) === 1 && $units[0]['id'] === null) {
+                    $match = $assignments->first(fn ($a) => !empty($a->school_name) && strcasecmp(trim($a->school_name), trim($school)) === 0);
+                } elseif (!$match && count($schools) === 1 && $schools[0] === 'General') {
+                    $match = $assignments->first(fn ($a) => (int) $a->responsible_unit_id === $unitId);
+                }
+
+                $key = $unitId !== null ? "unit_{$unitId}" : 'unit_general';
+                $rowCells[$key] = $match;
+
+                if ($match && $match->status === 'Compliant' && $match->approval_state !== 'Pending Approval') {
+                    $rowCompleted++;
+                    $completedCells++;
+                }
+                $totalCells++;
+            }
+
+            $matrix[$school] = [
+                'school'          => $school,
+                'cells'           => $rowCells,
+                'completed_count' => $rowCompleted,
+                'total_count'     => $rowTotal,
+                'is_complete'     => ($rowTotal > 0 && $rowCompleted === $rowTotal),
+                'rate'            => $rowTotal > 0 ? (int) round(($rowCompleted / $rowTotal) * 100) : 0,
+            ];
+        }
+
+        $matrixRate = $totalCells > 0 ? (int) round(($completedCells / $totalCells) * 100) : 0;
+        $hasMatrix = (count($schools) > 1 || count($units) > 1 || $assignments->count() > 1);
+
+        return [
+            'has_matrix'      => $hasMatrix,
+            'schools'         => $schools,
+            'units'           => $units,
+            'matrix'          => $matrix,
+            'total_cells'     => $totalCells,
+            'completed_cells' => $completedCells,
+            'matrix_rate'     => $matrixRate,
+        ];
+    }
 }

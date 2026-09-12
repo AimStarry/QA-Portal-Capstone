@@ -97,4 +97,58 @@ class AccreditabilityPipelineTest extends TestCase
             'level_or_tier' => 'Level 1',
         ]);
     }
+
+    /**
+     * Test admin can store accreditation with uploaded certificate file.
+     */
+    public function test_admin_can_upload_certificate_file()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $file = \Illuminate\Http\UploadedFile::fake()->create('paascu_cert.pdf', 500, 'application/pdf');
+
+        $response = $this->actingAs($this->admin)->post('/accreditations', [
+            'program_id' => $this->program->program_id,
+            'accrediting_body' => 'PAASCU',
+            'type' => 'Local',
+            'level_or_tier' => 'Level III',
+            'status' => 'Active',
+            'last_visit' => '2026-01-01',
+            'expiry_date' => '2030-01-01',
+            'certificate_file' => $file,
+        ]);
+
+        $response->assertRedirect('/accreditations');
+        $this->assertDatabaseHas('accreditations', [
+            'program_id' => $this->program->program_id,
+            'level_or_tier' => 'Level III',
+        ]);
+
+        $accreditation = Accreditation::where('program_id', $this->program->program_id)->first();
+        $this->assertNotNull($accreditation->certificate_file);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($accreditation->certificate_file);
+    }
+
+    /**
+     * Test admin can store accreditation with SharePoint link.
+     */
+    public function test_admin_can_save_certificate_sharepoint_link()
+    {
+        $response = $this->actingAs($this->admin)->post('/accreditations', [
+            'program_id' => $this->program->program_id,
+            'accrediting_body' => 'PAASCU',
+            'type' => 'Local',
+            'level_or_tier' => 'Level II',
+            'status' => 'Active',
+            'last_visit' => '2026-01-01',
+            'expiry_date' => '2029-01-01',
+            'certificate_link' => 'https://holyangeluniversity.sharepoint.com/sites/QA/Certificates/SOC_PAASCU.pdf',
+        ]);
+
+        $response->assertRedirect('/accreditations');
+        $this->assertDatabaseHas('accreditations', [
+            'program_id' => $this->program->program_id,
+            'certificate_link' => 'https://holyangeluniversity.sharepoint.com/sites/QA/Certificates/SOC_PAASCU.pdf',
+        ]);
+    }
 }
+

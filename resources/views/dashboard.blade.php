@@ -4,133 +4,309 @@
 <div class="space-y-8 font-sans">
 
     <!-- Portal Welcome Header -->
-    <div class="bg-gradient-to-r from-hau-maroon-dark to-hau-maroon rounded-2xl shadow-md p-6 flex flex-col md:flex-row items-center justify-between gap-4 border border-hau-gold/20">
-        <div class="space-y-1">
-            <h2 class="text-xl sm:text-2xl font-bold text-white">HAU QA Portal Dashboard</h2>
-            @php
-                $viewportName = 'QA Admin';
-                $user = auth()->user();
-                if ($user) {
-                    if ($user->usertype === 'Dean' && $user->college) {
-                        $viewportName = $user->college->name;
-                    } elseif ($user->usertype === 'Head of Unit' && $user->unit) {
-                        $viewportName = $user->unit->name;
-                    } elseif ($user->usertype === 'QA Admin') {
-                        $viewportName = session('active_role', 'QA Admin') === 'Unit or Department' ? 'Unit or Department' : 'QA Admin';
-                    }
-                }
-            @endphp
-            <p class="text-xs sm:text-sm text-hau-gold-light/80">Active Viewport: <strong class="text-hau-gold font-semibold">{{ $viewportName }}</strong>. Tracking accreditation metrics and documentation checklists.</p>
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#4a0000] via-hau-maroon to-[#8c1515] p-6 sm:p-7 shadow-xl shadow-hau-maroon-dark/20 border border-hau-gold/30">
+        <!-- Ambient Glowing Highlights -->
+        <div class="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-hau-gold/20 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-rose-500/15 blur-3xl"></div>
+        
+        <!-- Subtle Decorative Wave / Geometric Accent Overlay -->
+        <div class="pointer-events-none absolute inset-0 opacity-10">
+            <svg class="h-full w-full" viewBox="0 0 1000 200" fill="none" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 80 C 250 160, 450 0, 750 100 C 900 150, 1000 70, 1000 70" stroke="#D4AF37" stroke-width="2" fill="none"/>
+                <path d="M0 120 C 300 40, 600 180, 1000 110" stroke="#FFFFFF" stroke-width="1.5" fill="none"/>
+            </svg>
         </div>
-        <div class="flex items-center gap-2 text-xs font-bold font-mono px-3 py-1.5 rounded-lg bg-white/10 text-hau-gold border border-hau-gold/30">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            Last Updated: {{ date('F d, Y') }}
+
+        <!-- Watermark HAU Emblem -->
+        <div class="pointer-events-none absolute -right-6 -bottom-10 h-48 w-48 opacity-[0.08] transform rotate-12 select-none">
+            <img src="{{ asset('images/hau_logo.png') }}" alt="HAU Watermark" class="h-full w-full object-contain filter brightness-200">
+        </div>
+
+        <!-- Header Content -->
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <!-- Left: Brand, Viewport & Description -->
+            <div class="space-y-2">
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-hau-gold/20 text-hau-gold-light border border-hau-gold/40 text-xs font-bold tracking-wider uppercase">
+                        <svg class="w-3.5 h-3.5 text-hau-gold" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd" />
+                        </svg>
+                        Quality Assurance
+                    </span>
+                    
+                    @php
+                        $viewportName = 'QA Admin';
+                        $user = auth()->user();
+                        if ($user) {
+                            if ($user->usertype === 'Dean' && $user->college) {
+                                $viewportName = $user->college->name;
+                            } elseif ($user->usertype === 'Head of Unit' && $user->unit) {
+                                $viewportName = $user->unit->name;
+                            } elseif ($user->usertype === 'QA Admin') {
+                                $viewportName = session('active_role', 'QA Admin') === 'Unit or Department' ? 'Unit or Department' : 'QA Admin';
+                            }
+                        }
+                    @endphp
+                    
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-black/30 backdrop-blur-sm border border-white/15 text-xs font-semibold text-white/90">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span class="text-gray-300">Viewport:</span>
+                        <strong class="text-hau-gold font-bold">{{ $viewportName }}</strong>
+                    </div>
+                </div>
+
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
+                    HAU QA Portal Dashboard
+                </h2>
+
+                <p class="text-xs sm:text-sm text-gray-200/90 max-w-2xl font-medium leading-relaxed">
+                    Tracking accreditation metrics and university-wide documentation checklists.
+                </p>
+            </div>
+
+            <!-- Right: Export Full Report Button & Live Timestamp -->
+            <div class="flex flex-wrap items-center gap-3 self-start lg:self-center">
+                <a href="{{ route('reports.export-full') }}" class="group relative inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-black/30 hover:bg-gradient-to-r hover:from-amber-300 hover:via-hau-gold hover:to-amber-400 backdrop-blur-md border border-hau-gold/40 hover:border-white text-white/90 hover:text-hau-maroon-dark shadow-sm hover:shadow-xl hover:shadow-amber-500/25 hover:-translate-y-1 hover:scale-105 active:scale-95 transition-all duration-300 ease-out cursor-pointer overflow-hidden" title="Click to download full multi-tab system report (.xlsx)">
+                    <!-- Shimmer sweep effect on hover -->
+                    <div class="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+
+                    <!-- Icon Container -->
+                    <div class="p-1 rounded-lg bg-hau-gold/20 group-hover:bg-hau-maroon text-hau-gold group-hover:text-white border border-hau-gold/35 group-hover:border-transparent group-hover:scale-110 transition-all duration-300 flex-shrink-0 shadow-xs relative z-10">
+                        <svg class="w-4 h-4 transform group-hover:translate-y-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+
+                    <!-- Text Container -->
+                    <div class="text-left relative z-10">
+                        <div class="text-[9px] uppercase font-bold tracking-wider text-hau-gold group-hover:text-hau-maroon flex items-center gap-1 transition-colors duration-200">
+                            <span>Export</span>
+                            <svg class="w-2.5 h-2.5 opacity-70 group-hover:opacity-100 group-hover:translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                        <div class="text-white group-hover:text-hau-maroon-dark text-xs font-black tracking-tight transition-colors duration-200">Full System Report</div>
+                    </div>
+                </a>
+
+                <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-black/30 backdrop-blur-md text-white/90 border border-white/20 shadow-sm hover:border-hau-gold/50 transition-all duration-200">
+                    <div class="p-1 rounded-lg bg-hau-gold/20 text-hau-gold border border-hau-gold/35">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-[9px] uppercase font-bold tracking-wider text-hau-gold">System Date</div>
+                        <div class="font-mono text-white text-xs font-bold tracking-tight">{{ date('F d, Y') }}</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     @if ($role === 'QA Admin')
         <!-- ================= QA ADMIN VIEWPORT ================= -->
 
-        <!-- Action & Alerts Center -->
-        @if ($warningAccreditations->isNotEmpty() || $overdueCompliance->isNotEmpty() || $criticalRisks->isNotEmpty())
-            <div class="bg-gradient-to-br from-hau-maroon/5 to-hau-gold/5 border border-hau-maroon/15 rounded-2xl p-6 space-y-4">
-                <div class="flex items-center gap-2 pb-2 border-b border-hau-maroon/15">
-                    <div class="p-1.5 bg-hau-maroon/10 rounded-lg">
-                        <svg class="w-4 h-4 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
+        <!-- 1. Executive Alerts & Action Center Ribbon -->
+        @php
+            $totalAlertCount = $warningAccreditations->count() + $overdueCompliance->count() + $criticalRisks->count();
+        @endphp
+
+        @if ($totalAlertCount > 0)
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
+                <!-- Ribbon Summary Header (Always Visible, Compact & Informative) -->
+                <div class="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-gray-50 via-white to-gray-50/80">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-rose-50 text-rose-600 rounded-xl border border-rose-100 flex-shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-sm text-gray-900 uppercase tracking-wider">QA Attention Center</h3>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 font-mono">
+                                    {{ $totalAlertCount }} Action Items
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-500 font-medium">Quick overview of accreditation expirations, overdue compliance tasks, and active risks.</p>
+                        </div>
                     </div>
-                    <h3 class="font-bold text-sm text-hau-maroon uppercase tracking-wider">QA Alerts & Action Center</h3>
+
+                    <!-- Quick Glance Badges & Collapse Trigger -->
+                    <div class="flex items-center gap-2 sm:gap-3 flex-wrap lg:flex-nowrap">
+                        @if($warningAccreditations->isNotEmpty())
+                            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-bold font-mono shadow-xs">
+                                <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                                <span>{{ $warningAccreditations->count() }} Expiring/Lapsed</span>
+                            </div>
+                        @endif
+
+                        @if($overdueCompliance->isNotEmpty())
+                            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200/80 text-amber-800 text-xs font-bold font-mono shadow-xs">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                <span>{{ $overdueCompliance->count() }} Overdue Tasks</span>
+                            </div>
+                        @endif
+
+                        @if($criticalRisks->isNotEmpty())
+                            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-bold font-mono shadow-xs">
+                                <span class="w-2 h-2 rounded-full bg-rose-600"></span>
+                                <span>{{ $criticalRisks->count() }} Critical Risk(s)</span>
+                            </div>
+                        @endif
+
+                        <!-- Toggle Button -->
+                        <button type="button" 
+                                onclick="toggleAlertDetails()" 
+                                id="alert-toggle-btn"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition ml-auto lg:ml-0 cursor-pointer">
+                            <span id="alert-toggle-text">Expand Details</span>
+                            <svg id="alert-toggle-icon" class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Column 1: Accreditation Warnings -->
-                    <div class="space-y-3">
-                        <h4 class="text-xs font-bold text-hau-maroon-dark uppercase tracking-wide flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            Accreditation Expirations ({{ $warningAccreditations->count() }})
-                        </h4>
-                        <div class="overflow-y-auto pr-1 space-y-3" style="max-height: 290px;">
-                            @forelse($warningAccreditations as $accred)
-                                <div class="bg-white rounded-xl p-3 border border-hau-maroon/10 shadow-sm space-y-1 hover:border-hau-gold/50 transition">
-                                    <div class="flex justify-between items-center text-[10px]">
-                                        <span class="font-bold text-hau-maroon font-mono">{{ $accred->program?->program_code ?? 'N/A' }}</span>
-                                        <span class="font-bold text-rose-600">{{ $accred->status }}</span>
-                                    </div>
-                                    <p class="text-xs font-bold text-gray-800 leading-tight">Accreditor: {{ $accred->accrediting_body }}</p>
-                                    <p class="text-[10px] text-gray-500 font-mono">Expires: {{ $accred->expiry_date ? $accred->expiry_date->format('M d, Y') : 'N/A' }}</p>
-                                </div>
-                            @empty
-                                <p class="text-xs text-hau-maroon/50 italic">No expiring accreditations.</p>
-                            @endforelse
-                        </div>
-                    </div>
 
-                    <!-- Column 2: Overdue Tasks -->
-                    <div class="space-y-3">
-                        <h4 class="text-xs font-bold text-hau-maroon-dark uppercase tracking-wide font-sans flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                            Overdue Compliance Tasks ({{ $overdueCompliance->count() }})
-                        </h4>
-                        <div class="overflow-y-auto pr-1 space-y-3" style="max-height: 290px;">
-                            @forelse($overdueCompliance as $task)
-                                <div class="bg-white rounded-xl p-3 border border-hau-maroon/10 shadow-sm space-y-1 hover:border-hau-gold/50 transition">
-                                    <div class="flex justify-between items-center text-[10px]">
-                                        <span class="font-bold text-hau-maroon font-mono">{{ $task->program?->program_code ?? ($task->school ?? 'General') }}</span>
-                                        <span class="font-bold text-rose-600">Past Due</span>
+                <!-- Collapsible Detail Section (hidden by default for a clean high-level view) -->
+                <div id="alert-detail-drawer" class="hidden border-t border-gray-200 bg-gray-50/50 p-5 lg:p-6 transition-all duration-300">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Column 1: Accreditation Warnings -->
+                        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-xs space-y-3">
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Accreditation Expirations
+                                </h4>
+                                <span class="text-xs font-bold font-mono px-2 py-0.5 bg-rose-50 text-rose-700 rounded">{{ $warningAccreditations->count() }}</span>
+                            </div>
+                            <div class="overflow-y-auto pr-1 space-y-2.5 max-h-64">
+                                @forelse($warningAccreditations as $accred)
+                                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-200/80 space-y-1 hover:border-hau-maroon/30 transition">
+                                        <div class="flex justify-between items-center text-[10px]">
+                                            <span class="font-bold text-hau-maroon font-mono">{{ $accred->program?->program_code ?? 'N/A' }}</span>
+                                            <span class="font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">{{ $accred->status }}</span>
+                                        </div>
+                                        <p class="text-xs font-bold text-gray-800 leading-tight">Accreditor: {{ $accred->accrediting_body }}</p>
+                                        <p class="text-[10px] text-gray-500 font-mono">Expires: {{ $accred->expiry_date ? $accred->expiry_date->format('M d, Y') : 'N/A' }}</p>
                                     </div>
-                                    <h5 class="text-xs font-bold text-gray-800 leading-tight truncate" title="{{ $task->title }}">{{ $task->title }}</h5>
-                                    <p class="text-[10px] text-gray-500 font-mono">Due: {{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}</p>
-                                </div>
-                            @empty
-                                <p class="text-xs text-hau-maroon/50 italic font-sans">No overdue compliance tasks.</p>
-                            @endforelse
+                                @empty
+                                    <p class="text-xs text-gray-400 italic py-3 text-center">No expiring accreditations.</p>
+                                @endforelse
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Column 3: Critical Risks -->
-                    <div class="space-y-3">
-                        <h4 class="text-xs font-bold text-hau-maroon-dark uppercase tracking-wide flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            Critical Active Risks ({{ $criticalRisks->count() }})
-                        </h4>
-                        <div class="overflow-y-auto pr-1 space-y-3" style="max-height: 290px;">
-                            @forelse($criticalRisks as $risk)
-                                <div class="bg-white rounded-xl p-3 border border-hau-maroon/10 shadow-sm space-y-1 hover:border-hau-gold/50 transition">
-                                    <div class="flex justify-between items-center text-[10px]">
-                                        <span class="font-bold text-hau-maroon font-mono">{{ $risk->program?->program_code ?? 'N/A' }}</span>
-                                        <span class="font-black text-rose-600 bg-rose-50 px-1.5 py-0.25 rounded border border-rose-100">Critical</span>
+                        <!-- Column 2: Overdue Tasks -->
+                        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-xs space-y-3">
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                    Overdue Compliance
+                                </h4>
+                                <span class="text-xs font-bold font-mono px-2 py-0.5 bg-amber-50 text-amber-700 rounded">{{ $overdueCompliance->count() }}</span>
+                            </div>
+                            <div class="overflow-y-auto pr-1 space-y-2.5 max-h-64">
+                                @forelse($overdueCompliance as $task)
+                                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-200/80 space-y-1 hover:border-amber-400 transition">
+                                        <div class="flex justify-between items-center text-[10px]">
+                                            <span class="font-bold text-hau-maroon font-mono">{{ $task->program?->program_code ?? ($task->school ?? 'General') }}</span>
+                                            <span class="font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">Past Due</span>
+                                        </div>
+                                        <h5 class="text-xs font-bold text-gray-800 leading-tight truncate" title="{{ $task->title }}">{{ $task->title }}</h5>
+                                        <p class="text-[10px] text-gray-500 font-mono">Due: {{ $task->due_date ? $task->due_date->format('M d, Y') : 'N/A' }}</p>
                                     </div>
-                                    <p class="text-xs text-gray-700 font-medium line-clamp-2 leading-relaxed" title="{{ $risk->description }}">{{ $risk->description }}</p>
-                                </div>
-                            @empty
-                                <p class="text-xs text-hau-maroon/50 italic">No critical risks flagged.</p>
-                            @endforelse
+                                @empty
+                                    <p class="text-xs text-gray-400 italic py-3 text-center">No overdue compliance tasks.</p>
+                                @endforelse
+                            </div>
+                        </div>
+
+                        <!-- Column 3: Critical Risks -->
+                        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-xs space-y-3">
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                    Critical QA Risks
+                                </h4>
+                                <span class="text-xs font-bold font-mono px-2 py-0.5 bg-rose-50 text-rose-700 rounded">{{ $criticalRisks->count() }}</span>
+                            </div>
+                            <div class="overflow-y-auto pr-1 space-y-2.5 max-h-64">
+                                @forelse($criticalRisks as $risk)
+                                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-200/80 space-y-1 hover:border-rose-300 transition">
+                                        <div class="flex justify-between items-center text-[10px]">
+                                            <span class="font-bold text-hau-maroon font-mono">{{ $risk->program?->program_code ?? 'N/A' }}</span>
+                                            <span class="font-black text-rose-600 bg-rose-50 px-1.5 py-0.25 rounded border border-rose-100">Critical</span>
+                                        </div>
+                                        <p class="text-xs text-gray-700 font-medium line-clamp-2 leading-relaxed" title="{{ $risk->description }}">{{ $risk->description }}</p>
+                                    </div>
+                                @empty
+                                    <p class="text-xs text-gray-400 italic py-3 text-center">No critical risks flagged.</p>
+                                @endforelse
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         @endif
 
-        <!-- Core Counts -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <!-- Accredited Programs Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between hover:shadow-md transition relative group overflow-hidden">
-                <div class="absolute -top-1 left-0 right-0 h-1 bg-hau-gold"></div>
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="font-mono" style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af;">Accreditor Filter</p>
-                        <div class="flex items-baseline gap-1 mt-1">
-                            <span id="accredited-card-count" class="text-gray-900 font-mono tracking-tighter" style="font-size: 3.75rem; font-weight: 900; line-height: 1;">{{ $accreditationCounts[''] }}</span>
-                            <span id="accredited-card-unit" style="font-size: 0.85rem; font-weight: 800; font-family: sans-serif; color: #6b7280; margin-left: 0.25rem;">Accredited Program(s)</span>
-                        </div>
-                    </div>
-                    <div class="px-2.5 py-1 bg-hau-gold/15 rounded-lg text-hau-gold-dark font-mono text-xs font-black uppercase tracking-wider" id="card-accreditor-tag">
-                        All
+        <!-- ================= 2. UNIFIED EXECUTIVE PERFORMANCE SCORECARD ================= -->
+        @php
+            $liveAccreditationRate = $liveAccreditableCount > 0 ? round(($liveAccreditedCount / $liveAccreditableCount) * 100) : 0;
+        @endphp
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Card 1: Degree Portfolio & Accreditability -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between hover:shadow-md transition relative overflow-hidden group">
+                <div class="absolute -top-1 left-0 right-0 h-1.5 bg-hau-maroon"></div>
+                
+                <!-- 1. Header (Standardized Height) -->
+                <div class="flex items-start justify-between gap-2 min-h-[44px]">
+                    <span class="font-mono leading-tight" style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;">Academic Offerings</span>
+                    <span class="rounded-lg font-mono shrink-0 whitespace-nowrap" style="font-size: 0.78rem; font-weight: 800; padding: 0.2rem 0.55rem; background-color: rgba(128, 0, 0, 0.08); color: #800000; border: 1px solid rgba(128, 0, 0, 0.2);">
+                        {{ $liveAccreditableCount }} Accreditable
+                    </span>
+                </div>
+
+                <!-- 2. Hero Metric Body (Standardized Height) -->
+                <div class="min-h-[90px] flex items-center">
+                    <div class="flex items-baseline gap-2 flex-wrap">
+                        <span class="text-gray-900 font-mono tracking-tighter" style="font-size: 3.5rem; font-weight: 900; line-height: 1;">{{ $liveOfferingsCount }}</span>
+                        <span class="font-sans" style="font-size: 0.88rem; font-weight: 700; color: #4b5563;">Total Programs</span>
                     </div>
                 </div>
-                <p class="font-medium" style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-top: 0.5rem; margin-bottom: 0.5rem;">Accredited degree programs with active certifications.</p>
-                <div class="mt-auto pt-2 border-t border-gray-100">
-                    <select id="dashboard-filter-body" onchange="filterProgramsByBody(this.value)" class="block w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon cursor-pointer font-bold text-gray-700">
+
+                <!-- 3. Footer (Standardized Height) -->
+                <div class="min-h-[52px] pt-3 border-t border-gray-100 flex flex-col justify-center">
+                    <div class="flex items-center justify-between font-medium" style="font-size: 0.85rem; color: #4b5563;">
+                        <span>Accreditable programs:</span>
+                        <span class="font-mono font-bold" style="font-size: 0.95rem; color: #111827;">{{ $liveAccreditableCount }} / {{ $liveOfferingsCount }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Total Accredited Programs & Interactive Filter -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between hover:shadow-md transition relative overflow-hidden group">
+                <div class="absolute -top-1 left-0 right-0 h-1.5 bg-hau-gold"></div>
+                
+                <!-- 1. Header (Standardized Height) -->
+                <div class="flex items-start justify-between gap-2 min-h-[44px]">
+                    <span class="font-mono leading-tight" style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;">Accredited Programs</span>
+                    <span class="rounded-lg font-mono shrink-0 uppercase whitespace-nowrap" id="card-accreditor-tag" style="font-size: 0.78rem; font-weight: 900; padding: 0.2rem 0.55rem; background-color: rgba(212, 175, 55, 0.2); color: #8a6d12; border: 1px solid rgba(212, 175, 55, 0.35);">
+                        All
+                    </span>
+                </div>
+
+                <!-- 2. Hero Metric Body (Standardized Height) -->
+                <div class="min-h-[90px] flex items-center">
+                    <div class="flex items-baseline gap-2 flex-wrap">
+                        <span id="accredited-card-count" class="font-mono tracking-tighter" style="font-size: 3.5rem; font-weight: 900; line-height: 1; color: #800000;">{{ $accreditationCounts[''] }}</span>
+                        <span id="accredited-card-unit" class="font-sans" style="font-size: 0.88rem; font-weight: 700; color: #4b5563;">Active Certifications</span>
+                    </div>
+                </div>
+
+                <!-- 3. Footer (Standardized Height) -->
+                <div class="min-h-[52px] pt-3 border-t border-gray-100 flex flex-col justify-center">
+                    <select id="dashboard-filter-body" onchange="filterProgramsByBody(this.value)" class="block w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon cursor-pointer">
                         <option value="">All Accrediting Bodies</option>
                         @foreach($allAccreditingBodies as $body)
                             @if(is_string($body))
@@ -141,119 +317,72 @@
                 </div>
             </div>
 
-            <!-- Degree Programs Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between hover:shadow-md transition relative overflow-hidden">
-                <div class="flex items-center justify-between">
-                    <div class="space-y-1">
-                        <p class="font-mono" style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af;">Degree Offerings</p>
-                        <p class="text-gray-900 font-mono tracking-tighter mt-1" style="font-size: 3.75rem; font-weight: 900; line-height: 1;">{{ $totalPrograms }}</p>
-                    </div>
-                    <div class="p-3 bg-hau-maroon/10 rounded-xl text-hau-maroon">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                        </svg>
-                    </div>
+            <!-- Card 3: Institutional Accreditation Rate -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between hover:shadow-md transition relative overflow-hidden group">
+                <div class="absolute -top-1 left-0 right-0 h-1.5 bg-emerald-500"></div>
+                
+                <!-- 1. Header (Standardized Height) -->
+                <div class="flex items-start justify-between gap-2 min-h-[44px]">
+                    <span class="font-mono leading-tight" style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;">Accreditation Rate</span>
+                    <span class="rounded-lg font-mono shrink-0 whitespace-nowrap" style="font-size: 0.78rem; font-weight: 800; padding: 0.2rem 0.55rem; background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;">
+                        Overall
+                    </span>
                 </div>
-                <p class="font-medium" style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-top: 0.75rem;">Total registered academic offerings (including basic education).</p>
-            </div>
 
-            <!-- Monitored Risks Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between hover:shadow-md transition relative overflow-hidden">
-                <div class="flex items-center justify-between">
-                    <div class="space-y-1">
-                        <p class="font-mono" style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af;">Monitored QA Risks</p>
-                        <p class="text-amber-600 font-mono tracking-tighter mt-1" style="font-size: 3.75rem; font-weight: 900; line-height: 1;">{{ $totalRisks }}</p>
-                    </div>
-                    <div class="p-3 bg-amber-50 rounded-xl text-amber-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                    </div>
-                </div>
-                <p class="font-medium" style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-top: 0.75rem;">Active risk logs requiring mitigation controls.</p>
-            </div>
-        </div>
-
-        <!-- ================= UNIVERSITY ACCREDITATION PERFORMANCE ================= -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-hau-maroon px-6 py-4 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-hau-gold">
-                <div>
-                    <h3 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                        <svg class="w-4 h-4 text-hau-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        University Accreditation Performance
-                    </h3>
-                    <p class="text-[10px] text-hau-gold-light/95 font-semibold mt-0.5">Percentage of academic programs with active local or international accreditation</p>
-                </div>
-            </div>
-
-            <!-- Tab 1: Current SY Overview -->
-            <div id="scorecard-tab-overview" class="p-6 space-y-6">
-                @php
-                    $liveAccreditationRate = $liveAccreditableCount > 0 ? round(($liveAccreditedCount / $liveAccreditableCount) * 100) : 0;
-                    $targetPrograms = 35;
-                    $targetStatus = $liveAccreditedCount >= $targetPrograms ? 'Exceeded' : 'Under Target';
-                @endphp
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-gray-50 border border-gray-150 p-4 rounded-2xl flex flex-col justify-between">
-                        <div>
-                            <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #9ca3af; display: block; letter-spacing: 0.03em;">Total Program Offerings</span>
-                            <span class="text-gray-800 font-mono mt-1.5 block tracking-tight" style="font-size: 3.5rem; font-weight: 900; line-height: 1;">{{ $liveOfferingsCount }}</span>
-                        </div>
-                        <p style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-top: 0.5rem;">All registered active academic programs (accreditable &amp; non-accreditable).</p>
-                    </div>
-                    <div class="bg-gray-50 border border-gray-150 p-4 rounded-2xl flex flex-col justify-between">
-                        <div>
-                            <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #9ca3af; display: block; letter-spacing: 0.03em;">Accreditable Programs</span>
-                            <span class="text-gray-800 font-mono mt-1.5 block tracking-tight" style="font-size: 3.5rem; font-weight: 900; line-height: 1;">{{ $liveAccreditableCount }}</span>
-                        </div>
-                        <p style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-top: 0.5rem;">Degree offerings eligible for accreditation audits.</p>
-                    </div>
-                    <div class="bg-gray-50 border border-gray-150 p-4 rounded-2xl flex flex-col justify-between">
-                        <div>
-                            <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #9ca3af; display: block; letter-spacing: 0.03em;">Total Accredited Programs</span>
-                            <div class="flex items-baseline gap-1.5 mt-1.5">
-                                <span class="text-hau-maroon font-mono tracking-tight" style="font-size: 3.5rem; font-weight: 900; line-height: 1;">{{ $liveAccreditedCount }}</span>
-                            </div>
-                        </div>
-                        <p style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-top: 0.5rem;">Degree offerings with active certifications.</p>
-                    </div>
-                    <div class="bg-gray-50 border border-gray-150 p-4 rounded-2xl flex flex-col justify-between">
-                        <div>
-                            <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #9ca3af; display: block; letter-spacing: 0.03em;">Accreditation Rate</span>
-                            <span class="text-emerald-600 font-mono mt-1.5 block tracking-tight" style="font-size: 3.5rem; font-weight: 900; line-height: 1;">{{ $liveAccreditationRate }}%</span>
-                        </div>
-                        <div class="mt-4">
-                            <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                                <div class="bg-emerald-500 h-full rounded-full" style="width: {{ $liveAccreditationRate }}%"></div>
-                            </div>
-                        </div>
+                <!-- 2. Hero Metric Body (Standardized Height) -->
+                <div class="min-h-[90px] flex items-center">
+                    <div class="flex items-baseline gap-2 flex-wrap">
+                        <span class="font-mono tracking-tighter" style="font-size: 3.5rem; font-weight: 900; line-height: 1; color: #059669;">{{ $liveAccreditationRate }}%</span>
+                        <span class="font-sans" style="font-size: 0.88rem; font-weight: 700; color: #4b5563;">of Accreditable</span>
                     </div>
                 </div>
 
-                <div class="pt-2">
-                    <!-- Accreditation Types Distribution -->
-                    <div class="border border-gray-200 rounded-2xl p-5 space-y-4">
-                        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                            Accredited Programs Breakdown
-                        </h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="bg-hau-maroon/5 p-4 rounded-xl border border-hau-maroon/10 text-center">
-                                <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #800000; display: block; letter-spacing: 0.03em;">Locally Accredited</span>
-                                <span class="text-hau-maroon font-mono mt-1.5 block tracking-tight" style="font-size: 3rem; font-weight: 900; line-height: 1;">{{ $liveLocallyAccreditedCount }}</span>
-                                <p style="font-size: 0.82rem; font-weight: 600; color: #6b7280; margin-top: 0.25rem;">PAASCU & PACUCOA programs</p>
-                            </div>
-                            <div class="bg-hau-gold/5 p-4 rounded-xl border border-hau-gold/20 text-center">
-                                <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #b7791f; display: block; letter-spacing: 0.03em;">Internationally Accredited</span>
-                                <span class="text-hau-gold-dark font-mono mt-1.5 block tracking-tight" style="font-size: 3rem; font-weight: 900; line-height: 1;">{{ $liveInternationallyAccreditedCount }}</span>
-                                <p style="font-size: 0.82rem; font-weight: 600; color: #6b7280; margin-top: 0.25rem;">AUN-QA, IACBE, & ACPHA programs</p>
-                            </div>
-                        </div>
+                <!-- 3. Footer (Standardized Height) -->
+                <div class="min-h-[52px] pt-3 border-t border-gray-100 flex flex-col justify-center space-y-1.5">
+                    <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                        <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: {{ min(100, $liveAccreditationRate) }}%"></div>
+                    </div>
+                    <div class="flex justify-between items-center font-medium" style="font-size: 0.78rem; color: #4b5563;">
+                        <span>{{ $liveAccreditedCount }} of {{ $liveAccreditableCount }} accredited</span>
+                        <span class="font-mono font-bold" style="color: #059669;">{{ $liveAccreditationRate }}%</span>
                     </div>
                 </div>
             </div>
 
+            <!-- Card 4: Scope & Distribution (Local vs. International) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between hover:shadow-md transition relative overflow-hidden group">
+                <div class="absolute -top-1 left-0 right-0 h-1.5 bg-hau-maroon-dark"></div>
+                
+                <!-- 1. Header (Standardized Height) -->
+                <div class="flex items-start justify-between gap-2 min-h-[44px]">
+                    <span class="font-mono leading-tight" style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;">Accreditation Scope</span>
+                    <span class="rounded font-mono shrink-0" style="font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.45rem; background-color: #f3f4f6; color: #6b7280;">Breakdown</span>
+                </div>
 
+                <!-- 2. Hero Metric Body (Standardized Height) -->
+                <div class="min-h-[90px] flex items-center">
+                    <div class="grid grid-cols-2 gap-2 w-full">
+                        <div class="bg-hau-maroon/5 rounded-xl p-2 border border-hau-maroon/15 text-center">
+                            <span class="font-mono block" style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: #800000;">Local</span>
+                            <span class="font-mono block tracking-tighter" style="font-size: 2.1rem; font-weight: 900; line-height: 1.1; color: #800000;">{{ $liveLocallyAccreditedCount }}</span>
+                            <span class="font-sans block truncate" style="font-size: 0.72rem; font-weight: 700; color: #4b5563;">PAASCU / PAC</span>
+                        </div>
+                        <div class="bg-hau-gold/10 rounded-xl p-2 border border-hau-gold/25 text-center">
+                            <span class="font-mono block" style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: #8a6d12;">Int'l</span>
+                            <span class="font-mono block tracking-tighter" style="font-size: 2.1rem; font-weight: 900; line-height: 1.1; color: #8a6d12;">{{ $liveInternationallyAccreditedCount }}</span>
+                            <span class="font-sans block truncate" style="font-size: 0.72rem; font-weight: 700; color: #4b5563;">AUN / IACBE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Footer (Standardized Height) -->
+                <div class="min-h-[52px] pt-3 border-t border-gray-100 flex flex-col justify-center">
+                    <div class="flex items-center justify-between font-medium" style="font-size: 0.85rem; color: #4b5563;">
+                        <span>Monitored QA Risks:</span>
+                        <span class="font-mono font-bold" style="font-size: 0.95rem; color: {{ $totalRisks > 0 ? '#b45309' : '#047857' }};">{{ $totalRisks }} active</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -627,30 +756,30 @@
         {{-- ── Compliance Item Detail Modal ─────────────────────────────────── --}}
         <div id="compliance-detail-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden" role="dialog" aria-modal="true">
             <!-- Backdrop -->
-            <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="closeComplianceDetailModal()"></div>
+            <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-xs" onclick="closeComplianceDetailModal()"></div>
             <!-- Panel -->
-            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-                <!-- Header -->
-                <div class="flex items-start justify-between p-6 border-b border-gray-200">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-amber-100 rounded-xl">
-                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="relative bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col transform scale-100 transition-all duration-200">
+                <!-- Header with dark maroon gradient -->
+                <div class="modal-dark-header flex items-center justify-between border-b border-white/10 shrink-0" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+                    <div class="flex items-center gap-3.5 min-w-0 pr-2">
+                        <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                            <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
                         </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Compliance Item</p>
-                            <h2 id="cdm-title" class="text-base font-black text-gray-900 leading-tight">—</h2>
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-bold text-white/80 uppercase tracking-wider" style="color: rgba(255, 255, 255, 0.85);">Compliance Item Details</p>
+                            <h2 id="cdm-title" class="text-base font-bold text-white leading-tight truncate mt-0.5" style="color: #ffffff;">—</h2>
                         </div>
                     </div>
-                    <button onclick="closeComplianceDetailModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <button onclick="closeComplianceDetailModal()" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer shrink-0" style="color: #ffffff;" aria-label="Close modal">
+                        <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
                 <!-- Status banner -->
-                <div id="cdm-status-banner" class="px-6 py-2 flex items-center gap-3 border-b border-gray-100"></div>
+                <div id="cdm-status-banner" class="px-6 py-2.5 flex items-center gap-3 border-b border-gray-100 bg-gray-50/50 shrink-0"></div>
                 <!-- Body -->
-                <div class="p-6 space-y-5">
+                <div class="p-6 space-y-5 overflow-y-auto flex-1">
                     <!-- Program & Accreditor -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -667,57 +796,57 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Category</p>
-                            <p id="cdm-category" class="text-sm text-gray-700">—</p>
+                            <p id="cdm-category" class="text-sm text-gray-700 font-medium">—</p>
                         </div>
                         <div>
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Area</p>
-                            <p id="cdm-area" class="text-sm text-gray-700">—</p>
+                            <p id="cdm-area" class="text-sm text-gray-700 font-medium">—</p>
                         </div>
                     </div>
                     <!-- Responsible Unit & Due Date -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Responsible Unit</p>
-                            <p id="cdm-unit" class="text-sm text-gray-700">—</p>
+                            <p id="cdm-unit" class="text-sm text-gray-700 font-medium">—</p>
                         </div>
                         <div>
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Due Date</p>
-                            <p id="cdm-due" class="text-sm font-mono font-bold">—</p>
+                            <p id="cdm-due" class="text-sm font-mono font-bold text-gray-900">—</p>
                         </div>
                     </div>
                     <!-- Contact -->
                     <div id="cdm-contact-row" class="grid grid-cols-2 gap-4 hidden">
                         <div>
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Contact Person</p>
-                            <p id="cdm-contact" class="text-sm text-gray-700">—</p>
+                            <p id="cdm-contact" class="text-sm text-gray-700 font-medium">—</p>
                         </div>
                         <div>
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Contact Email</p>
-                            <p id="cdm-email" class="text-sm text-gray-700">—</p>
+                            <p id="cdm-email" class="text-sm text-gray-700 font-mono text-xs">—</p>
                         </div>
                     </div>
                     <!-- Description -->
                     <div id="cdm-desc-row" class="hidden">
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Description</p>
-                        <p id="cdm-description" class="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-3">—</p>
+                        <p id="cdm-description" class="text-sm text-gray-700 leading-relaxed bg-gray-50 border border-gray-200/60 rounded-xl p-3.5">—</p>
                     </div>
                     <!-- Recommendation -->
                     <div id="cdm-rec-row" class="hidden">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Recommendation / Requirement</p>
-                        <p id="cdm-recommendation" class="text-sm text-gray-700 leading-relaxed bg-amber-50 border border-amber-100 rounded-xl p-3">—</p>
+                        <p class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider mb-1">Recommendation / Requirement</p>
+                        <p id="cdm-recommendation" class="text-sm text-gray-700 leading-relaxed bg-amber-50/70 border border-amber-200/60 rounded-xl p-3.5">—</p>
                     </div>
                     <!-- Action Plan -->
                     <div id="cdm-plan-row" class="hidden">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Action Plan</p>
-                        <p id="cdm-action-plan" class="text-sm text-gray-700 leading-relaxed bg-blue-50 border border-blue-100 rounded-xl p-3">—</p>
+                        <p class="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-1">Action Plan</p>
+                        <p id="cdm-action-plan" class="text-sm text-gray-700 leading-relaxed bg-blue-50/70 border border-blue-200/60 rounded-xl p-3.5">—</p>
                     </div>
                 </div>
                 <!-- Footer -->
-                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
-                    <button onclick="closeComplianceDetailModal()" class="px-4 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+                    <button onclick="closeComplianceDetailModal()" class="px-4 py-2.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition cursor-pointer">
                         Close
                     </button>
-                    <a id="cdm-submit-btn" href="#" class="inline-flex items-center gap-2 px-5 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg transition shadow-sm">
+                    <a id="cdm-submit-btn" href="#" class="inline-flex items-center gap-2 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl transition shadow-sm">
                         Go to Compliance Tracker
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </a>
@@ -880,93 +1009,148 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @forelse($accreditedPrograms as $prog)
-                <div class="program-card bg-gray-50 rounded-xl p-4 border border-gray-200 flex flex-col justify-between hover:border-hau-gold transition duration-150 relative"
-                     data-bodies="{{ json_encode($prog->accreditations->pluck('accrediting_body')->map(fn($b) => strtolower($b))->toArray()) }}">
-                    
-                    <div class="space-y-2">
-                        <span class="text-xs font-black text-hau-maroon block font-mono">{{ $prog->program_code }}</span>
-                        <h4 class="text-sm font-bold text-gray-900 leading-snug line-clamp-2" title="{{ $prog->program_name }}">{{ $prog->program_name }}</h4>
-                        @if($prog->former_name)
-                            <span class="text-[9px] text-gray-400 italic block leading-tight">formerly: {{ $prog->former_name }}</span>
-                        @endif
-                        <div class="text-[10px] text-gray-500 font-semibold space-y-0.5">
-                            <div class="truncate text-gray-700 font-bold" title="{{ $prog->college->name ?? 'Unassigned' }}">{{ $prog->college->name ?? 'Unassigned' }}</div>
-                            @if($prog->college && $prog->college->former_name)
-                                <div class="text-[9px] text-gray-450 italic truncate" title="formerly: {{ $prog->college->former_name }}">formerly: {{ $prog->college->former_name }}</div>
-                            @endif
-                            @if($prog->department)
-                                <div class="text-[9px] text-gray-400 font-medium truncate" title="Dept: {{ $prog->department }}">Dept: {{ $prog->department }}</div>
-                            @endif
-                        </div>
-                    </div>
+        <div class="rounded-xl border border-gray-200 shadow-2xs" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
+            <table class="w-full divide-y divide-gray-200 text-left">
+                <thead class="bg-gray-50 border-b border-gray-200 shadow-xs" style="position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th scope="col" class="px-5 py-3.5 text-xs font-bold text-gray-600 uppercase tracking-wider w-4/12" style="background-color: #f9fafb;">Program</th>
+                        <th scope="col" class="px-5 py-3.5 text-xs font-bold text-gray-600 uppercase tracking-wider w-3/12" style="background-color: #f9fafb;">School & Department</th>
+                        <th scope="col" class="px-5 py-3.5 text-xs font-bold text-gray-600 uppercase tracking-wider w-5/12" style="background-color: #f9fafb;">Accreditations & Status</th>
+                    </tr>
+                </thead>
+                <tbody id="directory-table-body" class="divide-y divide-gray-100 bg-white">
+                    @forelse($accreditedPrograms as $prog)
+                        <tr class="program-row hover:bg-gray-50/70 transition duration-150"
+                            data-bodies="{{ json_encode($prog->accreditations->pluck('accrediting_body')->map(fn($b) => strtolower($b))->toArray()) }}">
+                            
+                            <!-- Program Code & Title -->
+                            <td class="px-5 py-4 align-top">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded font-mono font-black text-xs bg-hau-maroon/10 text-hau-maroon border border-hau-maroon/20">
+                                        {{ $prog->program_code }}
+                                    </span>
+                                </div>
+                                <div class="text-xs font-bold text-gray-900 mt-1.5 leading-snug">
+                                    {{ $prog->program_name }}
+                                </div>
+                                @if($prog->former_name)
+                                    <div class="text-[10px] text-gray-400 italic mt-0.5">
+                                        formerly: {{ $prog->former_name }}
+                                    </div>
+                                @endif
+                            </td>
 
-                    <div class="mt-4 pt-3 border-t border-gray-200/60 space-y-2">
-                        @foreach($prog->accreditations as $audit)
-                            <div class="accreditation-subcard bg-white p-3 rounded-xl border border-gray-150 relative space-y-2 hover:shadow-xs transition duration-100"
-                                 data-body="{{ strtolower($audit->accrediting_body) }}">
-                                <div class="flex items-center justify-between gap-2 border-b border-gray-50 pb-1.5 flex-wrap">
-                                    <span class="font-bold text-[10px] text-hau-gold-dark px-2 py-0.5 bg-hau-gold/10 rounded font-mono">{{ $audit->accrediting_body }}</span>
-                                    <span class="font-mono text-[9px] text-gray-400">Expires: {{ $audit->expiry_date ? $audit->expiry_date->format('M d, Y') : '—' }}</span>
+                            <!-- School / College / Department -->
+                            <td class="px-5 py-4 align-top">
+                                @if($prog->college)
+                                    <div class="flex items-start gap-1.5">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-gray-100 text-gray-700 border border-gray-200 mt-0.5 shrink-0">
+                                            {{ $prog->college->code ?? 'School' }}
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-bold text-gray-800 leading-snug">{{ $prog->college->name }}</div>
+                                            @if($prog->college->former_name)
+                                                <div class="text-[10px] text-gray-400 italic">formerly: {{ $prog->college->former_name }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="text-xs text-gray-400 italic">Unassigned</span>
+                                @endif
+                                @if($prog->department)
+                                    <div class="text-[11px] text-gray-500 font-medium mt-1 pl-0.5">
+                                        <span class="text-gray-400">Dept:</span> <span class="font-semibold text-gray-600">{{ $prog->department }}</span>
+                                    </div>
+                                @endif
+                            </td>
+
+                            <!-- Accreditations & Tiers List -->
+                            <td class="px-5 py-4 align-top">
+                                <div class="space-y-2 w-full">
+                                    @foreach($prog->accreditations as $audit)
+                                        <div class="accreditation-pill flex items-center justify-between gap-3 px-3 py-2 bg-gray-50/80 hover:bg-hau-maroon/5 rounded-xl border border-gray-200/80 transition duration-150"
+                                             data-body="{{ strtolower($audit->accrediting_body) }}">
+                                            <div class="flex items-center gap-2.5 min-w-0">
+                                                <span class="font-bold text-[11px] text-hau-gold-dark px-2 py-0.5 bg-hau-gold/15 rounded-md font-mono border border-hau-gold/30 shrink-0">
+                                                    {{ $audit->accrediting_body }}
+                                                </span>
+                                                <span class="text-xs font-bold text-gray-800 whitespace-nowrap" title="{{ $audit->level_or_tier }}">
+                                                    {{ $audit->level_or_tier ?? 'Awaiting visit' }}
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center gap-2.5 shrink-0">
+                                                <span class="font-mono text-[11px] text-gray-500 font-medium whitespace-nowrap">
+                                                    {{ $audit->expiry_date ? $audit->expiry_date->format('M d, Y') : '—' }}
+                                                </span>
+                                                <span class="text-[10px] px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap {{ $audit->status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ($audit->status === 'Expiring Soon' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-rose-50 text-rose-700 border border-rose-100') }}">
+                                                    {{ $audit->status }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
-                                <div class="flex items-center justify-between gap-2 text-xs font-semibold text-gray-700 flex-wrap">
-                                    <span class="truncate max-w-[150px]" title="{{ $audit->level_or_tier }}">{{ $audit->level_or_tier ?? 'Awaiting visit' }}</span>
-                                    <span class="text-[9px] px-1.5 py-0.25 rounded font-bold shrink-0 {{ $audit->status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($audit->status === 'Expiring Soon' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-rose-50 text-rose-700 border border-rose-100') }}">{{ $audit->status }}</span>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @empty
-                <p class="text-xs text-gray-400 text-center py-6 col-span-full">No accredited programs logged in directory.</p>
-            @endforelse
-            
-            <div id="no-accredited-matches" class="hidden text-xs text-gray-400 text-center py-12 col-span-full">
-                No programs match the selected accrediting body.
-            </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="text-xs text-gray-400 text-center py-8 italic">No accredited programs logged in directory.</td>
+                        </tr>
+                    @endforelse
+                    
+                    <tr id="no-accredited-matches" class="hidden">
+                        <td colspan="3" class="text-xs text-gray-400 text-center py-8 italic">No programs match the selected accrediting body.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
 </div>
 
 <!-- ================= APPROVAL DETAIL POP-OUT MODAL ================= -->
-<div id="approval-detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-2xl overflow-hidden transform scale-95 transition-all duration-200">
-        <!-- Header -->
-        <div class="bg-hau-maroon-dark px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <div>
-                <div class="flex items-center gap-2 mb-0.5">
-                    <span id="adm-program-code" class="inline-flex px-2 py-0.5 rounded text-xs font-bold font-mono bg-white/10 text-white"></span>
-                    <span id="adm-body" class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-hau-gold/20 text-hau-gold-light"></span>
+<div id="approval-detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-2xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10 shrink-0" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5 min-w-0 pr-2">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
-                <h3 id="adm-title" class="text-base font-black text-white leading-snug"></h3>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <span id="adm-program-code" class="inline-flex px-2 py-0.5 rounded text-[11px] font-bold font-mono bg-white/15 text-white" style="color: #ffffff;"></span>
+                        <span id="adm-body" class="inline-flex px-2 py-0.5 rounded text-[11px] font-bold bg-white/20 text-white" style="color: #ffffff;"></span>
+                    </div>
+                    <h3 id="adm-title" class="text-base font-bold text-white leading-snug truncate" style="color: #ffffff;"></h3>
+                </div>
             </div>
-            <button onclick="closeApprovalDetailModal()" class="text-white/60 hover:text-white text-2xl leading-none ml-4 shrink-0">&times;</button>
+            <button onclick="closeApprovalDetailModal()" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer shrink-0" style="color: #ffffff;" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
         </div>
 
         <!-- Body -->
-        <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+        <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto flex-1">
 
             <!-- Workflow Banner -->
             <div class="flex items-center gap-2 bg-hau-maroon/5 border border-hau-maroon/15 rounded-xl px-4 py-3">
                 <div class="flex items-center gap-1.5 text-xs font-bold text-hau-maroon-dark flex-wrap">
-                    <span class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded flex items-center gap-1">
+                    <span class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-lg flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                         Recommendation
                     </span>
                     <svg class="w-3.5 h-3.5 text-hau-maroon/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    <span class="bg-hau-gold/20 text-hau-maroon-dark px-2 py-0.5 rounded flex items-center gap-1">
+                    <span class="bg-hau-gold/20 text-hau-maroon-dark px-2 py-0.5 rounded-lg flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         Action Plan
                     </span>
                     <svg class="w-3.5 h-3.5 text-hau-maroon/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    <span class="bg-hau-maroon text-white px-2 py-0.5 rounded ring-2 ring-hau-gold/40 flex items-center gap-1">
+                    <span class="bg-hau-maroon text-white px-2 py-0.5 rounded-lg ring-2 ring-hau-gold/40 flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                         Admin Reviews
                     </span>
                     <svg class="w-3.5 h-3.5 text-hau-maroon/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    <span class="bg-gray-200 text-gray-500 px-2 py-0.5 rounded flex items-center gap-1">
+                    <span class="bg-gray-200 text-gray-500 px-2 py-0.5 rounded-lg flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         Compliant
                     </span>
@@ -976,15 +1160,15 @@
             <!-- Status Transition -->
             <div class="flex items-center gap-3 text-sm">
                 <span class="text-gray-500 font-semibold text-xs">Status Transition:</span>
-                <span id="adm-current-status" class="font-bold text-gray-600 bg-gray-100 px-2.5 py-0.5 rounded border border-gray-200 text-xs"></span>
+                <span id="adm-current-status" class="font-bold text-gray-600 bg-gray-100 px-2.5 py-0.5 rounded-lg border border-gray-200 text-xs"></span>
                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                <span class="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200 text-xs">Compliant</span>
+                <span class="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200 text-xs">Compliant</span>
                 <span class="text-[10px] text-gray-400 italic">(auto on approval)</span>
             </div>
 
             <!-- Recommendation Checklist -->
             <div>
-                <span class="text-[10px] font-black text-hau-maroon uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                <span class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider mb-1 flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                     Accreditor Recommendations
                 </span>
@@ -1027,13 +1211,13 @@
             <!-- Description -->
             <div>
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Task Description</span>
-                <p id="adm-description" class="text-xs text-gray-600 leading-relaxed whitespace-pre-line"></p>
+                <p id="adm-description" class="text-xs text-gray-600 leading-relaxed whitespace-pre-line bg-gray-50 p-3 rounded-xl border border-gray-200/60"></p>
             </div>
 
             <!-- Submitted Action Plan -->
             <div class="bg-hau-gold/10 border border-hau-gold/30 rounded-xl p-4">
-                <span class="text-[10px] font-black text-hau-gold-dark uppercase tracking-wider block mb-2 flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                <span class="text-[10px] font-bold text-amber-900 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                     Submitted Action Plan
                 </span>
                 <p id="adm-action-plan" class="text-sm text-gray-800 leading-relaxed font-medium whitespace-pre-line"></p>
@@ -1041,7 +1225,7 @@
 
             <!-- Evidence Link -->
             <div class="bg-hau-maroon/5 border border-hau-maroon/10 rounded-xl p-4 flex items-center justify-between">
-                <span class="text-[10px] font-black text-hau-maroon uppercase tracking-wider flex items-center gap-1.5">
+                <span class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
                     Evidence Document Link
                 </span>
@@ -1050,19 +1234,19 @@
         </div>
 
         <!-- Footer: Approve / Reject actions -->
-        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between gap-3">
-            <button onclick="closeApprovalDetailModal()" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Close</button>
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 shrink-0">
+            <button onclick="closeApprovalDetailModal()" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Close</button>
             <div class="flex items-center gap-3">
                 <button id="adm-reject-btn"
                         onclick="closeApprovalDetailModal(); openRejectModal(window._admCurrentId, window._admCurrentTitle)"
-                        class="inline-flex items-center gap-1.5 px-5 py-2.5 border border-rose-300 hover:bg-rose-50 text-rose-700 text-xs font-bold rounded-lg transition">
+                        class="inline-flex items-center gap-1.5 px-4 py-2.5 border border-rose-200 bg-white hover:bg-rose-50 text-rose-700 text-xs font-bold rounded-xl transition">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     Reject Update
                 </button>
                 <form id="adm-approve-form" action="" method="POST">
                     @csrf
-                    <button type="submit" class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow transition">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         Approve & Mark Compliant
                     </button>
                 </form>
@@ -1073,30 +1257,61 @@
 
 <!-- ================= REJECTION REASON MODAL ================= -->
 <div id="reject-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon-dark px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-md font-bold">Reject Compliance Update</h3>
-            <button onclick="closeRejectModal()" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Reject Compliance Update</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Return submission for revisions</p>
+                </div>
+            </div>
+            <button onclick="closeRejectModal()" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
         </div>
         <form id="reject-form" action="" method="POST">
             @csrf
             <div class="p-6 space-y-4">
-                <p class="text-xs text-gray-500">Provide constructive feedback or a reason for rejecting the proposed compliance changes. The Unit or Department will see this feedback in order to submit revisions.</p>
+                <p class="text-xs text-gray-600 leading-relaxed bg-rose-50 border border-rose-100 rounded-xl p-3.5">Provide constructive feedback or a reason for rejecting the proposed compliance changes. The Unit or Department will see this feedback in order to submit revisions.</p>
                 <div>
-                    <label for="reject-reason" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Rejection Reason</label>
-                    <textarea name="rejection_reason" id="reject-reason" required rows="3" placeholder="e.g. Please upload the document with authorized signatures." class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon"></textarea>
+                    <label for="reject-reason" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Rejection Reason <span class="text-rose-500">*</span></label>
+                    <textarea name="rejection_reason" id="reject-reason" required rows="3" placeholder="e.g. Please upload the document with authorized signatures." class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition"></textarea>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeRejectModal()" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow transition">Reject Update</button>
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <button type="button" onclick="closeRejectModal()" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Cancel</button>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    Reject Update
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    // Sync filter selects and filter program cards dynamically
+    // Toggle expandable alert drawer
+    function toggleAlertDetails() {
+        const drawer = document.getElementById('alert-detail-drawer');
+        const text = document.getElementById('alert-toggle-text');
+        const icon = document.getElementById('alert-toggle-icon');
+        if (!drawer) return;
+        if (drawer.classList.contains('hidden')) {
+            drawer.classList.remove('hidden');
+            if (text) text.innerText = 'Hide Details';
+            if (icon) icon.classList.add('rotate-180');
+        } else {
+            drawer.classList.add('hidden');
+            if (text) text.innerText = 'Expand Details';
+            if (icon) icon.classList.remove('rotate-180');
+        }
+    }
+
+    // Sync filter selects and filter program rows dynamically
     function filterProgramsByBody(bodyVal) {
         const filterVal = bodyVal.toLowerCase();
         
@@ -1106,28 +1321,28 @@
         if (cardSelect && cardSelect.value !== bodyVal) cardSelect.value = bodyVal;
         if (headerSelect && headerSelect.value !== bodyVal) headerSelect.value = bodyVal;
         
-        const cards = document.querySelectorAll('.program-card');
+        const rows = document.querySelectorAll('.program-row');
         let visibleCount = 0;
         
-        cards.forEach(card => {
-            const subcards = card.querySelectorAll('.accreditation-subcard');
+        rows.forEach(row => {
+            const pills = row.querySelectorAll('.accreditation-pill');
             let hasMatch = false;
             
-            subcards.forEach(sub => {
-                const subBody = sub.getAttribute('data-body');
+            pills.forEach(pill => {
+                const subBody = pill.getAttribute('data-body');
                 if (!filterVal || subBody === filterVal) {
-                    sub.classList.remove('hidden');
+                    pill.classList.remove('hidden');
                     hasMatch = true;
                 } else {
-                    sub.classList.add('hidden');
+                    pill.classList.add('hidden');
                 }
             });
             
             if (hasMatch) {
-                card.classList.remove('hidden');
+                row.classList.remove('hidden');
                 visibleCount++;
             } else {
-                card.classList.add('hidden');
+                row.classList.add('hidden');
             }
         });
         

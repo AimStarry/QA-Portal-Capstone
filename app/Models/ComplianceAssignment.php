@@ -47,4 +47,36 @@ class ComplianceAssignment extends Model
     {
         return $this->belongsTo(ResponsibleUnit::class, 'responsible_unit_id', 'responsible_unit_id');
     }
+
+    /**
+     * Check if this cell submission is fully approved / compliant.
+     */
+    public function isCompliant(): bool
+    {
+        return $this->status === 'Compliant' && $this->approval_state !== 'Pending Approval';
+    }
+
+    /**
+     * Check if this cell submission is pending QA Admin approval.
+     */
+    public function isPendingApproval(): bool
+    {
+        return $this->approval_state === 'Pending Approval';
+    }
+
+    /**
+     * Check if this cell submission has been rejected and needs revision.
+     */
+    public function isRejected(): bool
+    {
+        return $this->approval_state === 'Rejected';
+    }
+
+    /**
+     * Get the effective evidence link (approved document link or pending document link).
+     */
+    public function getEffectiveLink(): ?string
+    {
+        return $this->document_link ?: $this->pending_document_link;
+    }
 }

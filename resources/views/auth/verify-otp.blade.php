@@ -51,7 +51,7 @@
             Enter it below to continue. The code expires in <strong class="text-red-600">10 minutes</strong>.
         </p>
 
-        <form action="{{ route('password.verify-otp.post') }}" method="POST" class="space-y-5" id="otp-form">
+        <form action="{{ route('password.verify-otp.post') }}" method="POST" class="space-y-5" id="otp-form" data-no-draft="true">
             @csrf
 
             {{-- 6-digit OTP input boxes --}}

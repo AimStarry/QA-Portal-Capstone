@@ -25,3 +25,11 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/scratch/
+*.sql
+*.zip
+programs_export.json
+local_dump_check.php
+app/Http/Controllers/ComplianceControllerTemp.php
+database/seeders/HauRealDataSeeder.php
+database/seeders/HauMockDataSeeder.php

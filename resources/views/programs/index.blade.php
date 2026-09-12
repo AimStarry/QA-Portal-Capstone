@@ -342,26 +342,41 @@
 
 <!-- Add Program Modal -->
 <div id="add-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-lg font-bold">Add Academic Program</h3>
-            <button onclick="closeModal('add-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Add Academic Program</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Register a new degree program into the curriculum</p>
+                </div>
+            </div>
+            <button onclick="closeModal('add-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
         <form action="{{ route('programs.store') }}" method="POST">
             @csrf
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-4 max-h-[calc(85vh-140px)] overflow-y-auto">
                 <div>
-                    <label for="add-code" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Program Code</label>
-                    <input type="text" name="program_code" id="add-code" required placeholder="e.g. BSCS" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="add-code" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Program Code <span class="text-rose-500">*</span></label>
+                    <input type="text" name="program_code" id="add-code" required placeholder="e.g. BSCS" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm uppercase text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="add-name" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Program Title / Degree Name</label>
-                    <input type="text" name="program_name" id="add-name" required placeholder="e.g. Bachelor of Science in Computer Science" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="add-name" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Program Title / Degree Name <span class="text-rose-500">*</span></label>
+                    <input type="text" name="program_name" id="add-name" required placeholder="e.g. Bachelor of Science in Computer Science" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="add-college" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">School / College</label>
+                    <label for="add-college" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">School / College <span class="text-rose-500">*</span></label>
                     @if($role === 'Dean' || $role === 'Principal')
-                        <select id="add-college" disabled class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-500 focus:outline-none">
+                        <select id="add-college" disabled class="block w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-100 text-gray-500 focus:outline-none">
                             @foreach($colleges as $col)
                                 @if($col->id === auth()->user()->college_id)
                                     <option value="{{ $col->id }}" selected>{{ $col->name }}</option>
@@ -370,7 +385,7 @@
                         </select>
                         <input type="hidden" name="college_id" value="{{ auth()->user()->college_id }}">
                     @else
-                        <select name="college_id" id="add-college" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                        <select name="college_id" id="add-college" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition">
                             <option value="" disabled selected>Select School / College</option>
                             @foreach($colleges as $col)
                                 <option value="{{ $col->id }}">{{ $col->name }}</option>
@@ -379,12 +394,12 @@
                     @endif
                 </div>
                 <div>
-                    <label for="add-department" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Department / Committee</label>
-                    <input type="text" name="department" id="add-department" placeholder="e.g. Computer Science Department" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="add-department" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Department / Committee</label>
+                    <input type="text" name="department" id="add-department" placeholder="e.g. Computer Science Department" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="add-level" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Program Level</label>
-                    <select name="program_level" id="add-level" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <label for="add-level" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Program Level <span class="text-rose-500">*</span></label>
+                    <select name="program_level" id="add-level" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition">
                         <option value="Undergraduate" selected>Undergraduate</option>
                         <option value="Graduate">Graduate</option>
                         <option value="Master's">Master's</option>
@@ -393,16 +408,19 @@
                     </select>
                 </div>
                 <div>
-                    <label for="add-accreditable" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Accreditable Status</label>
-                    <select name="is_accreditable" id="add-accreditable" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <label for="add-accreditable" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Accreditable Status <span class="text-rose-500">*</span></label>
+                    <select name="is_accreditable" id="add-accreditable" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition">
                         <option value="1" selected>Accreditable (Include in stats)</option>
                         <option value="0">Non-Accreditable (Exclude from stats)</option>
                     </select>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeModal('add-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-sm font-semibold rounded-lg shadow transition">Save Program</button>
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <button type="button" onclick="closeModal('add-modal')" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Cancel</button>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Save Program
+                </button>
             </div>
         </form>
     </div>
@@ -410,27 +428,42 @@
 
 <!-- Edit Program Modal -->
 <div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-lg font-bold">Edit Academic Program</h3>
-            <button onclick="closeModal('edit-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Edit Academic Program</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Update program specifications and accreditation details</p>
+                </div>
+            </div>
+            <button onclick="closeModal('edit-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
         <form id="edit-form" action="" method="POST">
             @csrf
             @method('PUT')
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-4 max-h-[calc(85vh-140px)] overflow-y-auto">
                 <div>
-                    <label for="edit-code" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Program Code</label>
-                    <input type="text" name="program_code" id="edit-code" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="edit-code" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Program Code <span class="text-rose-500">*</span></label>
+                    <input type="text" name="program_code" id="edit-code" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm uppercase text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="edit-name" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Program Title / Degree Name</label>
-                    <input type="text" name="program_name" id="edit-name" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="edit-name" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Program Title / Degree Name <span class="text-rose-500">*</span></label>
+                    <input type="text" name="program_name" id="edit-name" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="edit-college" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">School / College</label>
+                    <label for="edit-college" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">School / College <span class="text-rose-500">*</span></label>
                     @if($role === 'Dean' || $role === 'Principal')
-                        <select id="edit-college" disabled class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-500 focus:outline-none">
+                        <select id="edit-college" disabled class="block w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-100 text-gray-500 focus:outline-none">
                             @foreach($colleges as $col)
                                 @if($col->id === auth()->user()->college_id)
                                     <option value="{{ $col->id }}" selected>{{ $col->name }}</option>
@@ -439,7 +472,7 @@
                         </select>
                         <input type="hidden" name="college_id" value="{{ auth()->user()->college_id }}">
                     @else
-                        <select name="college_id" id="edit-college" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                        <select name="college_id" id="edit-college" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition">
                             @foreach($colleges as $col)
                                 <option value="{{ $col->id }}">{{ $col->name }}</option>
                             @endforeach
@@ -447,12 +480,12 @@
                     @endif
                 </div>
                 <div>
-                    <label for="edit-department" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Department / Committee</label>
-                    <input type="text" name="department" id="edit-department" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="edit-department" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Department / Committee</label>
+                    <input type="text" name="department" id="edit-department" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="edit-level" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Program Level</label>
-                    <select name="program_level" id="edit-level" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <label for="edit-level" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Program Level <span class="text-rose-500">*</span></label>
+                    <select name="program_level" id="edit-level" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition">
                         <option value="Undergraduate">Undergraduate</option>
                         <option value="Graduate">Graduate</option>
                         <option value="Master's">Master's</option>
@@ -461,16 +494,19 @@
                     </select>
                 </div>
                 <div>
-                    <label for="edit-accreditable" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Accreditable Status</label>
-                    <select name="is_accreditable" id="edit-accreditable" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <label for="edit-accreditable" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Accreditable Status <span class="text-rose-500">*</span></label>
+                    <select name="is_accreditable" id="edit-accreditable" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition">
                         <option value="1">Accreditable (Include in stats)</option>
                         <option value="0">Non-Accreditable (Exclude from stats)</option>
                     </select>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeModal('edit-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-sm font-semibold rounded-lg shadow transition">Update Program</button>
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <button type="button" onclick="closeModal('edit-modal')" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Cancel</button>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Update Program
+                </button>
             </div>
         </form>
     </div>
@@ -478,27 +514,42 @@
 
 <!-- Add Office/Unit Modal -->
 <div id="add-unit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-lg font-bold">Add Office / Unit</h3>
-            <button onclick="closeModal('add-unit-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Add Office / Unit</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Register a non-academic support unit or department</p>
+                </div>
+            </div>
+            <button onclick="closeModal('add-unit-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
         <form action="{{ route('units.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="p-6 space-y-4">
                 <div>
-                    <label for="add-unit-name-field" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Office/Unit Name</label>
-                    <input type="text" name="name" id="add-unit-name-field" required placeholder="e.g. Quality Assurance Office" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="add-unit-name-field" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Office/Unit Name <span class="text-rose-500">*</span></label>
+                    <input type="text" name="name" id="add-unit-name-field" required placeholder="e.g. Quality Assurance Office" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="add-unit-code-field" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Code</label>
-                    <input type="text" name="code" id="add-unit-code-field" placeholder="e.g. QAO" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="add-unit-code-field" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Code / Acronym</label>
+                    <input type="text" name="code" id="add-unit-code-field" placeholder="e.g. QAO" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Office Logo <span class="text-gray-400 normal-case font-normal">(optional, max 10MB)</span></label>
+                    <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Office Logo <span class="text-gray-400 normal-case font-normal">(optional, max 10MB)</span></label>
                     <div class="mt-1">
-                        <label for="logo-add-unit" class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-600 hover:text-hau-maroon group">
-                            <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <label for="logo-add-unit" class="flex items-center justify-center gap-2.5 px-4 py-3 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-600 hover:text-hau-maroon group">
+                            <svg class="w-5 h-5 text-gray-400 group-hover:text-hau-maroon transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                             </svg>
                             <span class="file-label-text truncate">Choose Image File...</span>
@@ -507,9 +558,12 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeModal('add-unit-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-sm font-semibold rounded-lg shadow transition">Save Office/Unit</button>
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <button type="button" onclick="closeModal('add-unit-modal')" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Cancel</button>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Save Office/Unit
+                </button>
             </div>
         </form>
     </div>
@@ -517,28 +571,43 @@
 
 <!-- Edit Office/Unit Modal -->
 <div id="edit-unit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-lg font-bold">Edit Office / Unit</h3>
-            <button onclick="closeModal('edit-unit-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Edit Office / Unit</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Update unit information and identity</p>
+                </div>
+            </div>
+            <button onclick="closeModal('edit-unit-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
         <form id="edit-unit-form" action="" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="p-6 space-y-4">
                 <div>
-                    <label for="edit-unit-name-field" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Office/Unit Name</label>
-                    <input type="text" name="name" id="edit-unit-name-field" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="edit-unit-name-field" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Office/Unit Name <span class="text-rose-500">*</span></label>
+                    <input type="text" name="name" id="edit-unit-name-field" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="edit-unit-code-field" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Code</label>
-                    <input type="text" name="code" id="edit-unit-code-field" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="edit-unit-code-field" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Code / Acronym</label>
+                    <input type="text" name="code" id="edit-unit-code-field" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Office Logo <span class="text-gray-400 normal-case font-normal">(upload new to replace, max 10MB)</span></label>
+                    <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Office Logo <span class="text-gray-400 normal-case font-normal">(upload new to replace, max 10MB)</span></label>
                     <div class="mt-1">
-                        <label for="logo-edit-unit" class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-600 hover:text-hau-maroon group">
-                            <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <label for="logo-edit-unit" class="flex items-center justify-center gap-2.5 px-4 py-3 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-600 hover:text-hau-maroon group">
+                            <svg class="w-5 h-5 text-gray-400 group-hover:text-hau-maroon transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                             </svg>
                             <span class="file-label-text truncate">Choose Image File...</span>
@@ -547,9 +616,12 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeModal('edit-unit-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-sm font-semibold rounded-lg shadow transition">Update Office/Unit</button>
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <button type="button" onclick="closeModal('edit-unit-modal')" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Cancel</button>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Update Office/Unit
+                </button>
             </div>
         </form>
     </div>
@@ -557,28 +629,43 @@
 
 <!-- Manage Schools & Colleges Modal -->
 <div id="manage-colleges-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-lg overflow-hidden transform scale-95 transition-all flex flex-col" style="max-height: 85vh;">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold shrink-0">
-            <h3 class="text-lg font-bold">Manage Colleges &amp; Units</h3>
-            <button onclick="closeModal('manage-colleges-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-lg overflow-hidden transform scale-95 transition-all duration-200 flex flex-col" style="max-height: 85vh;">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10 shrink-0" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Manage Colleges &amp; Units</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Configure institutional hierarchy and assigned leadership</p>
+                </div>
+            </div>
+            <button onclick="closeModal('manage-colleges-modal')" class="p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
 
         <!-- Tab Switcher -->
-        <div class="flex border-b border-gray-200 shrink-0">
-            <button type="button" onclick="switchManageTab('colleges')" id="tab-btn-colleges" class="flex-1 py-3 text-center text-sm font-bold border-b-2 border-hau-maroon text-hau-maroon focus:outline-none">Schools &amp; Colleges</button>
-            <button type="button" onclick="switchManageTab('units')" id="tab-btn-units" class="flex-1 py-3 text-center text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none">Offices &amp; Units</button>
+        <div class="flex border-b border-gray-200 shrink-0 bg-gray-50/50">
+            <button type="button" onclick="switchManageTab('colleges')" id="tab-btn-colleges" class="flex-1 py-3 text-center text-xs font-bold uppercase tracking-wider border-b-2 border-hau-maroon text-hau-maroon focus:outline-none transition">Schools &amp; Colleges</button>
+            <button type="button" onclick="switchManageTab('units')" id="tab-btn-units" class="flex-1 py-3 text-center text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none transition">Offices &amp; Units</button>
         </div>
 
         <!-- Colleges Tab Content -->
         <div id="manage-tab-colleges" class="flex flex-col flex-1 min-h-0">
-            <div class="px-6 py-3 border-b border-gray-150 flex justify-between items-center bg-gray-50/50 shrink-0">
-                <span class="text-xs font-bold text-gray-500">Active Schools/Colleges</span>
-                <button type="button" onclick="openModal('add-school-modal')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-lg shadow-sm transition">
+            <div class="px-6 py-3 border-b border-gray-150 flex justify-between items-center bg-gray-50/70 shrink-0">
+                <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">Active Schools / Colleges</span>
+                <button type="button" onclick="openModal('add-school-modal')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-xs transition">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Add School
                 </button>
             </div>
-            <div class="p-6 space-y-4 overflow-y-auto flex-1 bg-gray-50/20">
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 bg-gray-50/30">
                 @forelse($colleges as $col)
                     <div class="bg-white border border-gray-200 rounded-xl p-4 shrink-0 shadow-xs space-y-3">
                         <form action="{{ route('colleges.update', $col->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
@@ -586,22 +673,22 @@
                             @method('PUT')
                             <div class="space-y-3.5">
                                 <div>
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">School / College Name</label>
-                                    <input type="text" name="name" value="{{ $col->name }}" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-semibold text-gray-700" />
+                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">School / College Name</label>
+                                    <input type="text" name="name" value="{{ $col->name }}" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-semibold text-gray-900" />
                                 </div>
                                 <div class="grid grid-cols-12 gap-3">
                                     <div class="col-span-4">
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Acronym / Code</label>
-                                        <input type="text" name="code" value="{{ $col->code }}" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-semibold text-gray-700" />
+                                        <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">Acronym / Code</label>
+                                        <input type="text" name="code" value="{{ $col->code }}" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-semibold text-gray-900" />
                                     </div>
                                     <div class="col-span-8">
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Former Name (Optional)</label>
-                                        <input type="text" name="former_name" value="{{ $col->former_name }}" placeholder="e.g. College of Nursing (CON)" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon text-gray-700 font-semibold" />
+                                        <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">Former Name (Optional)</label>
+                                        <input type="text" name="former_name" value="{{ $col->former_name }}" placeholder="e.g. College of Nursing (CON)" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon text-gray-900 font-semibold" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Assigned Dean / Principal</label>
-                                    <select name="dean_id" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon text-gray-700 font-semibold bg-white">
+                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">Assigned Dean / Principal</label>
+                                    <select name="dean_id" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon text-gray-900 font-semibold bg-white">
                                         <option value="">No Head Assigned</option>
                                         @foreach($deans as $dean)
                                             <option value="{{ $dean->id }}" {{ $dean->college_id === $col->id ? 'selected' : '' }}>
@@ -611,13 +698,13 @@
                                     </select>
                                 </div>
                                 <div class="pt-2 border-t border-gray-100">
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1 font-sans">School Logo <span class="text-gray-455 normal-case font-normal">(upload new to replace, max 10MB)</span></label>
+                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">School Logo <span class="text-gray-400 normal-case font-normal">(upload new to replace, max 10MB)</span></label>
                                     <div class="mt-1 flex items-center gap-3">
                                         @if($col->logo)
-                                            <img src="{{ asset('storage/' . $col->logo) }}" alt="Logo" class="w-10 h-10 rounded object-contain border border-gray-200 p-0.5 bg-gray-50 flex-shrink-0" />
+                                            <img src="{{ asset('storage/' . $col->logo) }}" alt="Logo" class="w-10 h-10 rounded-lg object-contain border border-gray-200 p-0.5 bg-gray-50 shrink-0" />
                                         @endif
-                                        <label for="logo-col-{{ $col->id }}" class="flex-grow flex items-center justify-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-655 hover:text-hau-maroon group">
-                                            <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <label for="logo-col-{{ $col->id }}" class="grow flex items-center justify-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-600 hover:text-hau-maroon group">
+                                            <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                             </svg>
                                             <span class="file-label-text truncate">Choose Image...</span>
@@ -627,7 +714,10 @@
                                 </div>
                             </div>
                             <div class="flex justify-end pt-2 border-t border-gray-100">
-                                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">Save Changes</button>
+                                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-lg shadow-xs transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    Save Changes
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -639,14 +729,14 @@
 
         <!-- Units Tab Content -->
         <div id="manage-tab-units" class="flex flex-col flex-1 min-h-0 hidden">
-            <div class="px-6 py-3 border-b border-gray-150 flex justify-between items-center bg-gray-50/50 shrink-0">
-                <span class="text-xs font-bold text-gray-500">Active Offices/Units</span>
-                <button type="button" onclick="openModal('add-unit-modal')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-lg shadow-sm transition">
+            <div class="px-6 py-3 border-b border-gray-150 flex justify-between items-center bg-gray-50/70 shrink-0">
+                <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">Active Offices / Units</span>
+                <button type="button" onclick="openModal('add-unit-modal')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-xs transition">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Add Unit
                 </button>
             </div>
-            <div class="p-6 space-y-4 overflow-y-auto flex-1 bg-gray-50/20">
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 bg-gray-50/30">
                 @forelse($units as $u)
                     <div class="bg-white border border-gray-200 rounded-xl p-4 shrink-0 shadow-xs space-y-3">
                         <form action="{{ route('units.update', $u->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
@@ -654,17 +744,17 @@
                             @method('PUT')
                             <div class="space-y-3.5">
                                 <div>
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Office / Unit Name</label>
-                                    <input type="text" name="name" value="{{ $u->name }}" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-semibold text-gray-700" />
+                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">Office / Unit Name</label>
+                                    <input type="text" name="name" value="{{ $u->name }}" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-semibold text-gray-900" />
                                 </div>
                                 <div class="grid grid-cols-12 gap-3">
                                     <div class="col-span-4">
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Code</label>
-                                        <input type="text" name="code" value="{{ $u->code }}" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-semibold text-gray-700" />
+                                        <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">Code / Acronym</label>
+                                        <input type="text" name="code" value="{{ $u->code }}" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-semibold text-gray-900" />
                                     </div>
                                     <div class="col-span-8">
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Assigned Unit Head</label>
-                                        <select name="head_id" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon text-gray-700 font-semibold bg-white">
+                                        <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">Assigned Unit Head</label>
+                                        <select name="head_id" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon text-gray-900 font-semibold bg-white">
                                             <option value="">No Head Assigned</option>
                                             @foreach($unitHeads as $head)
                                                 <option value="{{ $head->id }}" {{ $head->unit_id === $u->id ? 'selected' : '' }}>
@@ -674,15 +764,15 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="pt-2 border-t border-gray-100 flex items-center justify-between gap-3 font-sans">
-                                    <div class="flex-grow">
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Office Logo <span class="text-gray-455 normal-case font-normal">(upload new to replace, max 10MB)</span></label>
+                                <div class="pt-2 border-t border-gray-100 flex items-center justify-between gap-3">
+                                    <div class="grow">
+                                        <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">Office Logo <span class="text-gray-400 normal-case font-normal">(upload new to replace, max 10MB)</span></label>
                                         <div class="mt-1 flex items-center gap-3">
                                             @if($u->logo)
-                                                <img src="{{ asset('storage/' . $u->logo) }}" alt="Logo" class="w-10 h-10 rounded object-contain border border-gray-200 p-0.5 bg-gray-50 flex-shrink-0" />
+                                                <img src="{{ asset('storage/' . $u->logo) }}" alt="Logo" class="w-10 h-10 rounded-lg object-contain border border-gray-200 p-0.5 bg-gray-50 shrink-0" />
                                             @endif
-                                            <label for="logo-unit-{{ $u->id }}" class="flex-grow flex items-center justify-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-655 hover:text-hau-maroon group">
-                                                <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <label for="logo-unit-{{ $u->id }}" class="grow flex items-center justify-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-600 hover:text-hau-maroon group">
+                                                <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                                 </svg>
                                                 <span class="file-label-text truncate">Choose Image...</span>
@@ -690,8 +780,11 @@
                                             <input type="file" id="logo-unit-{{ $u->id }}" name="logo" accept="image/*" class="hidden" onchange="updateFileLabel(this)" />
                                         </div>
                                     </div>
-                                    <div class="flex-shrink-0 self-end pb-1">
-                                        <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">Save</button>
+                                    <div class="shrink-0 self-end pb-1">
+                                        <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-lg shadow-xs transition">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                            Save
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -703,39 +796,54 @@
             </div>
         </div>
 
-        <div class="px-6 py-3 flex justify-end border-t border-gray-250 shrink-0 bg-gray-50">
-            <button type="button" onclick="closeModal('manage-colleges-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Close</button>
+        <div class="px-6 py-4 flex justify-end border-t border-gray-100 shrink-0 bg-gray-50">
+            <button type="button" onclick="closeModal('manage-colleges-modal')" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Close</button>
         </div>
     </div>
 </div>
 
 <!-- Add School Modal -->
 <div id="add-school-modal" class="fixed inset-0 z-55 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all flex flex-col">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold shrink-0">
-            <h3 class="text-sm font-black uppercase tracking-wider">Add New School / College</h3>
-            <button onclick="closeModal('add-school-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200 flex flex-col">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10 shrink-0" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Add School / College</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Register a new academic school or college division</p>
+                </div>
+            </div>
+            <button onclick="closeModal('add-school-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
         <form action="{{ route('colleges.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-4 max-h-[calc(85vh-140px)] overflow-y-auto">
                 <div>
-                    <label for="add-college-name" class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">School / College Name</label>
-                    <input type="text" name="name" id="add-college-name" required placeholder="e.g. School of Fine Arts" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon text-gray-700 font-semibold" />
+                    <label for="add-college-name" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">School / College Name <span class="text-rose-500">*</span></label>
+                    <input type="text" name="name" id="add-college-name" required placeholder="e.g. School of Fine Arts" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="add-college-code" class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Acronym / Code</label>
-                    <input type="text" name="code" id="add-college-code" placeholder="e.g. SFA" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon text-gray-700 font-semibold" />
+                    <label for="add-college-code" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Acronym / Code</label>
+                    <input type="text" name="code" id="add-college-code" placeholder="e.g. SFA" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="add-college-former" class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Former Name (Optional)</label>
-                    <input type="text" name="former_name" id="add-college-former" placeholder="e.g. College of Fine Arts (CFA)" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon text-gray-700 font-semibold" />
+                    <label for="add-college-former" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Former Name (Optional)</label>
+                    <input type="text" name="former_name" id="add-college-former" placeholder="e.g. College of Fine Arts (CFA)" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">School Logo <span class="text-gray-455 normal-case font-normal">(optional, max 10MB)</span></label>
+                    <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">School Logo <span class="text-gray-400 normal-case font-normal">(optional, max 10MB)</span></label>
                     <div class="mt-1">
-                        <label for="logo-add-school" class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-650 hover:text-hau-maroon group">
-                            <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <label for="logo-add-school" class="flex items-center justify-center gap-2.5 px-4 py-3 border-2 border-dashed border-gray-300 hover:border-hau-maroon rounded-xl cursor-pointer bg-gray-50 hover:bg-hau-maroon/5 transition duration-150 text-xs font-bold text-gray-600 hover:text-hau-maroon group">
+                            <svg class="w-5 h-5 text-gray-400 group-hover:text-hau-maroon transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                             </svg>
                             <span class="file-label-text truncate">Choose Image File...</span>
@@ -744,9 +852,12 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-3 flex justify-end gap-2 border-t border-gray-250 shrink-0">
-                <button type="button" onclick="closeModal('add-school-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow-sm transition">Add School</button>
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100 shrink-0">
+                <button type="button" onclick="closeModal('add-school-modal')" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Cancel</button>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Add School
+                </button>
             </div>
         </form>
     </div>

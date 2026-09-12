@@ -96,7 +96,7 @@
                 @endif
 
                 <!-- Login Form -->
-                <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
+                <form action="{{ route('login.post') }}" method="POST" class="space-y-5" data-no-draft="true">
                     @csrf
                     
                     <!-- Email Address Field -->

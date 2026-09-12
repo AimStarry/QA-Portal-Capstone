@@ -1,6 +1,23 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+</style>
 <div class="space-y-8 font-sans">
 
     <!-- Header Section -->
@@ -9,10 +26,17 @@
             <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Recommendations & Compliance Tracker</h2>
             <p class="text-xs sm:text-sm text-gray-500">Track documentation audits and compliance tasks. Recommendations are managed as checklists to drive compliance rates.</p>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="openAddModal()" class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-hau-maroon border border-transparent text-sm font-semibold rounded-xl text-white hover:bg-hau-maroon-light shadow-sm focus:outline-none transition">
+        <div class="flex items-center gap-2 shrink-0">
+            <!-- Single-page Compliance CSV Export -->
+            <button type="button" onclick="exportComplianceCsv()" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white border border-gray-300 text-sm font-semibold rounded-xl text-gray-700 hover:bg-gray-50 hover:text-hau-maroon hover:border-hau-maroon/30 shadow-xs focus:outline-none transition cursor-pointer whitespace-nowrap" title="Export compliance filtered tasks as CSV">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span>Export CSV</span>
+            </button>
+
+            <!-- Log Compliance Task -->
+            <button type="button" onclick="openAddModal()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-hau-maroon border border-transparent text-sm font-semibold rounded-xl text-white hover:bg-hau-maroon-light shadow-sm focus:outline-none transition cursor-pointer whitespace-nowrap">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Log Compliance Task
+                <span>Log Compliance Task</span>
             </button>
         </div>
     </div>
@@ -221,14 +245,39 @@
                 </div>
                 <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Filter Tasks & Recommendations</h3>
             </div>
-            <div class="text-xs text-gray-400 font-medium flex items-center gap-1.5">
-                <span>Active Filter Results:</span>
-                <span id="visible-count" class="font-bold text-hau-maroon font-mono text-sm">{{ $complianceRecords->count() }}</span>
-                <span class="text-gray-400">items</span>
-                <button type="button" onclick="clearAllFilters()" class="ml-2 text-xs font-semibold text-hau-maroon hover:underline flex items-center gap-1 cursor-pointer">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    Reset Filters
-                </button>
+            <div class="flex items-center gap-3 flex-wrap">
+                <!-- View Switcher -->
+                <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
+                    <button type="button" id="view-btn-table" onclick="setComplianceView('table')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-hau-maroon text-white shadow-xs flex items-center gap-1.5 transition" title="Dense Table View">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        <span>Table</span>
+                    </button>
+                    <button type="button" id="view-btn-matrix" onclick="setComplianceView('matrix')" class="px-2.5 py-1 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-200 flex items-center gap-1.5 transition" title="Cross-Tab / Matrix Grid View">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span>Matrix</span>
+                    </button>
+                    <button type="button" id="view-btn-board" onclick="setComplianceView('board')" class="px-2.5 py-1 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-200 flex items-center gap-1.5 transition" title="Kanban Stages Board">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+                        <span>Board</span>
+                    </button>
+                    <button type="button" id="view-btn-area" onclick="setComplianceView('area')" class="px-2.5 py-1 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-200 flex items-center gap-1.5 transition" title="Grouped by Accreditation Area">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        <span>By Area</span>
+                    </button>
+                    <button type="button" id="view-btn-grid" onclick="setComplianceView('grid')" class="px-2.5 py-1 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-200 flex items-center gap-1.5 transition" title="Card Grid View">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                        <span>Cards</span>
+                    </button>
+                </div>
+
+                <div class="text-xs text-gray-400 font-medium flex items-center gap-1.5">
+                    <span>Results:</span>
+                    <span id="visible-count" class="font-bold text-hau-maroon font-mono text-sm">{{ $complianceRecords->count() }}</span>
+                    <button type="button" onclick="clearAllFilters()" class="ml-2 text-xs font-semibold text-hau-maroon hover:underline flex items-center gap-1 cursor-pointer">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Reset
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -313,7 +362,17 @@
     <!-- Tasks Grid -->
     <div id="compliance-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         @forelse ($complianceRecords as $c)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-hau-maroon/40 transition cursor-pointer animate-fade-slide-up"
+            @php
+                $leftBorderColor = 'border-l-4 border-l-hau-maroon';
+                if ($c->status === 'Compliant') {
+                    $leftBorderColor = 'border-l-4 border-l-emerald-500';
+                } elseif ($c->status === 'Non-Compliant') {
+                    $leftBorderColor = 'border-l-4 border-l-rose-500';
+                } elseif ($c->due_date && $c->due_date->isPast()) {
+                    $leftBorderColor = 'border-l-4 border-l-rose-400';
+                }
+            @endphp
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 {{ $leftBorderColor }} overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-hau-maroon/40 transition cursor-pointer animate-fade-slide-up"
                  onclick="openDetailModal(this)"
                  data-id="{{ $c->compliance_record_id }}"
                  data-program-id="{{ $c->program_id }}"
@@ -360,279 +419,249 @@
                  data-completion-rate="{{ $c->recommendationItems->count() > 0 ? round(($c->recommendationItems->where('is_completed', true)->count() / $c->recommendationItems->count()) * 100) : 0 }}">
                  
                  <!-- Top Body -->
-                 <div class="p-5 space-y-4 flex-1">
-                     <div class="flex items-start justify-between gap-2">
-                          <div class="flex flex-wrap gap-1">
-                              @php
-                                  $isAllUnitsTask = str_contains($c->responsible_unit ?? '', 'All Departments') || str_contains($c->responsible_unit ?? '', 'All Units');
-                              @endphp
-                              @if ($isAllUnitsTask)
-                                  <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-150">
-                                      All Departments &amp; Units
-                                  </span>
-                              @else
-                                  @php
-                                      $badgeItems = [];
-                                      if ($c->assignments && $c->assignments->count() > 0) {
-                                          foreach($c->assignments as $ass) {
-                                              if($ass->program) {
-                                                  $badgeItems[] = ['type' => 'prog', 'id' => $ass->program_id, 'label' => $ass->program->program_code, 'link' => route('programs.show', $ass->program_id)];
-                                              } elseif($ass->school_name) {
-                                                  $sCode = $getSchoolCode($ass->school_name);
-                                                  if (!empty($sCode)) {
-                                                      $badgeItems[] = ['type' => 'sch', 'id' => $sCode, 'label' => $sCode, 'title' => $ass->school_name];
-                                                  }
-                                              } elseif($ass->responsibleUnit) {
-                                                  $label = $ass->responsibleUnit->code ?? $ass->responsibleUnit->name;
-                                                  $badgeItems[] = ['type' => 'unit', 'id' => $ass->responsible_unit_id, 'label' => $label];
-                                              }
-                                          }
-                                      } elseif($c->program) {
-                                          $badgeItems[] = ['type' => 'prog', 'id' => $c->program_id, 'label' => $c->program->program_code, 'link' => route('programs.show', $c->program_id)];
-                                      } elseif($c->school) {
-                                          foreach(explode(';', $c->school) as $sItem) {
-                                              $sName = trim($sItem);
-                                              $sCode = $getSchoolCode($sName);
-                                              if (!empty($sCode)) {
-                                                  $badgeItems[] = ['type' => 'sch', 'id' => $sCode, 'label' => $sCode, 'title' => $sName];
-                                              }
-                                          }
-                                      }
-                                      
-                                      $uniqueBadges = [];
-                                      $seenKeys = [];
-                                      foreach ($badgeItems as $item) {
-                                          $key = $item['type'] . '_' . $item['id'];
-                                          if (!in_array($key, $seenKeys)) {
-                                              $seenKeys[] = $key;
-                                              $uniqueBadges[] = $item;
-                                          }
-                                      }
-
-                                      $maxVisible = 4;
-                                      $visibleBadges = array_slice($uniqueBadges, 0, $maxVisible);
-                                      $hiddenCount = count($uniqueBadges) - count($visibleBadges);
-                                      $allLabels = array_map(fn($b) => $b['label'], $uniqueBadges);
-                                  @endphp
-
-                                  @foreach($visibleBadges as $b)
-                                      @if(isset($b['link']))
-                                          <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon hover:underline">
-                                              <a href="{{ $b['link'] }}" onclick="event.stopPropagation();">{{ $b['label'] }}</a>
-                                          </span>
-                                      @elseif($b['type'] === 'unit')
-                                          <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700">
-                                              {{ $b['label'] }}
-                                          </span>
-                                      @else
-                                          <span title="{{ $b['title'] ?? '' }}" class="inline-flex px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon">
-                                              {{ $b['label'] }}
-                                          </span>
-                                      @endif
-                                  @endforeach
-
-                                  @if($hiddenCount > 0)
-                                      <span title="{{ implode(', ', $allLabels) }}" class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200 cursor-help">
-                                          +{{ $hiddenCount }} more
-                                      </span>
-                                  @endif
-                              @endif
-                              @if ($c->accrediting_body)
-                                  <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-hau-gold/15 text-hau-maroon-dark">
-                                      {{ $c->accrediting_body }}
-                                  </span>
-                              @endif
-                          </div>
-                         
-                         <div class="flex items-center gap-1 shrink-0">
-                             <!-- Priority Badge -->
-                             <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-black
-                                 @if ($c->priority === 'Critical') bg-rose-100 text-rose-800 border border-rose-200
-                                 @elseif ($c->priority === 'High') bg-amber-50 text-amber-800 border border-amber-200
-                                 @elseif ($c->priority === 'Low') bg-slate-150 text-slate-700 border border-slate-200
-                                 @else bg-blue-50 text-blue-700 border border-blue-150
-                                 @endif">
-                                 {{ $c->priority ?? 'Medium' }}
-                             </span>
-                             
-                             <!-- Status Badge -->
-                             <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold
-                                 @if ($c->status == 'Compliant') bg-emerald-50 text-emerald-700 border border-emerald-100
-                                 @elseif ($c->status == 'Non-Compliant') bg-rose-50 text-rose-700 border border-rose-100
-                                 @else bg-gray-50 text-gray-600 border border-gray-200
-                                 @endif">
-                                 {{ $c->status }}
-                             </span>
-                         </div>
-                     </div>
-
-                     <!-- 4-Stage Workflow Pipeline Stepper -->
-                     @php
-                         $stage = $c->workflow_stage ?? 'recommendation_created';
-                         $stages = [
-                             'recommendation_created' => 0,
-                             'action_plan_submitted'  => 1,
-                             'admin_reviewing'        => 2,
-                             'compliant'              => 3,
-                         ];
-                         $currentIdx = $stages[$stage] ?? 0;
-                     @endphp
-                     <div class="flex items-center gap-0 w-full">
-                         @php
-                             $stepDefs = [
-                                 ['label' => 'Recommendation', 'iconSvg' => '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>', 'colors' => ['done' => 'bg-hau-maroon text-white', 'active' => 'bg-hau-maroon/10 text-hau-maroon border border-hau-maroon/30', 'idle' => 'bg-gray-100 text-gray-400']],
-                                 ['label' => 'Action Plan', 'iconSvg' => '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>', 'colors' => ['done' => 'bg-hau-gold text-hau-maroon-dark', 'active' => 'bg-hau-gold/15 text-hau-gold-dark border border-hau-gold/40', 'idle' => 'bg-gray-100 text-gray-400']],
-                                 ['label' => 'Admin Review', 'iconSvg' => '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>', 'colors' => ['done' => 'bg-hau-maroon-dark text-white', 'active' => 'bg-hau-maroon/10 text-hau-maroon-dark border border-hau-maroon/30', 'idle' => 'bg-gray-100 text-gray-400']],
-                                 ['label' => 'Compliant', 'iconSvg' => '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>', 'colors' => ['done' => 'bg-emerald-500 text-white', 'active' => 'bg-emerald-50 text-emerald-700 border border-emerald-300', 'idle' => 'bg-gray-100 text-gray-400']],
-                             ];
-                         @endphp
-                         @foreach($stepDefs as $si => $step)
-                             @php
-                                 if ($si < $currentIdx) $cls = $step['colors']['done'];
-                                 elseif ($si === $currentIdx) $cls = $step['colors']['active'];
-                                 else $cls = $step['colors']['idle'];
-                             @endphp
-                             <div class="flex flex-col items-center flex-1 min-w-0">
-                                 <div class="flex items-center w-full">
-                                     @if($si > 0)
-                                         <div class="flex-1 h-px {{ $si <= $currentIdx ? 'bg-hau-maroon/40' : 'bg-gray-200' }}"></div>
-                                     @endif
-                                     <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-black {{ $cls }} shrink-0">
-                                         @if($si < $currentIdx)
-                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                         @else
-                                             {!! $step['iconSvg'] !!}
-                                         @endif
+                 <div class="p-5 space-y-3.5 flex-1 flex flex-col justify-between">
+                     <div class="space-y-3">
+                         <!-- Badges Row: Program / School / Agency on Left, Priority & Status on Right -->
+                         <div class="flex items-center justify-between gap-2">
+                             <div class="flex flex-wrap items-center gap-1.5 min-w-0">
+                                 @php
+                                     $isAllUnitsTask = str_contains($c->responsible_unit ?? '', 'All Departments') || str_contains($c->responsible_unit ?? '', 'All Units');
+                                 @endphp
+                                 @if ($isAllUnitsTask)
+                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-150">
+                                         All Depts
                                      </span>
-                                     @if($si < count($stepDefs) - 1)
-                                         <div class="flex-1 h-px {{ $si < $currentIdx ? 'bg-hau-maroon/40' : 'bg-gray-200' }}"></div>
+                                 @else
+                                     @php
+                                         $badgeItems = [];
+                                         if ($c->assignments && $c->assignments->count() > 0) {
+                                             foreach($c->assignments as $ass) {
+                                                 if($ass->program) {
+                                                     $badgeItems[] = ['type' => 'prog', 'id' => $ass->program_id, 'label' => $ass->program->program_code, 'link' => route('programs.show', $ass->program_id)];
+                                                 } elseif($ass->school_name) {
+                                                     $sCode = $getSchoolCode($ass->school_name);
+                                                     if (!empty($sCode)) {
+                                                         $badgeItems[] = ['type' => 'sch', 'id' => $sCode, 'label' => $sCode, 'title' => $ass->school_name];
+                                                     }
+                                                 } elseif($ass->responsibleUnit) {
+                                                     $label = $ass->responsibleUnit->code ?? $ass->responsibleUnit->name;
+                                                     $badgeItems[] = ['type' => 'unit', 'id' => $ass->responsible_unit_id, 'label' => $label];
+                                                 }
+                                             }
+                                         } elseif($c->program) {
+                                             $badgeItems[] = ['type' => 'prog', 'id' => $c->program_id, 'label' => $c->program->program_code, 'link' => route('programs.show', $c->program_id)];
+                                         } elseif($c->school) {
+                                             foreach(explode(';', $c->school) as $sItem) {
+                                                 $sName = trim($sItem);
+                                                 $sCode = $getSchoolCode($sName);
+                                                 if (!empty($sCode)) {
+                                                     $badgeItems[] = ['type' => 'sch', 'id' => $sCode, 'label' => $sCode, 'title' => $sName];
+                                                 }
+                                             }
+                                         }
+                                         
+                                         $uniqueBadges = [];
+                                         $seenKeys = [];
+                                         foreach ($badgeItems as $item) {
+                                             $key = $item['type'] . '_' . $item['id'];
+                                             if (!in_array($key, $seenKeys)) {
+                                                 $seenKeys[] = $key;
+                                                 $uniqueBadges[] = $item;
+                                             }
+                                         }
+
+                                         $maxVisible = 3;
+                                         $visibleBadges = array_slice($uniqueBadges, 0, $maxVisible);
+                                         $hiddenCount = count($uniqueBadges) - count($visibleBadges);
+                                         $allLabels = array_map(fn($b) => $b['label'], $uniqueBadges);
+                                     @endphp
+
+                                     @foreach($visibleBadges as $b)
+                                         @if(isset($b['link']))
+                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon hover:underline">
+                                                 <a href="{{ $b['link'] }}" onclick="event.stopPropagation();">{{ $b['label'] }}</a>
+                                             </span>
+                                         @elseif($b['type'] === 'unit')
+                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700">
+                                                 {{ $b['label'] }}
+                                             </span>
+                                         @else
+                                             <span title="{{ $b['title'] ?? '' }}" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon">
+                                                 {{ $b['label'] }}
+                                             </span>
+                                         @endif
+                                     @endforeach
+
+                                     @if($hiddenCount > 0)
+                                         <span title="{{ implode(', ', $allLabels) }}" class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-600 border border-gray-200 cursor-help">
+                                             +{{ $hiddenCount }}
+                                         </span>
+                                     @endif
+                                 @endif
+                                 @if ($c->accrediting_body)
+                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-hau-gold/20 text-hau-maroon border border-hau-gold/30">
+                                         {{ $c->accrediting_body }}
+                                     </span>
+                                 @endif
+                             </div>
+                            
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <!-- Priority Badge -->
+                                <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold tracking-wide
+                                    @if ($c->priority === 'Critical') bg-rose-50 text-rose-700 border border-rose-200
+                                    @elseif ($c->priority === 'High') bg-amber-50 text-amber-800 border border-amber-200
+                                    @elseif ($c->priority === 'Low') bg-slate-100 text-slate-600 border border-slate-200
+                                    @else bg-blue-50 text-blue-700 border border-blue-150
+                                    @endif">
+                                    {{ $c->priority ?? 'Medium' }}
+                                </span>
+                                
+                                <!-- Status Badge -->
+                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold
+                                    @if ($c->status == 'Compliant') bg-emerald-50 text-emerald-700 border border-emerald-100
+                                    @elseif ($c->status == 'Non-Compliant') bg-rose-50 text-rose-700 border border-rose-100
+                                    @else bg-gray-50 text-gray-600 border border-gray-200
+                                    @endif">
+                                    {{ $c->status }}
+                                </span>
+                            </div>
+                         </div>
+
+                         <!-- Area & Category Badges + Title -->
+                         <div class="space-y-1.5">
+                             @if ($c->area || $c->category)
+                                 <div class="flex flex-wrap gap-1 items-center">
+                                     @if($c->area)
+                                         @foreach(preg_split('/[,;]+/', $c->area) as $areaTag)
+                                             @if(trim($areaTag) !== '')
+                                                 <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700 tracking-wider uppercase border border-slate-200/60">{{ trim($areaTag) }}</span>
+                                             @endif
+                                         @endforeach
+                                     @endif
+                                     @if($c->category)
+                                         @foreach(preg_split('/[,;]+/', $c->category) as $catTag)
+                                             @if(trim($catTag) !== '')
+                                                 <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200 tracking-wider uppercase leading-none">{{ trim($catTag) }}</span>
+                                             @endif
+                                         @endforeach
                                      @endif
                                  </div>
-                                 <span class="text-[8px] font-bold text-center mt-0.5 leading-tight
-                                     @if($si < $currentIdx) text-gray-500
-                                     @elseif($si === $currentIdx) text-hau-maroon
-                                     @else text-gray-350
-                                     @endif
-                                     ">
-                                     {{ $step['label'] }}
-                                 </span>
-                             </div>
-                         @endforeach
-                     </div>
-
-                      <!-- Info -->
-                      <div class="space-y-2">
-                          @if ($c->area || $c->category)
-                              <div class="flex flex-wrap gap-1 items-center">
-                                  @if($c->area)
-                                      @foreach(preg_split('/[,;]+/', $c->area) as $areaTag)
-                                          @if(trim($areaTag) !== '')
-                                              <span class="inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold bg-slate-100 text-slate-700 tracking-wider uppercase border border-slate-200/50">{{ trim($areaTag) }}</span>
-                                          @endif
-                                      @endforeach
-                                  @endif
-                                  @if($c->category)
-                                      @foreach(preg_split('/[,;]+/', $c->category) as $catTag)
-                                          @if(trim($catTag) !== '')
-                                              <span class="inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-50 text-amber-800 border border-amber-200 tracking-wider uppercase leading-none">{{ trim($catTag) }}</span>
-                                          @endif
-                                      @endforeach
-                                  @endif
-                              </div>
-                          @endif
-                          <h4 class="font-bold text-gray-900 text-sm leading-snug truncate" title="{{ $c->title }}">{{ $c->title }}</h4>
-                      </div>
-
-                     <!-- Recommendation Checklist -->
-                     @if ($c->recommendationItems->count() > 0)
-                         <div class="space-y-2" onclick="event.stopPropagation()">
-                             <div class="flex items-center justify-between">
-                                 <span class="text-[9px] font-bold text-hau-maroon uppercase tracking-wider flex items-center gap-1">
-                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                                     Recommendations ({{ $c->recommendationItems->where('is_completed', true)->count() }}/{{ $c->recommendationItems->count() }})
-                                 </span>
-                                 <span class="text-[9px] font-bold text-hau-maroon completion-rate-{{ $c->id }}">{{ $c->recommendationItems->count() > 0 ? round(($c->recommendationItems->where('is_completed', true)->count() / $c->recommendationItems->count()) * 100) : 0 }}%</span>
-                             </div>
-                             <!-- Completion Progress Bar -->
-                             <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                                 <div class="completion-bar bg-hau-maroon h-full rounded-full" id="bar-{{ $c->id }}" style="width: {{ $c->recommendationItems->count() > 0 ? round(($c->recommendationItems->where('is_completed', true)->count() / $c->recommendationItems->count()) * 100) : 0 }}%"></div>
-                             </div>
-                             <!-- Checklist Items -->
-                             <div class="space-y-1">
-                                 @foreach($c->recommendationItems->take(1) as $item)
-                                     <label class="checklist-item flex items-start gap-2 py-1 px-2 rounded-lg cursor-pointer group" data-item-id="{{ $item->id }}" data-record-id="{{ $c->id }}">
-                                         <input type="checkbox" class="checklist-checkbox mt-0.5 shrink-0" {{ $item->is_completed ? 'checked' : '' }} onchange="toggleRecommendation({{ $item->id }}, {{ $c->id }})" />
-                                         <span class="text-xs text-gray-700 leading-relaxed {{ $item->is_completed ? 'checklist-text-completed' : '' }}" id="reco-text-card-{{ $item->id }}">{{ $item->text }}</span>
-                                     </label>
-                                 @endforeach
-                                 @if($c->recommendationItems->count() > 1)
-                                     <div class="text-[10px] text-hau-maroon font-bold pl-2 pt-0.5 flex items-center gap-1 hover:underline cursor-pointer">
-                                         <svg class="w-3 h-3 text-hau-maroon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                         +{{ $c->recommendationItems->count() - 1 }} more recommendation(s)...
-                                     </div>
-                                 @endif
-                             </div>
+                             @endif
+                             <h4 class="font-bold text-gray-900 text-sm leading-snug line-clamp-2 hover:text-hau-maroon transition" title="{{ $c->title }}">{{ $c->title }}</h4>
                          </div>
-                     @endif
 
-                     @if ($c->description)
-                         <div>
-                             <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Task Description:</span>
-                             <p class="text-xs text-gray-500 line-clamp-2 leading-relaxed mt-0.5" title="{{ $c->description }}">{{ $c->description }}</p>
-                         </div>
-                     @endif
-
-                     <!-- Action Plan -->
-                     <div class="bg-gray-50 rounded-lg p-3 border border-gray-150 space-y-1">
-                         <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Action Plan</span>
-                         <p class="text-xs text-gray-700 font-medium line-clamp-2 leading-relaxed">
-                             {{ $c->action_plan ?? 'No action plan formulated yet.' }}
-                         </p>
-                     </div>
-
-                     <!-- Document / Evidence Links -->
-                     <div class="pt-2 border-t border-gray-100 text-xs space-y-1">
+                         <!-- Design 3: Linear Chevron Ribbon -->
                          @php
-                             $hasAnyLink = false;
+                             $stage = $c->workflow_stage ?? 'recommendation_created';
+                             $stageIndices = [
+                                 'recommendation_created' => 0,
+                                 'action_plan_submitted'  => 1,
+                                 'admin_reviewing'        => 2,
+                                 'compliant'              => 3,
+                             ];
+                             $currentIdx = $stageIndices[$stage] ?? 0;
+                             $steps = [
+                                 ['num' => '01', 'label' => 'Rec', 'full' => 'Recommendation Logged'],
+                                 ['num' => '02', 'label' => 'Plan', 'full' => 'Action Plan Submitted'],
+                                 ['num' => '03', 'label' => 'Review', 'full' => 'Under Admin Review'],
+                                 ['num' => '04', 'label' => 'Done', 'full' => 'Compliant / Completed'],
+                             ];
                          @endphp
-                         @if ($c->assignments && $c->assignments->count() > 0)
-                             <span class="text-gray-400 font-semibold block text-[10px] uppercase tracking-wider">Evidence Links:</span>
-                             @foreach($c->assignments as $ass)
-                                 @php
-                                     $activeLink = $ass->pending_document_link ?? $ass->document_link;
-                                     $targetLabel = $ass->program->program_code ?? ($ass->school_name ? $getSchoolCode($ass->school_name) : ($ass->responsibleUnit->code ?? $ass->responsibleUnit->name ?? 'Unit'));
-                                 @endphp
-                                 @if($activeLink)
-                                     @php $hasAnyLink = true; @endphp
-                                     <div class="flex items-center justify-between gap-2 text-[11px]">
-                                         <span class="font-bold text-gray-700 truncate max-w-[120px]" title="{{ $targetLabel }}">{{ $targetLabel }}:</span>
-                                         <a href="{{ $activeLink }}" target="_blank" onclick="event.stopPropagation();" class="text-hau-maroon hover:underline font-mono font-semibold truncate block max-w-[180px]" title="{{ $activeLink }}">
-                                             {{ $ass->pending_document_link ? 'Proposed Link 🔗' : 'Open Link 🔗' }}
-                                         </a>
-                                     </div>
+                         <div class="bg-gray-50/70 border border-gray-150/80 rounded-lg p-1.5 flex items-center justify-between gap-1 overflow-x-auto text-[10px]">
+                             @foreach($steps as $si => $st)
+                                 <div class="flex items-center gap-1 shrink-0 {{ $si === $currentIdx ? 'bg-white px-2 py-0.5 rounded shadow-2xs font-bold text-hau-maroon border border-gray-200' : ($si < $currentIdx ? 'text-emerald-700 font-semibold' : 'text-gray-400 font-normal') }}" title="{{ $st['full'] }}">
+                                     @if($si < $currentIdx)
+                                         <span class="text-emerald-600 font-bold">✓</span>
+                                     @else
+                                         <span class="font-mono text-[9px] opacity-70">{{ $st['num'] }}</span>
+                                     @endif
+                                     <span>{{ $st['label'] }}</span>
+                                 </div>
+
+                                 @if($si < count($steps) - 1)
+                                     <svg class="w-3 h-3 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                  @endif
                              @endforeach
-                         @endif
+                         </div>
 
-                         @if(!$hasAnyLink && $c->document_link)
-                             <div class="flex items-center justify-between">
-                                 <span class="text-gray-400 font-semibold">Evidence Link:</span>
-                                 <a href="{{ $c->document_link }}" target="_blank" onclick="event.stopPropagation();" class="text-hau-maroon hover:underline font-mono font-medium truncate block max-w-[200px]" title="{{ $c->document_link }}">
-                                     Open Link <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                                 </a>
-                             </div>
-                         @elseif(!$hasAnyLink)
-                             <div class="flex items-center justify-between">
-                                 <span class="text-gray-400 font-semibold">Evidence Link:</span>
-                                 <span class="text-gray-400 font-medium italic">No document attached</span>
+                         <!-- Recommendation Checklist Progress & Active Item -->
+                         @php
+                             $totalRecs = $c->recommendationItems->count();
+                             $completedRecs = $c->recommendationItems->where('is_completed', true)->count();
+                             $recPercentage = $totalRecs > 0 ? round(($completedRecs / $totalRecs) * 100) : 0;
+                             $pendingReco = $c->recommendationItems->firstWhere('is_completed', false) ?? $c->recommendationItems->first();
+                         @endphp
+                         @if ($totalRecs > 0)
+                             <div class="space-y-2 pt-0.5">
+                                 <div class="flex items-center justify-between text-[11px]">
+                                     <span class="font-bold text-gray-700 flex items-center gap-1.5">
+                                         <svg class="w-3.5 h-3.5 text-hau-maroon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                         Recommendations
+                                     </span>
+                                     <span class="font-mono font-bold text-hau-maroon">
+                                         <span class="completion-rate-{{ $c->id }}">{{ $recPercentage }}%</span>
+                                         <span class="text-gray-400 font-normal">({{ $completedRecs }}/{{ $totalRecs }})</span>
+                                     </span>
+                                 </div>
+                                 <!-- Completion Progress Bar -->
+                                 <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                     <div class="completion-bar bg-hau-maroon h-full rounded-full transition-all duration-300" id="bar-{{ $c->id }}" style="width: {{ $recPercentage }}%"></div>
+                                 </div>
+
+                                 @if($pendingReco)
+                                     <div class="flex items-center gap-2 bg-gray-50/60 p-1.5 rounded-md text-xs text-gray-600 border border-gray-150/70" onclick="event.stopPropagation()">
+                                         @if($role === 'QA Admin')
+                                             <input type="checkbox" class="w-3.5 h-3.5 rounded border-gray-300 text-hau-maroon focus:ring-hau-maroon cursor-pointer shrink-0" {{ $pendingReco->is_completed ? 'checked' : '' }} onchange="toggleRecommendation({{ $pendingReco->recommendation_item_id ?? $pendingReco->id }}, {{ $c->compliance_record_id ?? $c->id }})" title="QA Admin: Click to toggle" />
+                                         @else
+                                             <input type="checkbox" class="w-3.5 h-3.5 rounded border-gray-300 text-hau-maroon mt-0.5 cursor-not-allowed opacity-75 shrink-0" {{ $pendingReco->is_completed ? 'checked' : '' }} disabled title="Only QA Admin can directly check off items." />
+                                         @endif
+                                         <span class="truncate text-[11px] flex-1 {{ $pendingReco->is_completed ? 'line-through text-gray-400' : 'text-gray-700 font-medium' }}" title="{{ $pendingReco->text }}">
+                                             {{ $pendingReco->text }}
+                                         </span>
+                                         @if($totalRecs > 1)
+                                             <span class="text-[10px] text-hau-maroon font-bold shrink-0">+{{ $totalRecs - 1 }} more</span>
+                                         @endif
+                                     </div>
+                                 @endif
                              </div>
                          @endif
                      </div>
 
-                      <div class="flex items-center justify-between text-xs">
-                          <span class="text-gray-450 font-semibold">Unit or Department:</span>
-                          <span class="font-bold text-gray-700">{{ $c->responsible_unit ?? 'Unassigned' }}</span>
-                      </div>
+                     <!-- Smart Content Badges (Action Plan & Evidence Indicators if present) -->
+                     @php
+                         $hasActionPlan = !empty(trim($c->action_plan ?? '')) && !str_contains(strtolower($c->action_plan), 'no action plan formulated');
+                         $hasEvidence = false;
+                         $primaryEvidenceLink = null;
+                         if ($c->assignments && $c->assignments->count() > 0) {
+                             foreach($c->assignments as $ass) {
+                                 if ($ass->pending_document_link || $ass->document_link) {
+                                     $hasEvidence = true;
+                                     $primaryEvidenceLink = $ass->pending_document_link ?? $ass->document_link;
+                                     break;
+                                 }
+                             }
+                         }
+                         if (!$hasEvidence && !empty($c->document_link)) {
+                             $hasEvidence = true;
+                             $primaryEvidenceLink = $c->document_link;
+                         }
+                     @endphp
+                     @if($hasActionPlan || $hasEvidence)
+                         <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-gray-100">
+                             @if($hasActionPlan)
+                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200" title="{{ $c->action_plan }}">
+                                     <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                     Action Plan Added
+                                 </span>
+                             @endif
+                             @if($hasEvidence)
+                                 <a href="{{ $primaryEvidenceLink }}" target="_blank" onclick="event.stopPropagation();" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition" title="{{ $primaryEvidenceLink }}">
+                                     <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                                     Evidence Attached 🔗
+                                 </a>
+                             @endif
+                         </div>
+                     @endif
                  </div>
 
                  <!-- Footer Controls -->
@@ -651,7 +680,7 @@
                                   @endif
                               @endif
                           @else
-                              <span class="whitespace-nowrap">No deadline</span>
+                              <span class="whitespace-nowrap text-gray-400 font-normal">No deadline</span>
                           @endif
                      </div>
                      
@@ -690,6 +719,746 @@
         <div id="no-matches-row" class="col-span-full text-center text-gray-400 py-12 text-sm bg-white rounded-xl border border-gray-200 hidden">No compliance items match your filters.</div>
     </div>
 
+    <!-- ===== 1. ENHANCED TABLE VIEW ===== -->
+    <div id="compliance-table-view" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-xs">
+                <thead class="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
+                    <tr>
+                        <th class="px-3 py-3 w-8 text-center"></th>
+                        <th class="px-4 py-3 text-left">Task Title &amp; Area</th>
+                        <th class="px-4 py-3 text-left w-36">Unit / Program</th>
+                        <th class="px-4 py-3 text-left w-36">Stage</th>
+                        <th class="px-4 py-3 text-left w-36">Checklist</th>
+                        <th class="px-4 py-3 text-center w-24">Priority</th>
+                        <th class="px-4 py-3 text-center w-28">Status</th>
+                        <th class="px-4 py-3 text-left w-32">Due Date</th>
+                        <th class="px-4 py-3 text-center w-24">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white" id="compliance-table-body">
+                    @forelse($complianceRecords as $c)
+                        @php
+                            $stage = $c->workflow_stage ?? 'recommendation_created';
+                            $stageLabels = [
+                                'recommendation_created' => '1: Rec Logged',
+                                'action_plan_submitted'  => '2: Action Plan',
+                                'admin_reviewing'        => '3: In Review',
+                                'compliant'              => '4: Compliant',
+                            ];
+                            $stageColor = [
+                                'recommendation_created' => 'bg-hau-maroon/5 text-hau-maroon border-hau-maroon/20',
+                                'action_plan_submitted'  => 'bg-amber-50 text-amber-800 border-amber-200',
+                                'admin_reviewing'        => 'bg-blue-50 text-blue-700 border-blue-200',
+                                'compliant'              => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                            ];
+                            $totalRecs = $c->recommendationItems->count();
+                            $completedRecs = $c->recommendationItems->where('is_completed', true)->count();
+                            $recRate = $totalRecs > 0 ? round(($completedRecs / $totalRecs) * 100) : 0;
+                            $hasActionPlan = !empty(trim($c->action_plan ?? '')) && !str_contains(strtolower($c->action_plan), 'no action plan formulated');
+                        @endphp
+                        <tr class="hover:bg-gray-50/80 transition cursor-pointer table-task-row"
+                            onclick="openDetailModal(document.querySelector('#compliance-grid > [data-id=\'{{ $c->compliance_record_id }}\']'))"
+                            data-table-id="{{ $c->compliance_record_id }}">
+                            <td class="px-3 py-3 text-center" onclick="event.stopPropagation(); toggleTableSubrow('{{ $c->compliance_record_id }}')">
+                                <button type="button" class="p-1 text-gray-400 hover:text-hau-maroon rounded transition" title="Toggle Checklist & Details">
+                                    <svg class="w-3.5 h-3.5 transform transition-transform duration-200" id="subrow-chevron-{{ $c->compliance_record_id }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </button>
+                            </td>
+                            <td class="px-4 py-3 space-y-0.5 max-w-xs">
+                                <div class="font-bold text-gray-900 text-xs hover:text-hau-maroon transition line-clamp-1" title="{{ $c->title }}">
+                                    {{ $c->title }}
+                                </div>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    @if($c->area)
+                                        <span class="text-[9px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200/60 truncate max-w-[200px]">
+                                            {{ $c->area }}
+                                        </span>
+                                    @endif
+                                    @if($c->category)
+                                        <span class="text-[9px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60">
+                                            {{ $c->category }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-hau-maroon/5 text-hau-maroon">
+                                    {{ $c->program->program_code ?? ($getSchoolCode($c->school) ?: ($c->responsible_unit ?? 'General')) }}
+                                </span>
+                                @if($c->accrediting_body)
+                                    <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 ml-1">
+                                        {{ $c->accrediting_body }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border {{ $stageColor[$stage] ?? 'bg-gray-50 text-gray-600 border-gray-200' }}">
+                                    {{ $stageLabels[$stage] ?? '1: Rec Logged' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="space-y-1 w-full max-w-[120px]">
+                                    <div class="flex items-center justify-between text-[10px] font-mono">
+                                        <span class="font-bold text-hau-maroon">{{ $recRate }}%</span>
+                                        <span class="text-gray-400">({{ $completedRecs }}/{{ $totalRecs }})</span>
+                                    </div>
+                                    <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                        <div class="bg-hau-maroon h-full rounded-full" style="width: {{ $recRate }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold
+                                    @if ($c->priority === 'Critical') bg-rose-50 text-rose-700 border border-rose-200
+                                    @elseif ($c->priority === 'High') bg-amber-50 text-amber-800 border border-amber-200
+                                    @elseif ($c->priority === 'Low') bg-slate-100 text-slate-600 border border-slate-200
+                                    @else bg-blue-50 text-blue-700 border border-blue-150
+                                    @endif">
+                                    {{ $c->priority ?? 'Medium' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold
+                                    @if ($c->status == 'Compliant') bg-emerald-50 text-emerald-700 border border-emerald-100
+                                    @elseif ($c->status == 'Non-Compliant') bg-rose-50 text-rose-700 border border-rose-100
+                                    @else bg-gray-50 text-gray-600 border border-gray-200
+                                    @endif">
+                                    {{ $c->status }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
+                                @if($c->due_date)
+                                    {{ $c->due_date->format('M d, Y') }}
+                                    @if($c->status !== 'Compliant' && $c->due_date->isPast())
+                                        <span class="text-rose-600 font-bold block text-[9px]">Overdue</span>
+                                    @endif
+                                @else
+                                    <span class="text-gray-400 font-sans italic">None</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-center" onclick="event.stopPropagation()">
+                                <div class="flex items-center justify-center gap-1">
+                                    <button onclick="openDetailModal(document.querySelector('#compliance-grid > [data-id=\'{{ $c->compliance_record_id }}\']'))" class="p-1 text-gray-400 hover:text-hau-maroon hover:bg-gray-100 rounded transition" title="View Details">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    </button>
+                                    @if ($role === 'QA Admin')
+                                        <button onclick="openEditModal(document.querySelector('#compliance-grid > [data-id=\'{{ $c->compliance_record_id }}\']'))" class="p-1 text-gray-400 hover:text-hau-maroon hover:bg-gray-100 rounded transition" title="Edit Task">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                        </button>
+                                        <form action="{{ route('compliance.destroy', $c->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this compliance record?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded transition" title="Delete Task">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <button onclick="openProposeModal(document.querySelector('#compliance-grid > [data-id=\'{{ $c->compliance_record_id }}\']'))" {{ $c->approval_state === 'Pending Approval' ? 'disabled' : '' }} class="px-2 py-0.5 border border-hau-maroon hover:bg-hau-maroon/5 text-hau-maroon font-bold text-[10px] rounded transition disabled:opacity-50">
+                                            Propose
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Expandable Sub-Row for Checklist & Action Plan -->
+                        <tr id="subrow-{{ $c->compliance_record_id }}" class="bg-gray-50/70 border-b border-gray-100 hidden" data-table-subrow-id="{{ $c->compliance_record_id }}">
+                            <td colspan="9" class="px-6 py-4 space-y-3">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Recommendations Checklist -->
+                                    <div class="space-y-2 bg-white p-3 rounded-xl border border-gray-200">
+                                        <div class="flex items-center justify-between text-xs font-bold text-gray-700">
+                                            <span class="flex items-center gap-1.5">
+                                                <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                                Recommendations ({{ $completedRecs }}/{{ $totalRecs }})
+                                            </span>
+                                            <span class="text-hau-maroon font-mono">{{ $recRate }}% Done</span>
+                                        </div>
+                                        @if($c->recommendationItems->isNotEmpty())
+                                            <div class="space-y-1.5 max-h-40 overflow-y-auto pr-1 text-xs">
+                                                @foreach($c->recommendationItems as $recItem)
+                                                    <div class="flex items-start gap-2 p-1.5 rounded-lg bg-gray-50 border border-gray-150/60">
+                                                        @if($role === 'QA Admin')
+                                                            <input type="checkbox" {{ $recItem->is_completed ? 'checked' : '' }} onchange="toggleRecommendation({{ $recItem->recommendation_item_id ?? $recItem->id }}, {{ $c->compliance_record_id }})" class="w-3.5 h-3.5 rounded border-gray-300 text-hau-maroon focus:ring-hau-maroon mt-0.5 cursor-pointer shrink-0" />
+                                                        @else
+                                                            <input type="checkbox" {{ $recItem->is_completed ? 'checked' : '' }} disabled class="w-3.5 h-3.5 rounded border-gray-300 text-hau-maroon mt-0.5 opacity-75 cursor-not-allowed shrink-0" />
+                                                        @endif
+                                                        <span class="text-gray-700 {{ $recItem->is_completed ? 'line-through text-gray-400' : '' }} flex-1 leading-snug">{{ $recItem->text }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <p class="text-gray-400 text-xs italic">No specific recommendations recorded.</p>
+                                        @endif
+                                    </div>
+
+                                    <!-- Action Plan & Evidence Summary -->
+                                    <div class="space-y-2 bg-white p-3 rounded-xl border border-gray-200 flex flex-col justify-between">
+                                        <div class="space-y-1.5">
+                                            <span class="text-xs font-bold text-gray-700 block">Action Plan &amp; Notes</span>
+                                            <p class="text-xs text-gray-600 leading-relaxed line-clamp-3">{{ $c->action_plan ?: 'No action plan formulated yet.' }}</p>
+                                        </div>
+                                        <div class="pt-2 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap text-xs">
+                                            @if($c->document_link)
+                                                <a href="{{ $c->document_link }}" target="_blank" class="inline-flex items-center gap-1 text-hau-maroon hover:underline font-bold font-mono text-[11px] truncate max-w-[200px]">
+                                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                                                    View Evidence Document
+                                                </a>
+                                            @else
+                                                <span class="text-gray-400 italic text-[11px]">No evidence attached</span>
+                                            @endif
+                                            <button onclick="openDetailModal(document.querySelector('#compliance-grid > [data-id=\'{{ $c->compliance_record_id }}\']'))" class="text-hau-maroon hover:underline font-bold text-[11px] ml-auto">
+                                                Open Full Workspace &rarr;
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="text-center py-8 text-gray-400">No compliance items logged yet.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== 1.5 CROSS-TAB / MATRIX GRID VIEW (Option 3) ===== -->
+    <div id="compliance-matrix-view" class="space-y-6 hidden">
+        @forelse($complianceRecords as $c)
+            @php
+                $gridData = $c->getMatrixGridData();
+                $stage = $c->workflow_stage ?? 'recommendation_created';
+                $stageLabels = [
+                    'recommendation_created' => '1: Rec Logged',
+                    'action_plan_submitted'  => '2: Action Plan',
+                    'admin_reviewing'        => '3: In Review',
+                    'compliant'              => '4: Compliant',
+                ];
+                $stageColor = [
+                    'recommendation_created' => 'bg-hau-maroon/5 text-hau-maroon border-hau-maroon/20',
+                    'action_plan_submitted'  => 'bg-amber-50 text-amber-800 border-amber-200',
+                    'admin_reviewing'        => 'bg-blue-50 text-blue-700 border-blue-200',
+                    'compliant'              => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                ];
+                $totalRecs = $c->recommendationItems->count();
+                $completedRecs = $c->recommendationItems->where('is_completed', true)->count();
+                $recRate = $totalRecs > 0 ? round(($completedRecs / $totalRecs) * 100) : 0;
+            @endphp
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition matrix-task-card"
+                 data-matrix-id="{{ $c->compliance_record_id }}">
+                <!-- Task Header Summary -->
+                <div class="p-4 bg-gray-50/70 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-hau-maroon text-white">
+                                Task #{{ $c->compliance_record_id }}
+                            </span>
+                            @if($c->accrediting_body)
+                                <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                    {{ $c->accrediting_body }}
+                                </span>
+                            @endif
+                            @if($c->area)
+                                <span class="text-[10px] font-semibold text-gray-600 bg-white px-2 py-0.5 rounded border border-gray-200">
+                                    {{ $c->area }}
+                                </span>
+                            @endif
+                            @if($c->category)
+                                <span class="text-[10px] font-bold text-gray-600 bg-white px-2 py-0.5 rounded border border-gray-200">
+                                    {{ $c->category }}
+                                </span>
+                            @endif
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border {{ $stageColor[$stage] ?? 'bg-gray-50 text-gray-600 border-gray-200' }}">
+                                {{ $stageLabels[$stage] ?? '1: Rec Logged' }}
+                            </span>
+                        </div>
+                        <h4 class="text-sm font-black text-gray-900 hover:text-hau-maroon transition cursor-pointer"
+                            onclick="openDetailModal(document.querySelector('#compliance-grid > [data-id=\'{{ $c->compliance_record_id }}\']'))">
+                            {{ $c->title }}
+                        </h4>
+                    </div>
+
+                    <!-- Overall Rollup Status & Quick Actions -->
+                    <div class="flex items-center gap-3 shrink-0">
+                        <div class="text-right space-y-1">
+                            <div class="flex items-center justify-end gap-2 text-xs font-mono">
+                                <span class="text-gray-500 font-sans text-[11px] font-medium">Matrix Rollup:</span>
+                                <span class="font-black {{ $gridData['matrix_rate'] === 100 ? 'text-emerald-700' : 'text-hau-maroon' }}">
+                                    {{ $gridData['completed_cells'] }} / {{ $gridData['total_cells'] }} Approved ({{ $gridData['matrix_rate'] }}%)
+                                </span>
+                            </div>
+                            <div class="w-36 bg-gray-200 h-2 rounded-full overflow-hidden ml-auto">
+                                <div class="{{ $gridData['matrix_rate'] === 100 ? 'bg-emerald-500' : 'bg-hau-maroon' }} h-full rounded-full transition-all duration-300"
+                                     style="width: {{ $gridData['matrix_rate'] }}%"></div>
+                            </div>
+                        </div>
+
+                        <button type="button"
+                                onclick="openDetailModal(document.querySelector('#compliance-grid > [data-id=\'{{ $c->compliance_record_id }}\']'))"
+                                class="px-3 py-1.5 bg-hau-maroon/10 hover:bg-hau-maroon hover:text-white text-hau-maroon text-xs font-bold rounded-xl transition flex items-center gap-1">
+                            <span>Workspace</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cross-Tab Matrix Grid Table -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-xs text-left">
+                        <thead>
+                            <tr class="bg-gray-50/90 text-gray-600 font-bold uppercase tracking-wider text-[10px]">
+                                <th class="px-4 py-3 border-r border-gray-200 min-w-[220px]">
+                                    <div class="flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        <span>Target School / College</span>
+                                    </div>
+                                </th>
+                                @foreach($gridData['units'] as $u)
+                                    <th class="px-4 py-3 text-center border-r border-gray-200 min-w-[200px]">
+                                        <div class="flex flex-col items-center">
+                                            <span class="font-extrabold text-gray-800">{{ $u['name'] }}</span>
+                                            <span class="text-[9px] font-mono text-gray-400 font-normal">Assigned Evidence</span>
+                                        </div>
+                                    </th>
+                                @endforeach
+                                <th class="px-4 py-3 text-center min-w-[160px] bg-gray-100/60 font-black text-gray-800">
+                                    Combined Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-150 bg-white">
+                            @foreach($gridData['matrix'] as $schoolName => $row)
+                                <tr class="hover:bg-gray-50/70 transition">
+                                    <!-- Row Header: School -->
+                                    <td class="px-4 py-3.5 border-r border-gray-150 font-bold text-gray-900 bg-gray-50/30">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full {{ $row['is_complete'] ? 'bg-emerald-500' : ($row['completed_count'] > 0 ? 'bg-amber-500' : 'bg-gray-300') }}"></span>
+                                            <span class="text-xs">{{ $schoolName }}</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Matrix Cells (One per assigned unit) -->
+                                    @foreach($gridData['units'] as $u)
+                                        @php
+                                            $cellKey = $u['id'] !== null ? "unit_{$u['id']}" : 'unit_general';
+                                            $cell = $row['cells'][$cellKey] ?? null;
+                                        @endphp
+                                        <td class="px-4 py-3 text-center border-r border-gray-150 align-middle">
+                                            @if($cell)
+                                                @php
+                                                    $activeLink = $cell->pending_document_link ?: $cell->document_link;
+                                                @endphp
+                                                <div class="flex flex-col items-center justify-center gap-1.5 py-1">
+                                                    @if($cell->isCompliant())
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                                                            <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                                            Approved
+                                                        </span>
+                                                        @if($cell->document_link)
+                                                            <a href="{{ $cell->document_link }}" target="_blank"
+                                                               class="inline-flex items-center gap-1 text-hau-maroon hover:underline font-mono text-[10px] font-semibold truncate max-w-[170px]"
+                                                               title="{{ $cell->document_link }}">
+                                                                <span>Open Evidence</span>
+                                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                                            </a>
+                                                        @endif
+                                                    @elseif($cell->isPendingApproval())
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
+                                                            <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                            In Review
+                                                        </span>
+                                                        @if($cell->pending_document_link)
+                                                            <a href="{{ $cell->pending_document_link }}" target="_blank"
+                                                               class="inline-flex items-center gap-1 text-blue-700 hover:underline font-mono text-[10px] font-semibold truncate max-w-[170px]"
+                                                               title="{{ $cell->pending_document_link }}">
+                                                                <span>Review Doc</span>
+                                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                                            </a>
+                                                        @endif
+
+                                                        @if($role === 'QA Admin')
+                                                            <div class="flex items-center gap-1 mt-1">
+                                                                <button type="button"
+                                                                        onclick="quickApproveAssignment({{ $cell->id }}, {{ $c->compliance_record_id }})"
+                                                                        class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[10px] shadow-2xs transition">
+                                                                    Approve
+                                                                </button>
+                                                                <button type="button"
+                                                                        onclick="quickRejectAssignment({{ $cell->id }}, {{ $c->compliance_record_id }})"
+                                                                        class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded text-[10px] shadow-2xs transition">
+                                                                    Reject
+                                                                </button>
+                                                            </div>
+                                                        @endif
+                                                    @elseif($cell->isRejected())
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
+                                                              title="{{ $cell->rejection_reason ?? 'Revision required by QA Admin' }}">
+                                                            <svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                            Needs Revision
+                                                        </span>
+                                                        @if($cell->rejection_reason)
+                                                            <span class="text-[9px] text-rose-600 italic line-clamp-1 max-w-[160px]" title="{{ $cell->rejection_reason }}">
+                                                                "{{ $cell->rejection_reason }}"
+                                                            </span>
+                                                        @endif
+                                                        <button type="button"
+                                                                onclick="openCellSubmitModal({{ $cell->id }}, {{ $c->compliance_record_id }}, '{{ addslashes($schoolName) }}', '{{ addslashes($u['name']) }}', '{{ addslashes($cell->rejection_reason ?? '') }}')"
+                                                                class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded text-[10px] shadow-2xs transition mt-0.5">
+                                                            Submit Revision
+                                                        </button>
+                                                    @else
+                                                        {{-- Pending submission --}}
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                                            Pending
+                                                        </span>
+                                                        <button type="button"
+                                                                onclick="openCellSubmitModal({{ $cell->id }}, {{ $c->compliance_record_id }}, '{{ addslashes($schoolName) }}', '{{ addslashes($u['name']) }}', '')"
+                                                                class="px-2 py-0.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white font-bold rounded text-[10px] shadow-2xs transition mt-0.5 flex items-center gap-1">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                                            <span>Add Link</span>
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <div class="text-gray-300 italic text-[11px] py-2">—</div>
+                                            @endif
+                                        </td>
+                                    @endforeach
+
+                                    <!-- Row Combined Status -->
+                                    <td class="px-4 py-3.5 text-center bg-gray-50/40 align-middle">
+                                        <div class="space-y-1.5 flex flex-col items-center">
+                                            <span class="font-mono text-xs font-black {{ $row['is_complete'] ? 'text-emerald-700' : ($row['completed_count'] > 0 ? 'text-amber-700' : 'text-gray-600') }}">
+                                                {{ $row['completed_count'] }} / {{ $row['total_count'] }} Complete
+                                            </span>
+                                            <div class="w-24 bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                                                <div class="{{ $row['is_complete'] ? 'bg-emerald-500' : 'bg-hau-maroon' }} h-full rounded-full transition-all duration-300"
+                                                     style="width: {{ $row['rate'] }}%"></div>
+                                            </div>
+                                            <span class="inline-flex px-1.5 py-0.25 rounded text-[9px] font-extrabold {{ $row['is_complete'] ? 'bg-emerald-100 text-emerald-800' : ($row['completed_count'] > 0 ? 'bg-amber-100 text-amber-800' : 'bg-gray-150 text-gray-600') }}">
+                                                {{ $row['is_complete'] ? '100% Done' : ($row['completed_count'] > 0 ? 'In Progress' : 'Pending') }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @empty
+            <div class="bg-white rounded-2xl p-12 text-center border border-gray-200 shadow-sm text-gray-400 text-sm">
+                No compliance tasks logged yet.
+            </div>
+        @endforelse
+    </div>
+    <div id="compliance-board-view" class="hidden">
+        @php
+            $stagesConfig = [
+                'recommendation_created' => [
+                    'title' => '01 Recommendation Logged',
+                    'sub' => 'New findings & recs',
+                    'badge' => 'bg-hau-maroon/10 text-hau-maroon border-hau-maroon/20',
+                    'header_bg' => 'border-t-4 border-t-hau-maroon bg-white',
+                    'id_count' => 'board-count-rec',
+                ],
+                'action_plan_submitted' => [
+                    'title' => '02 Action Plan Formulated',
+                    'sub' => 'Plan formulated / in progress',
+                    'badge' => 'bg-amber-50 text-amber-800 border-amber-200',
+                    'header_bg' => 'border-t-4 border-t-amber-500 bg-white',
+                    'id_count' => 'board-count-plan',
+                ],
+                'admin_reviewing' => [
+                    'title' => '03 Under QA Review',
+                    'sub' => 'Evidence submitted for audit',
+                    'badge' => 'bg-blue-50 text-blue-700 border-blue-200',
+                    'header_bg' => 'border-t-4 border-t-blue-500 bg-white',
+                    'id_count' => 'board-count-review',
+                ],
+                'compliant' => [
+                    'title' => '04 Compliant / Completed',
+                    'sub' => 'Fully verified & closed',
+                    'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    'header_bg' => 'border-t-4 border-t-emerald-500 bg-white',
+                    'id_count' => 'board-count-compliant',
+                ],
+            ];
+        @endphp
+
+        <!-- Vertical Stack of Stage Sections with Internal Vertical Scrolling -->
+        <div class="space-y-4">
+            @foreach($stagesConfig as $stKey => $stMeta)
+                @php
+                    $stageRecords = $complianceRecords->filter(fn($r) => ($r->workflow_stage ?? 'recommendation_created') === $stKey);
+                    $slugStage = Str::slug($stKey);
+                @endphp
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden" data-board-column="{{ $stKey }}" id="board-stage-card-{{ $slugStage }}">
+                    <!-- Stage Header (Click to Collapse/Expand) -->
+                    <div class="p-4 {{ $stMeta['header_bg'] }} border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-gray-50/80 transition shadow-2xs"
+                         onclick="toggleBoardStage('{{ $slugStage }}')">
+                        <div class="flex items-center gap-3">
+                            <div class="space-y-0.5 min-w-0">
+                                <h4 class="text-sm font-black text-gray-900 tracking-tight uppercase flex items-center gap-2">
+                                    <span>{{ $stMeta['title'] }}</span>
+                                    <span id="{{ $stMeta['id_count'] }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-bold {{ $stMeta['badge'] }}">
+                                        {{ $stageRecords->count() }} Task(s)
+                                    </span>
+                                </h4>
+                                <p class="text-xs text-gray-400 font-medium">{{ $stMeta['sub'] }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 shrink-0">
+                            <span class="text-[11px] text-gray-400 font-semibold hidden sm:inline">Click to collapse/expand</span>
+                            <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-200 board-chevron-icon" id="board-chevron-{{ $slugStage }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Cards Container (Vertical Scroll per Stage) -->
+                    <div class="p-4 overflow-y-auto max-h-[460px] custom-scrollbar board-cards-container" id="board-stage-body-{{ $slugStage }}" data-stage-container="{{ $stKey }}">
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                            @forelse($stageRecords as $c)
+                                @php
+                                    $totalRecs = $c->recommendationItems->count();
+                                    $completedRecs = $c->recommendationItems->where('is_completed', true)->count();
+                                    $recRate = $totalRecs > 0 ? round(($completedRecs / $totalRecs) * 100) : 0;
+                                @endphp
+                                <div class="bg-gray-50/60 rounded-xl p-3.5 border border-gray-200/80 shadow-xs hover:shadow-md hover:border-hau-maroon/40 hover:bg-white transition cursor-pointer space-y-2.5 flex flex-col justify-between board-item-card"
+                                     onclick="openDetailModal(document.querySelector('#compliance-grid > [data-id=\'{{ $c->compliance_record_id }}\']'))"
+                                     data-board-id="{{ $c->compliance_record_id }}"
+                                     data-board-stage="{{ $stKey }}">
+                                    
+                                    <div class="space-y-2">
+                                        <!-- Tags Top -->
+                                        <div class="flex items-center justify-between gap-1.5 flex-wrap">
+                                            <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-hau-maroon/5 text-hau-maroon">
+                                                {{ $c->program->program_code ?? ($getSchoolCode($c->school) ?: ($c->responsible_unit ?? 'General')) }}
+                                            </span>
+                                            <div class="flex items-center gap-1">
+                                                <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold
+                                                    @if ($c->priority === 'Critical') bg-rose-50 text-rose-700 border border-rose-200
+                                                    @elseif ($c->priority === 'High') bg-amber-50 text-amber-800 border border-amber-200
+                                                    @elseif ($c->priority === 'Low') bg-slate-100 text-slate-600 border border-slate-200
+                                                    @else bg-blue-50 text-blue-700 border border-blue-150
+                                                    @endif">
+                                                    {{ $c->priority ?? 'Medium' }}
+                                                </span>
+                                                @if($c->accrediting_body)
+                                                    <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-800">
+                                                        {{ $c->accrediting_body }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <!-- Title -->
+                                        <h5 class="text-xs font-bold text-gray-900 leading-snug line-clamp-2 hover:text-hau-maroon transition" title="{{ $c->title }}">
+                                            {{ $c->title }}
+                                        </h5>
+
+                                        <!-- Area Badge -->
+                                        @if($c->area)
+                                            <div class="text-[9px] text-gray-500 font-semibold bg-white px-1.5 py-0.5 rounded border border-gray-200 truncate">
+                                                {{ $c->area }}
+                                            </div>
+                                        @endif
+
+                                        <!-- Checklist Progress Bar -->
+                                        @if($totalRecs > 0)
+                                            <div class="space-y-1">
+                                                <div class="flex items-center justify-between text-[10px] font-mono">
+                                                    <span class="text-gray-500">Recs: {{ $completedRecs }}/{{ $totalRecs }}</span>
+                                                    <span class="font-bold text-hau-maroon">{{ $recRate }}%</span>
+                                                </div>
+                                                <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                                                    <div class="bg-hau-maroon h-full rounded-full" style="width: {{ $recRate }}%"></div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Footer: Due Date & Actions -->
+                                    <div class="pt-2 border-t border-gray-200/60 flex items-center justify-between gap-1 text-[10px] text-gray-400">
+                                        <div class="flex items-center gap-1 font-mono">
+                                            <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                            @if($c->due_date)
+                                                <span class="{{ $c->status !== 'Compliant' && $c->due_date->isPast() ? 'text-rose-600 font-bold' : '' }}">{{ $c->due_date->format('M d, Y') }}</span>
+                                            @else
+                                                <span>No due date</span>
+                                            @endif
+                                        </div>
+                                        <span class="text-hau-maroon font-bold hover:underline">View &rarr;</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="col-span-full py-8 text-center text-xs text-gray-400 italic board-empty-indicator">
+                                    No items in this stage.
+                                </div>
+                            @endforelse
+                            <div class="col-span-full py-8 text-center text-xs text-gray-400 italic board-no-match-indicator hidden">
+                                No matching items in this stage.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- ===== 3. GROUPED BY ACCREDITATION AREA VIEW ===== -->
+    <div id="compliance-area-view" class="space-y-4 hidden">
+        <!-- Accrediting Body Sub-Pills Bar -->
+        <div class="bg-white rounded-2xl p-3.5 border border-gray-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-hau-maroon/10 text-hau-maroon rounded-xl shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                </div>
+                <div>
+                    <span class="text-xs font-black text-gray-800 uppercase tracking-wider block">Accreditation Standards &amp; Taxonomy</span>
+                    <span class="text-[10px] text-gray-400">Select an accrediting body to inspect its specific area criteria and survey standards.</span>
+                </div>
+            </div>
+
+            <!-- Pill Buttons -->
+            <div class="flex items-center gap-1.5 flex-wrap" id="area-body-pills">
+                <button type="button" onclick="setAreaBodyFilter('all')" data-body-pill="all" class="px-3 py-1 text-xs font-bold rounded-xl bg-hau-maroon text-white shadow-2xs flex items-center gap-1.5 transition">
+                    <span>All Bodies</span>
+                    <span class="font-mono text-[10px] opacity-80" id="area-pill-count-all">({{ $complianceRecords->count() }})</span>
+                </button>
+                @foreach($bodies as $b)
+                    @php
+                        $bodyCount = $complianceRecords->filter(fn($r) => strcasecmp(trim($r->accrediting_body ?? ''), trim($b)) === 0)->count();
+                    @endphp
+                    @if($bodyCount > 0)
+                        <button type="button" onclick="setAreaBodyFilter('{{ strtolower(trim($b)) }}')" data-body-pill="{{ strtolower(trim($b)) }}" class="px-3 py-1 text-xs font-bold rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center gap-1.5 transition">
+                            <span>{{ $b }}</span>
+                            <span class="font-mono text-[10px] bg-white text-gray-700 px-1.5 py-0.25 rounded-md border border-gray-200" id="area-pill-count-{{ Str::slug($b) }}">({{ $bodyCount }})</span>
+                        </button>
+                    @endif
+                @endforeach
+            </div>
+        </div>
+
+        @php
+            $groupedByBodyAndArea = $complianceRecords->groupBy(function($item) {
+                $body = trim($item->accrediting_body ?: 'General Standards');
+                $area = trim($item->area ?: 'Uncategorized Area');
+                return $body . '|||' . $area;
+            })->sortKeys();
+        @endphp
+
+        @forelse($groupedByBodyAndArea as $groupKey => $areaRecords)
+            @php
+                $parts = explode('|||', $groupKey);
+                $bodyName = $parts[0] ?? 'General Standards';
+                $areaName = $parts[1] ?? 'Uncategorized Area';
+
+                $areaTotalRecs = $areaRecords->sum(fn($r) => $r->recommendationItems->count());
+                $areaCompletedRecs = $areaRecords->sum(fn($r) => $r->recommendationItems->where('is_completed', true)->count());
+                $areaRate = $areaTotalRecs > 0 ? round(($areaCompletedRecs / $areaTotalRecs) * 100) : 0;
+                $areaCompliantCount = $areaRecords->where('status', 'Compliant')->count();
+                $slugArea = Str::slug($groupKey);
+            @endphp
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden area-group-card"
+                 data-area-body="{{ strtolower(trim($bodyName)) }}"
+                 data-area-group="{{ strtolower(trim($areaName)) }}"
+                 id="area-card-{{ $slugArea }}">
+                <!-- Accordion Header -->
+                <div class="p-4 bg-gray-50/90 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-gray-100/80 transition"
+                     onclick="toggleAreaAccordion('{{ $slugArea }}')">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-hau-maroon text-white rounded-xl shadow-xs shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200 tracking-wider font-mono uppercase">
+                                    {{ $bodyName }}
+                                </span>
+                                <span>{{ $areaName }}</span>
+                                <span class="text-xs font-mono font-bold bg-white text-hau-maroon px-2 py-0.5 rounded-full border border-gray-200 shadow-2xs area-item-counter">
+                                    {{ $areaRecords->count() }} Task(s)
+                                </span>
+                            </h3>
+                            <p class="text-[11px] text-gray-400 font-medium">Compliance: {{ $areaCompliantCount }}/{{ $areaRecords->count() }} Compliant &bull; {{ $areaRate }}% Checklist completion</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 shrink-0">
+                        <div class="w-32 hidden sm:block">
+                            <div class="flex items-center justify-between text-[10px] font-mono font-bold text-gray-600 mb-1">
+                                <span>Progress</span>
+                                <span class="text-hau-maroon">{{ $areaRate }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-hau-maroon h-full rounded-full" style="width: {{ $areaRate }}%"></div>
+                            </div>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-200 area-chevron-icon" id="area-chevron-{{ $slugArea }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+
+                <!-- Accordion Body -->
+                <div class="p-4 space-y-3 area-body-content" id="area-body-{{ $slugArea }}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        @foreach($areaRecords as $c)
+                            @php
+                                $totalRecs = $c->recommendationItems->count();
+                                $completedRecs = $c->recommendationItems->where('is_completed', true)->count();
+                                $recRate = $totalRecs > 0 ? round(($completedRecs / $totalRecs) * 100) : 0;
+                            @endphp
+                            <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-xs hover:shadow-md hover:border-hau-maroon/40 transition cursor-pointer space-y-3 flex flex-col justify-between area-item-card"
+                                 onclick="openDetailModal(document.querySelector('#compliance-grid > [data-id=\'{{ $c->compliance_record_id }}\']'))"
+                                 data-area-item-id="{{ $c->compliance_record_id }}"
+                                 data-area-item-body="{{ strtolower(trim($c->accrediting_body ?? 'general')) }}">
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between gap-1.5 flex-wrap">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-hau-maroon/5 text-hau-maroon">
+                                            {{ $c->program->program_code ?? ($getSchoolCode($c->school) ?: ($c->responsible_unit ?? 'General')) }}
+                                        </span>
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold
+                                            @if ($c->status == 'Compliant') bg-emerald-50 text-emerald-700 border border-emerald-100
+                                            @elseif ($c->status == 'Non-Compliant') bg-rose-50 text-rose-700 border border-rose-100
+                                            @else bg-gray-50 text-gray-600 border border-gray-200
+                                            @endif">
+                                            {{ $c->status }}
+                                        </span>
+                                    </div>
+                                    <h5 class="text-xs font-bold text-gray-900 leading-snug line-clamp-2 hover:text-hau-maroon transition" title="{{ $c->title }}">
+                                        {{ $c->title }}
+                                    </h5>
+                                    @if($totalRecs > 0)
+                                        <div class="space-y-1">
+                                            <div class="flex items-center justify-between text-[10px] font-mono">
+                                                <span class="text-gray-500">Checklist: {{ $completedRecs }}/{{ $totalRecs }}</span>
+                                                <span class="font-bold text-hau-maroon">{{ $recRate }}%</span>
+                                            </div>
+                                            <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                                <div class="bg-hau-maroon h-full rounded-full" style="width: {{ $recRate }}%"></div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400 font-mono">
+                                    <span>{{ $c->due_date ? $c->due_date->format('M d, Y') : 'No deadline' }}</span>
+                                    <span class="text-hau-maroon font-bold font-sans">Details &rarr;</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="bg-white rounded-2xl p-12 text-center text-gray-400 border border-gray-200 text-sm">
+                No compliance items logged.
+            </div>
+        @endforelse
+    </div>
+
     <!-- ===== PAGINATION BAR ===== -->
     <div id="pagination-bar" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
         <!-- Results counter -->
@@ -706,14 +1475,25 @@
 
     <!-- 1. Add Compliance Modal (Accessible to both roles) -->
     <div id="add-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full overflow-hidden transform scale-95 transition-all flex flex-col" style="max-width: 960px; max-height: calc(100vh - 40px);">
-            <div class="bg-hau-maroon px-5 py-3 text-white flex items-center justify-between border-b-2 border-hau-gold shrink-0">
-                <h3 class="text-base font-bold">Log Compliance Item</h3>
-                <button onclick="closeModal('add-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full overflow-hidden transform scale-95 transition-all duration-200 flex flex-col" style="max-width: 960px; max-height: calc(100vh - 40px);">
+            <!-- Header with dark maroon gradient -->
+            <div class="modal-dark-header flex items-center justify-between border-b border-white/10 shrink-0" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+                <div class="flex items-center gap-3.5">
+                    <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                        <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Log Compliance Item</h3>
+                        <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Register a new compliance task, recommendation, or action item</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('add-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;" aria-label="Close modal">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
             <form action="{{ route('compliance.store') }}" method="POST" class="flex flex-col min-h-0 flex-1">
                 @csrf
-                <div class="p-4 space-y-3.5 overflow-y-auto flex-1 min-h-0">
+                <div class="p-5 space-y-3.5 overflow-y-auto flex-1 min-h-0">
                     <!-- Section I: Context & Categorization -->
                     <div class="border-b border-gray-150 pb-1">
                         <h4 class="text-[10px] font-black text-hau-maroon uppercase tracking-wider">I. Context & Categorization</h4>
@@ -984,9 +1764,23 @@
     <!-- 2. Edit Compliance Modal (Admin only) -->
     <div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
         <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full overflow-hidden transform scale-95 transition-all flex flex-col" style="max-width: 960px; max-height: calc(100vh - 40px);">
-            <div class="bg-hau-maroon px-5 py-3 text-white flex items-center justify-between border-b-2 border-hau-gold shrink-0">
-                <h3 class="text-base font-bold">Edit Compliance Item</h3>
-                <button onclick="closeModal('edit-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+            <div class="modal-dark-header relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+                <div class="flex items-center gap-3.5">
+                    <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                        <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Edit Compliance Item</h3>
+                        <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Update compliance task details, assignments, and requirements</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('edit-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
             <form id="edit-form" action="" method="POST" class="flex flex-col min-h-0 flex-1">
                 @csrf
@@ -1142,14 +1936,20 @@
                         <div>
                             <label for="edit-status" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Status</label>
                             <select name="status" id="edit-status" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="Pending">Pending Audit</option>
-                                <option value="Compliant">Compliant</option>
-                                <option value="Non-Compliant">Non-Compliant</option>
+                                <option value="Complied">Complied</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Pending Review">Pending Review</option>
+                                <option value="Not Complied">Not Complied</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3">
+                    <!-- Section III: Contact & Submission Details -->
+                    <div class="border-b border-gray-150 pb-1 pt-1">
+                        <h4 class="text-[10px] font-black text-hau-maroon uppercase tracking-wider">III. Contact & Submission Details</h4>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="edit-contact-person" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Contact Person</label>
                             <input type="text" name="contact_person" id="edit-contact-person" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
@@ -1158,10 +1958,11 @@
                             <label for="edit-contact-email" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Contact Email</label>
                             <input type="email" name="contact_email" id="edit-contact-email" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
                         </div>
-                        <div>
-                            <label for="edit-link" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Document Link (Evidence URL)</label>
-                            <input type="url" name="document_link" id="edit-link" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
-                        </div>
+                    </div>
+
+                    <div>
+                        <label for="edit-link" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Document Link (Evidence URL)</label>
+                        <input type="url" name="document_link" id="edit-link" placeholder="https://drive.google.com/..." class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
                     </div>
 
                     <div>
@@ -1169,9 +1970,9 @@
                         <textarea name="action_plan" id="edit-action_plan" rows="2" class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon"></textarea>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-5 py-3 flex justify-end gap-3 border-t border-gray-200 shrink-0">
-                    <button type="button" onclick="closeModal('edit-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-sm font-semibold rounded-lg shadow transition">Update Task</button>
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200 shrink-0">
+                    <button type="button" onclick="closeModal('edit-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">Update Task</button>
                 </div>
             </form>
         </div>
@@ -1181,9 +1982,23 @@
     <!-- 3. Propose Update Modal (Unit or Department only, with Action Plan edit support) -->
     <div id="propose-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
         <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-lg overflow-hidden transform scale-95 transition-all">
-            <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-                <h3 class="text-md font-bold">Propose Compliance Update</h3>
-                <button onclick="closeModal('propose-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+            <div class="modal-dark-header relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+                <div class="flex items-center gap-3.5">
+                    <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                        <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Propose New Compliance Item</h3>
+                        <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Submit a new recommendation or task for administrative review</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('propose-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
             <form id="propose-form" action="" method="POST">
                 @csrf
@@ -1254,45 +2069,128 @@
                     </div>
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                    <button type="button" onclick="closeModal('propose-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow transition">Propose Changes</button>
+                    <button type="button" onclick="closeModal('propose-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">Propose Changes</button>
                 </div>
             </form>
         </div>
     </div>
 @endif
 
-    <!-- 4. Compliance Item Details Modal (Accessible to both) -->
-    <div id="detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-lg overflow-hidden transform scale-95 transition-all">
-            <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-                <h3 class="text-base font-bold">Compliance Recommendation Details</h3>
-                <button onclick="closeModal('detail-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
-            </div>
-            <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-                
-                <!-- Title & Program -->
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <span id="detail-program" class="inline-flex px-2 py-0.5 rounded text-xs font-bold font-mono bg-hau-maroon/5 text-hau-maroon"></span>
-                        <span id="detail-body" class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-hau-gold/15 text-hau-maroon-dark ml-2"></span>
-                        <h4 id="detail-title" class="text-lg font-black text-gray-900 mt-2"></h4>
+    <!-- 4.5 Single Cell Evidence Submission Modal -->
+    <div id="cell-submit-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-lg overflow-hidden transform scale-95 transition-all">
+            <div class="modal-dark-header relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+                <div class="flex items-center gap-3.5">
+                    <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                        <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
                     </div>
-                    <div class="flex flex-col items-end gap-1.5 shrink-0">
-                        <span id="detail-priority" class="inline-flex px-2 py-0.5 rounded text-[10px] font-black border"></span>
-                        <span id="detail-status" class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border"></span>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Submit Evidence</h3>
+                        <p id="cell-submit-subtitle" class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Upload documentation and proof of compliance</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('cell-submit-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="cell-submit-form" onsubmit="submitCellEvidence(event)" class="p-6 space-y-4">
+                @csrf
+                <input type="hidden" id="cell-submit-compliance-id" name="compliance_id" value="" />
+                <input type="hidden" id="cell-submit-assignment-id" name="assignment_id" value="" />
+
+                <!-- Rejection Alert if revising -->
+                <div id="cell-submit-rejection-alert" class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700 hidden">
+                    <span class="font-bold block text-rose-800 uppercase tracking-wider text-[10px] mb-0.5">QA Admin Feedback / Reason</span>
+                    <span id="cell-submit-rejection-text"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        SharePoint / Evidence Document Link <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="url" id="cell-submit-link" name="pending_document_link" required
+                           placeholder="https://haueduph.sharepoint.com/..."
+                           class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Action Plan / Summary of Evidence <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea id="cell-submit-action-plan" name="action_plan" rows="3" required
+                              placeholder="Describe the attached evidence documentation and actions implemented..."
+                              class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition leading-relaxed"></textarea>
+                </div>
+
+                <div class="pt-3 border-t border-gray-150 flex items-center justify-between">
+                    <button type="button" onclick="closeModal('cell-submit-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit" id="cell-submit-btn" class="px-5 py-2 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                        <span>Submit for QA Review</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Compliance Item Details Modal (Accessible to both) -->
+    <div id="detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-xs overflow-y-auto hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full overflow-hidden transform scale-95 transition-all flex flex-col my-auto" style="max-width: 780px; max-height: calc(100vh - 40px);">
+            <!-- Modal Header (Pinned at Top) -->
+            <div class="relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem;">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide">Compliance Task Workspace &amp; Matrix</h3>
+                        <p class="text-xs text-white/80 font-normal mt-0.5">Detailed task view, recommendations, assignments, and evidence</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('detail-modal')" class="p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Scrollable Content (Bounded with min-h-0) -->
+            <div class="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+                
+                <!-- Title & Status Header Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 bg-gray-50/80 p-3.5 rounded-xl border border-gray-200">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span id="detail-program" class="inline-flex px-2 py-0.5 rounded text-[11px] font-bold font-mono bg-hau-maroon/10 text-hau-maroon"></span>
+                            <span id="detail-body" class="inline-flex px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900"></span>
+                            <span id="detail-priority" class="inline-flex px-2 py-0.5 rounded text-[10px] font-black border"></span>
+                        </div>
+                        <h4 id="detail-title" class="text-base font-black text-gray-900 leading-snug"></h4>
+                    </div>
+                    <div class="shrink-0 flex items-center sm:items-end">
+                        <span id="detail-status" class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-black border shadow-2xs"></span>
                     </div>
                 </div>
 
                 <!-- Rejection Alerts (If Rejected) -->
-                <div id="detail-rejected-alert" class="bg-rose-50 border border-rose-200 rounded-xl p-4 hidden">
-                    <h5 class="text-xs font-bold text-rose-800 uppercase tracking-wider mb-1">Rejection Reason from QA Admin</h5>
+                <div id="detail-rejected-alert" class="bg-rose-50 border border-rose-200 rounded-xl p-3.5 hidden">
+                    <h5 class="text-xs font-bold text-rose-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Rejection Reason from QA Admin</span>
+                    </h5>
                     <p id="detail-rejection-reason" class="text-xs text-rose-700 font-medium italic"></p>
                 </div>
 
-                <!-- Workflow Timeline -->
-                <div id="detail-workflow-tracker" class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-4">
-                    <h5 class="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-3">Recommendation Workflow</h5>
+                <!-- Workflow Timeline Tracker -->
+                <div id="detail-workflow-tracker" class="bg-white border border-gray-200 rounded-xl p-3 shadow-2xs">
+                    <h5 class="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2">Recommendation Workflow Stage</h5>
                     <div id="detail-workflow-steps" class="space-y-0">
                         <!-- Injected by JS -->
                     </div>
@@ -1300,28 +2198,32 @@
 
                 <!-- Recommendation Checklist -->
                 <div>
-                    <span class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider block flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                        Recommendations Checklist
+                    <span class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider block flex items-center gap-1 mb-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <span>Recommendations Checklist</span>
                     </span>
-                    <div id="detail-recommendation" class="text-sm text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-150 mt-1"></div>
+                    <div id="detail-recommendation" class="text-xs text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-200"></div>
                 </div>
 
-                <!-- Description -->
-                <div>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Task Description</span>
-                    <p id="detail-description" class="text-xs text-gray-600 mt-1 whitespace-pre-line"></p>
+                <!-- Action Plan & Description in Compact Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Action Plan / Action Taken -->
+                    <div>
+                        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">Action Plan / Action Taken</span>
+                        <p id="detail-action-plan" class="text-xs text-gray-700 bg-gray-50 border border-gray-200 p-2.5 rounded-xl leading-relaxed font-medium whitespace-pre-line min-h-[60px]"></p>
+                    </div>
+
+                    <!-- Task Description -->
+                    <div>
+                        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">Task Description</span>
+                        <p id="detail-description" class="text-xs text-gray-600 bg-white border border-gray-200 p-2.5 rounded-xl leading-relaxed whitespace-pre-line min-h-[60px]"></p>
+                    </div>
                 </div>
 
-                <!-- Action Plan -->
-                <div>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Action Plan / Action Taken</span>
-                    <p id="detail-action-plan" class="text-xs text-gray-700 bg-gray-50 border border-gray-150 p-3 rounded-lg leading-relaxed mt-1 font-medium whitespace-pre-line"></p>
-                </div>
-
-                <!-- Submissions & SharePoint Links Breakdown Table -->
-                <div class="pt-3 border-t border-gray-150 space-y-2">
-                    <span class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider block flex items-center justify-between">
+                <!-- Submissions & SharePoint Links Breakdown Table (Full Width) -->
+                <div class="pt-2 border-t border-gray-200 space-y-1.5">
+                    <span class="text-[10px] font-black text-hau-maroon uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         <span>Assigned Target Submissions &amp; SharePoint Evidence Links</span>
                     </span>
                     <div id="detail-assignments-list">
@@ -1329,41 +2231,47 @@
                     </div>
                 </div>
 
-                <!-- Grid Details -->
-                <div class="grid grid-cols-2 gap-4 text-xs">
-                    <div>
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">School / College</span>
-                        <span id="detail-school" class="font-semibold text-gray-800"></span>
-                    </div>
-                    <div>
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Unit or Department</span>
-                        <span id="detail-resp" class="font-semibold text-gray-800"></span>
-                    </div>
-                    <div>
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Contact Person</span>
-                        <span id="detail-contact-person" class="font-semibold text-gray-800"></span>
-                        <span id="detail-contact-email" class="block text-gray-500 font-mono text-[10px] mt-0.5"></span>
-                    </div>
-                    <div>
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Category / Area</span>
-                        <span id="detail-cat-area" class="font-semibold text-gray-800"></span>
-                    </div>
-                    <div>
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Deadline / Due Date</span>
-                        <span id="detail-due" class="font-semibold text-gray-800"></span>
+                <!-- Metadata Card -->
+                <div class="bg-gray-50/70 border border-gray-200 rounded-xl p-3.5 space-y-2.5">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block border-b border-gray-200 pb-1.5">
+                        Assignment &amp; Department Metadata
+                    </span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">School / College</span>
+                            <span id="detail-school" class="font-semibold text-gray-900 block mt-0.5"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Unit or Department</span>
+                            <span id="detail-resp" class="font-semibold text-gray-900 block mt-0.5"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Contact Person</span>
+                            <span id="detail-contact-person" class="font-semibold text-gray-900 block mt-0.5"></span>
+                            <span id="detail-contact-email" class="block text-gray-500 font-mono text-[10px] mt-0.5"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Category / Area</span>
+                            <span id="detail-cat-area" class="font-semibold text-gray-900 block mt-0.5"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Deadline / Due Date</span>
+                            <span id="detail-due" class="font-semibold text-gray-900 block mt-0.5"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Evidence Document Link</span>
+                            <div id="detail-link-container" class="mt-0.5">
+                                <!-- Clickable link injected here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Evidence Link -->
-                <div class="pt-4 border-t border-gray-150 flex items-center justify-between text-xs">
-                    <span class="text-gray-500 font-bold">Evidence Document Link:</span>
-                    <div id="detail-link-container">
-                        <!-- Clickable link injected here -->
-                    </div>
-                </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-200">
-                <button type="button" onclick="closeModal('detail-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Close Details</button>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-200 shrink-0">
+                <button type="button" onclick="closeModal('detail-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">Close Details</button>
                 <div id="detail-action-buttons">
                     <!-- Action buttons dynamically loaded here based on role -->
                 </div>
@@ -1374,9 +2282,23 @@
     <!-- Manage Categories & Labs Modal -->
     <div id="manage-labs-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
         <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full overflow-hidden transform scale-95 transition-all flex flex-col" style="max-width: 540px; max-height: calc(100vh - 80px);">
-            <div class="bg-hau-maroon px-5 py-3 text-white flex items-center justify-between border-b-2 border-hau-gold shrink-0">
-                <h3 class="text-base font-bold">Manage Categories &amp; Departments</h3>
-                <button onclick="closeModal('manage-labs-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+            <div class="modal-dark-header relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+                <div class="flex items-center gap-3.5">
+                    <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                        <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Manage Laboratories / Facilities</h3>
+                        <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Add, edit, or configure facility and lab options</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('manage-labs-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
             <!-- Tabs Navigation -->
@@ -1437,8 +2359,8 @@
 
             </div>
 
-            <div class="bg-gray-50 px-5 py-3 flex justify-end border-t border-gray-200 shrink-0">
-                <button type="button" onclick="closeModal('manage-labs-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Done</button>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end border-t border-gray-200 shrink-0">
+                <button type="button" onclick="closeModal('manage-labs-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">Done</button>
             </div>
         </div>
     </div>
@@ -1446,14 +2368,16 @@
 
 <!-- ================= JAVASCRIPT ================= -->
 <script>
-    // ===== PAGINATION STATE =====
+    // ===== PAGINATION & HYBRID VIEW STATE =====
     const ITEMS_PER_PAGE = 12;
     let currentPage = 1;
     let filteredCards = []; // holds currently visible (filtered) card elements
+    let currentComplianceView = localStorage.getItem('compliance_view_mode') || 'table';
+    if (currentComplianceView === 'list') currentComplianceView = 'table';
 
     /**
      * Core pagination renderer.
-     * Call this after any filter change to re-slice and display cards.
+     * Re-slices and displays cards & table rows for the current page.
      */
     function renderPagination() {
         const totalItems = filteredCards.length;
@@ -1466,9 +2390,22 @@
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         const end   = Math.min(start + ITEMS_PER_PAGE, totalItems);
 
-        // Show/hide cards based on current page slice
+        // Show/hide cards and table rows based on current page slice
         filteredCards.forEach((card, idx) => {
-            card.style.display = (idx >= start && idx < end) ? '' : 'none';
+            const isVisiblePage = (idx >= start && idx < end);
+            card.style.display = isVisiblePage ? '' : 'none';
+            const id = card.getAttribute('data-id');
+            const tableRow = document.querySelector(`tr[data-table-id="${id}"]`);
+            if (tableRow) {
+                tableRow.style.display = isVisiblePage ? '' : 'none';
+            }
+            // If main table row is hidden by pagination, ensure its subrow is hidden as well
+            if (!isVisiblePage) {
+                const subRow = document.getElementById('subrow-' + id);
+                if (subRow) subRow.classList.add('hidden');
+                const chevron = document.getElementById('subrow-chevron-' + id);
+                if (chevron) chevron.classList.remove('rotate-90');
+            }
         });
 
         // Update info text
@@ -1539,22 +2476,155 @@
 
         controlsEl.innerHTML = html;
 
-        // Show/hide the whole pagination bar
+        // Show/hide the whole pagination bar based on current view and items
         const bar = document.getElementById('pagination-bar');
-        if (bar) bar.style.display = totalItems === 0 ? 'none' : '';
+        if (bar) {
+            const isPagedView = (currentComplianceView === 'table' || currentComplianceView === 'grid');
+            bar.style.display = (isPagedView && totalItems > 0) ? '' : 'none';
+        }
     }
 
     function goToPage(page) {
         currentPage = page;
         renderPagination();
-        // Smooth scroll to top of grid
-        const grid = document.getElementById('compliance-grid');
-        if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const scrollTarget = document.getElementById('compliance-table-view') || document.getElementById('compliance-grid');
+        if (scrollTarget) scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ── Table Sub-Row Accordion Toggle ──
+    function toggleTableSubrow(id) {
+        const subRow = document.getElementById('subrow-' + id);
+        const chevron = document.getElementById('subrow-chevron-' + id);
+        if (!subRow) return;
+
+        const isHidden = subRow.classList.contains('hidden');
+        if (isHidden) {
+            subRow.classList.remove('hidden');
+            if (chevron) chevron.classList.add('rotate-90', 'text-hau-maroon');
+        } else {
+            subRow.classList.add('hidden');
+            if (chevron) chevron.classList.remove('rotate-90', 'text-hau-maroon');
+        }
+    }
+
+    // ── Area Accordion Toggle ──
+    function toggleAreaAccordion(slug) {
+        const body = document.getElementById('area-body-' + slug);
+        const chevron = document.getElementById('area-chevron-' + slug);
+        if (!body) return;
+
+        const isHidden = body.classList.contains('hidden');
+        if (isHidden) {
+            body.classList.remove('hidden');
+            if (chevron) chevron.classList.remove('rotate-180');
+        } else {
+            body.classList.add('hidden');
+            if (chevron) chevron.classList.add('rotate-180');
+        }
+    }
+
+    // ── Board Stage Accordion Toggle ──
+    function toggleBoardStage(slug) {
+        const body = document.getElementById('board-stage-body-' + slug);
+        const chevron = document.getElementById('board-chevron-' + slug);
+        if (!body) return;
+
+        const isHidden = body.classList.contains('hidden');
+        if (isHidden) {
+            body.classList.remove('hidden');
+            if (chevron) chevron.classList.remove('rotate-180');
+        } else {
+            body.classList.add('hidden');
+            if (chevron) chevron.classList.add('rotate-180');
+        }
+    }
+
+    // ── Area View Accrediting Body Sub-Pill Filter ──
+    let currentAreaBodyFilter = 'all';
+
+    function setAreaBodyFilter(bodyKey) {
+        currentAreaBodyFilter = bodyKey ? bodyKey.toLowerCase().trim() : 'all';
+
+        const activeClass = 'px-3 py-1 text-xs font-bold rounded-xl bg-hau-maroon text-white shadow-2xs flex items-center gap-1.5 transition';
+        const inactiveClass = 'px-3 py-1 text-xs font-bold rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center gap-1.5 transition';
+
+        document.querySelectorAll('#area-body-pills [data-body-pill]').forEach(btn => {
+            const pillKey = btn.getAttribute('data-body-pill');
+            if (pillKey === currentAreaBodyFilter) {
+                btn.className = activeClass;
+            } else {
+                btn.className = inactiveClass;
+            }
+        });
+
+        applyFilters(false);
     }
 
     /**
-     * Central filter + pagination entry point.
-     * Replaces direct show/hide logic — now all filtering goes through here.
+     * View Mode Switcher: 'table' | 'matrix' | 'board' | 'area' | 'grid'
+     */
+    function setComplianceView(mode) {
+        currentComplianceView = mode;
+        try { localStorage.setItem('compliance_view_mode', mode); } catch (e) {}
+
+        const gridEl = document.getElementById('compliance-grid');
+        const tableEl = document.getElementById('compliance-table-view');
+        const matrixEl = document.getElementById('compliance-matrix-view');
+        const boardEl = document.getElementById('compliance-board-view');
+        const areaEl = document.getElementById('compliance-area-view');
+        const paginationBar = document.getElementById('pagination-bar');
+
+        const btnTable = document.getElementById('view-btn-table');
+        const btnMatrix = document.getElementById('view-btn-matrix');
+        const btnBoard = document.getElementById('view-btn-board');
+        const btnArea = document.getElementById('view-btn-area');
+        const btnGrid = document.getElementById('view-btn-grid');
+
+        const activeClass = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-hau-maroon text-white shadow-xs flex items-center gap-1.5 transition';
+        const inactiveClass = 'px-2.5 py-1 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-200 flex items-center gap-1.5 transition';
+
+        // Reset all buttons
+        if (btnTable) btnTable.className = inactiveClass;
+        if (btnMatrix) btnMatrix.className = inactiveClass;
+        if (btnBoard) btnBoard.className = inactiveClass;
+        if (btnArea) btnArea.className = inactiveClass;
+        if (btnGrid) btnGrid.className = inactiveClass;
+
+        // Hide all containers
+        if (tableEl) tableEl.classList.add('hidden');
+        if (matrixEl) matrixEl.classList.add('hidden');
+        if (boardEl) boardEl.classList.add('hidden');
+        if (areaEl) areaEl.classList.add('hidden');
+        if (gridEl) gridEl.classList.add('hidden');
+
+        if (mode === 'table') {
+            if (tableEl) tableEl.classList.remove('hidden');
+            if (btnTable) btnTable.className = activeClass;
+            if (paginationBar) paginationBar.style.display = filteredCards.length > 0 ? '' : 'none';
+        } else if (mode === 'matrix') {
+            if (matrixEl) matrixEl.classList.remove('hidden');
+            if (btnMatrix) btnMatrix.className = activeClass;
+            if (paginationBar) paginationBar.style.display = 'none';
+        } else if (mode === 'board') {
+            if (boardEl) boardEl.classList.remove('hidden');
+            if (btnBoard) btnBoard.className = activeClass;
+            if (paginationBar) paginationBar.style.display = 'none';
+        } else if (mode === 'area') {
+            if (areaEl) areaEl.classList.remove('hidden');
+            if (btnArea) btnArea.className = activeClass;
+            if (paginationBar) paginationBar.style.display = 'none';
+        } else {
+            // 'grid' (Cards)
+            if (gridEl) gridEl.classList.remove('hidden');
+            if (btnGrid) btnGrid.className = activeClass;
+            if (paginationBar) paginationBar.style.display = filteredCards.length > 0 ? '' : 'none';
+        }
+
+        renderPagination();
+    }
+
+    /**
+     * Smart string search matcher.
      */
     function smartMatch(cardVal, filterVal) {
         if (!filterVal) return true;
@@ -1562,6 +2632,28 @@
         cardVal = cardVal.toLowerCase().trim();
         filterVal = filterVal.toLowerCase().trim();
         return cardVal.includes(filterVal) || filterVal.includes(cardVal);
+    }
+
+    function exportComplianceCsv() {
+        const search   = (document.getElementById('comp-search')   || {}).value || '';
+        const body     = (document.getElementById('comp-body')     || {}).value || '';
+        const category = (document.getElementById('comp-category') || {}).value || '';
+        const area     = (document.getElementById('comp-area')     || {}).value || '';
+        const status   = (document.getElementById('comp-status')   || {}).value || '';
+        const priority = (document.getElementById('comp-priority') || {}).value || '';
+        const unit     = (document.getElementById('comp-unit')     || {}).value || '';
+
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (body) params.append('body', body);
+        if (category) params.append('category', category);
+        if (area) params.append('area', area);
+        if (status) params.append('status', status);
+        if (priority) params.append('priority', priority);
+        if (unit) params.append('responsible_unit', unit);
+
+        const url = "{{ route('compliance.export') }}" + (params.toString() ? '?' + params.toString() : '');
+        window.location.href = url;
     }
 
     function clearAllFilters() {
@@ -1584,6 +2676,10 @@
         applyFilters(false);
     }
 
+    /**
+     * Central filter entry point.
+     * Evaluates criteria and synchronizes Cards, Table, Kanban Board, and Area views.
+     */
     function applyFilters(isUserAction = false) {
         const search   = (document.getElementById('comp-search')   || {}).value || '';
         const body     = (document.getElementById('comp-body')     || {}).value || '';
@@ -1597,8 +2693,10 @@
         const noMatches = document.getElementById('no-matches-row');
 
         filteredCards = [];
+        const matchedIds = new Set();
 
         allCards.forEach(card => {
+            const cardId       = card.getAttribute('data-id');
             const cardTitle    = (card.getAttribute('data-title') || '').toLowerCase();
             const cardDesc     = (card.getAttribute('data-desc') || '').toLowerCase();
             const cardResp     = (card.getAttribute('data-resp') || '').toLowerCase();
@@ -1654,38 +2752,109 @@
 
             const visible = matchSearch && matchBody && matchCategory && matchArea && matchStatus && matchPriority && matchUnit;
 
-            // Hide card initially — renderPagination will reveal the active page slice
+            // Hide card initially — renderPagination will reveal active page slice
             card.style.display = 'none';
 
-            if (visible) filteredCards.push(card);
+            if (visible) {
+                filteredCards.push(card);
+                matchedIds.add(String(cardId));
+            }
         });
 
-        // Reset to page 1 on every filter change
+        // 1. Sync Kanban Board View cards & stage counters
+        const stageCounts = {
+            'recommendation_created': 0,
+            'action_plan_submitted': 0,
+            'admin_reviewing': 0,
+            'compliant': 0
+        };
+
+        document.querySelectorAll('#compliance-board-view .board-item-card').forEach(boardCard => {
+            const bId = boardCard.getAttribute('data-board-id');
+            const bStage = boardCard.getAttribute('data-board-stage') || 'recommendation_created';
+            const isMatch = matchedIds.has(String(bId));
+            boardCard.style.display = isMatch ? '' : 'none';
+            if (isMatch && stageCounts[bStage] !== undefined) {
+                stageCounts[bStage]++;
+            }
+        });
+
+        // Update Board Counter badges & empty state indicators
+        const boardCountRec = document.getElementById('board-count-rec');
+        const boardCountPlan = document.getElementById('board-count-plan');
+        const boardCountReview = document.getElementById('board-count-review');
+        const boardCountCompliant = document.getElementById('board-count-compliant');
+
+        if (boardCountRec) boardCountRec.textContent = stageCounts['recommendation_created'];
+        if (boardCountPlan) boardCountPlan.textContent = stageCounts['action_plan_submitted'];
+        if (boardCountReview) boardCountReview.textContent = stageCounts['admin_reviewing'];
+        if (boardCountCompliant) boardCountCompliant.textContent = stageCounts['compliant'];
+
+        document.querySelectorAll('#compliance-board-view [data-board-column]').forEach(col => {
+            const st = col.getAttribute('data-board-column');
+            const count = stageCounts[st] || 0;
+            const noMatchMsg = col.querySelector('.board-no-match-indicator');
+            const emptyMsg = col.querySelector('.board-empty-indicator');
+            if (noMatchMsg) {
+                noMatchMsg.style.display = (count === 0 && (!emptyMsg || emptyMsg.style.display === 'none')) ? '' : 'none';
+            }
+        });
+
+        // 1.5. Sync Matrix Grid View cards
+        document.querySelectorAll('#compliance-matrix-view .matrix-task-card').forEach(mCard => {
+            const mId = mCard.getAttribute('data-matrix-id');
+            const isMatch = matchedIds.has(String(mId));
+            mCard.style.display = isMatch ? '' : 'none';
+        });
+
+        // 2. Sync Grouped by Area View cards & area counters + Body Pills filter
+        document.querySelectorAll('#compliance-area-view .area-group-card').forEach(areaCard => {
+            const cardBody = (areaCard.getAttribute('data-area-body') || '').toLowerCase().trim();
+            const matchesBodyFilter = (currentAreaBodyFilter === 'all' || cardBody === currentAreaBodyFilter || cardBody.includes(currentAreaBodyFilter));
+
+            let areaVisibleCount = 0;
+            areaCard.querySelectorAll('.area-item-card').forEach(itemCard => {
+                const aId = itemCard.getAttribute('data-area-item-id');
+                const isMatch = matchedIds.has(String(aId)) && matchesBodyFilter;
+                itemCard.style.display = isMatch ? '' : 'none';
+                if (isMatch) areaVisibleCount++;
+            });
+
+            const counterEl = areaCard.querySelector('.area-item-counter');
+            if (counterEl) counterEl.textContent = `${areaVisibleCount} Task${areaVisibleCount !== 1 ? 's' : ''}`;
+            
+            // Show area card only if at least one matching item is inside and matches the selected body pill
+            areaCard.style.display = (areaVisibleCount > 0 && matchesBodyFilter) ? '' : 'none';
+        });
+
+        // 3. Reset to page 1 and render table & card pagination
         currentPage = 1;
         renderPagination();
 
-        // Update visible-count badge in filter toolbar
+        // 4. Update visible-count badge in filter toolbar
         const countEl = document.getElementById('visible-count');
         if (countEl) countEl.textContent = filteredCards.length;
 
-        // Toggle empty/no-matches indicators
+        // 5. Toggle empty/no-matches indicators
         if (noMatches) {
-            noMatches.style.display = filteredCards.length === 0 && allCards.length > 0 ? '' : 'none';
+            noMatches.style.display = (filteredCards.length === 0 && allCards.length > 0) ? '' : 'none';
         }
 
         if (isUserAction && filteredCards.length > 0) {
-            const grid = document.getElementById('compliance-grid');
-            if (grid) {
-                grid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            const container = document.getElementById('compliance-table-view') || document.getElementById('compliance-grid');
+            if (container && container.style.display !== 'none') {
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
     }
 
-    // Initialize pagination on page load
+    // Initialize pagination & view on page load
     document.addEventListener('DOMContentLoaded', () => {
         // Build initial filteredCards from all cards
         filteredCards = Array.from(document.querySelectorAll('#compliance-grid > [data-id]'));
         renderPagination();
+        setComplianceView(currentComplianceView);
+
         // Set initial visible-count to total records
         const countEl = document.getElementById('visible-count');
         if (countEl) countEl.textContent = filteredCards.length;
@@ -1914,8 +3083,76 @@
 
     let currentDetailId = null;
 
-    // ── Toggle Recommendation Checklist Item (AJAX) ──────────────────────
+    function getRecoStatusBadge(status, isCompleted) {
+        if (status === 'approved' || isCompleted) {
+            return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Approved</span>';
+        }
+        if (status === 'under_review') {
+            return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200"><svg class="w-3 h-3 text-amber-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Under Review</span>';
+        }
+        if (status === 'needs_revision') {
+            return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> Needs Revision</span>';
+        }
+        return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200">Pending Evidence</span>';
+    }
+
+    function updateCardRecoCache(recordId, itemId, updatedProperties) {
+        const card = document.querySelector(`#compliance-grid > [data-id="${recordId}"]`);
+        if (!card) return;
+
+        let recos = [];
+        try {
+            recos = JSON.parse(card.getAttribute('data-recommendations') || '[]');
+        } catch (e) {}
+
+        recos = recos.map(item => {
+            const currentId = item.recommendation_item_id || item.id;
+            if (String(currentId) === String(itemId)) {
+                return Object.assign({}, item, updatedProperties);
+            }
+            return item;
+        });
+
+        card.setAttribute('data-recommendations', JSON.stringify(recos));
+
+        // Update item on card preview if present
+        const textElCard = document.getElementById('reco-text-card-' + itemId);
+        if (textElCard && updatedProperties.is_completed !== undefined) {
+            if (updatedProperties.is_completed) {
+                textElCard.classList.add('checklist-text-completed');
+            } else {
+                textElCard.classList.remove('checklist-text-completed');
+            }
+        }
+
+        const badgeElCard = document.getElementById('reco-badge-card-' + itemId);
+        if (badgeElCard && updatedProperties.status) {
+            const st = updatedProperties.status;
+            if (st === 'approved' || updatedProperties.is_completed) {
+                badgeElCard.innerHTML = '<span class="inline-flex px-1.5 py-0.25 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-150">Approved</span>';
+            } else if (st === 'under_review') {
+                badgeElCard.innerHTML = '<span class="inline-flex px-1.5 py-0.25 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-150">Reviewing</span>';
+            } else if (st === 'needs_revision') {
+                badgeElCard.innerHTML = '<span class="inline-flex px-1.5 py-0.25 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-150">Needs Rev</span>';
+            } else {
+                badgeElCard.innerHTML = '<span class="inline-flex px-1.5 py-0.25 rounded text-[9px] font-bold bg-gray-100 text-gray-500">Pending</span>';
+            }
+        }
+
+        // Checkbox sync on card
+        const cbCard = document.querySelector(`.checklist-item[data-item-id="${itemId}"] input[type="checkbox"]`);
+        if (cbCard && updatedProperties.is_completed !== undefined) {
+            cbCard.checked = updatedProperties.is_completed;
+        }
+    }
+
+    // ── Toggle Recommendation Checklist Item (QA Admin AJAX) ──────────────────────
     function toggleRecommendation(itemId, recordId) {
+        if ("{{ $role }}" !== 'QA Admin') {
+            alert('Only QA Admin can directly mark recommendations as completed. Use "Submit Evidence" to provide your documentation.');
+            return;
+        }
+
         fetch(`/compliance/recommendations/${itemId}/toggle`, {
             method: 'POST',
             headers: {
@@ -1927,15 +3164,13 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                // Update text styling on card and in modal
-                const textElCard = document.getElementById('reco-text-card-' + itemId);
-                if (textElCard) {
-                    if (data.is_completed) {
-                        textElCard.classList.add('checklist-text-completed');
-                    } else {
-                        textElCard.classList.remove('checklist-text-completed');
-                    }
-                }
+                // Update cached state
+                updateCardRecoCache(recordId, itemId, {
+                    is_completed: data.is_completed,
+                    status: data.status
+                });
+
+                // Update text styling in modal
                 const textElModal = document.getElementById('reco-text-modal-' + itemId);
                 if (textElModal) {
                     if (data.is_completed) {
@@ -1945,23 +3180,224 @@
                     }
                 }
 
-                // Sync checkbox state on card
-                const cbCard = document.querySelector('label[data-item-id="' + itemId + '"] input[type="checkbox"]');
-                if (cbCard) cbCard.checked = data.is_completed;
+                // Sync status badge in modal
+                const badgeModal = document.getElementById('reco-status-badge-' + itemId);
+                if (badgeModal) {
+                    badgeModal.innerHTML = getRecoStatusBadge(data.status, data.is_completed);
+                }
 
-                // Sync checkbox state in modal
-                const cbModal = document.querySelector('#detail-recommendation input[onchange*="' + itemId + '"]');
-                if (cbModal) cbModal.checked = data.is_completed;
-
-                // Update progress bar
+                // Update progress bar & percentage
                 const bar = document.getElementById('bar-' + recordId);
                 if (bar) bar.style.width = data.completion_rate + '%';
-                // Update rate text
                 const rateEl = document.querySelector('.completion-rate-' + recordId);
                 if (rateEl) rateEl.innerText = data.completion_rate + '%';
+
+                // If overall task status changed
+                if (data.overall_status) {
+                    const card = document.querySelector(`#compliance-grid > [data-id="${recordId}"]`);
+                    if (card) card.setAttribute('data-status', data.overall_status);
+                }
+            } else {
+                alert(data.message || 'Action failed.');
             }
         })
-        .catch(err => console.error('Toggle failed:', err));
+        .catch(err => {
+            console.error('Toggle failed:', err);
+            alert('Unable to toggle recommendation. Please check permissions.');
+        });
+    }
+
+    // ── Approve Recommendation Item (QA Admin) ──────────────────────────
+    function approveRecommendationItem(itemId, recordId) {
+        if (!confirm('Approve this recommendation item as completed?')) return;
+
+        fetch(`/compliance/recommendations/${itemId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                updateCardRecoCache(recordId, itemId, {
+                    is_completed: true,
+                    status: 'approved',
+                    admin_remarks: null
+                });
+
+                // Update modal row UI
+                const textElModal = document.getElementById('reco-text-modal-' + itemId);
+                if (textElModal) textElModal.classList.add('line-through', 'text-gray-400');
+
+                const badgeModal = document.getElementById('reco-status-badge-' + itemId);
+                if (badgeModal) badgeModal.innerHTML = getRecoStatusBadge('approved', true);
+
+                const cbModal = document.querySelector(`#modal-reco-row-${itemId} input[type="checkbox"]`);
+                if (cbModal) cbModal.checked = true;
+
+                const remarksBox = document.getElementById('reco-remarks-box-' + itemId);
+                if (remarksBox) remarksBox.remove();
+
+                // Update progress bar & rate
+                const bar = document.getElementById('bar-' + recordId);
+                if (bar) bar.style.width = data.completion_rate + '%';
+                const rateEl = document.querySelector('.completion-rate-' + recordId);
+                if (rateEl) rateEl.innerText = data.completion_rate + '%';
+
+                if (data.overall_status) {
+                    const card = document.querySelector(`#compliance-grid > [data-id="${recordId}"]`);
+                    if (card) card.setAttribute('data-status', data.overall_status);
+                    const statusBadge = document.getElementById('detail-status');
+                    if (statusBadge && data.overall_status === 'Compliant') {
+                        statusBadge.innerText = 'Compliant';
+                        statusBadge.className = 'inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-700 border-emerald-100';
+                    }
+                }
+
+                alert('Recommendation approved successfully!');
+                // Re-render the detail modal to update actions
+                if (_currentDetailCard) openDetailModal(_currentDetailCard);
+            } else {
+                alert(data.message || 'Error approving recommendation.');
+            }
+        })
+        .catch(err => {
+            console.error('Approve failed:', err);
+            alert('Failed to approve recommendation.');
+        });
+    }
+
+    // ── Reject Recommendation Item Modal & Handler ──────────────────────
+    let _activeRejectItemId = null;
+
+    function openRejectItemModal(itemId, recoText) {
+        _activeRejectItemId = itemId;
+        document.getElementById('reject-item-text-preview').innerText = recoText;
+        document.getElementById('reject-item-remarks').value = '';
+        openModal('reject-item-modal');
+    }
+
+    function closeRejectItemModal() {
+        _activeRejectItemId = null;
+        closeModal('reject-item-modal');
+    }
+
+    function submitRejectItem(e) {
+        e.preventDefault();
+        if (!_activeRejectItemId) return;
+
+        const remarks = document.getElementById('reject-item-remarks').value.trim();
+        if (!remarks) {
+            alert('Please provide feedback remarks for the unit.');
+            return;
+        }
+
+        const btn = document.getElementById('reject-item-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        fetch(`/compliance/recommendations/${_activeRejectItemId}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ admin_remarks: remarks }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (currentDetailId) {
+                    updateCardRecoCache(currentDetailId, _activeRejectItemId, {
+                        is_completed: false,
+                        status: 'needs_revision',
+                        admin_remarks: remarks
+                    });
+                }
+                closeRejectItemModal();
+                alert('Revision requested. The submitting unit has been notified.');
+                if (_currentDetailCard) openDetailModal(_currentDetailCard);
+            } else {
+                alert(data.message || 'Error requesting revision.');
+            }
+        })
+        .catch(err => {
+            console.error('Reject item failed:', err);
+            alert('Failed to submit revision request.');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = 'Send Revision Request';
+        });
+    }
+
+    // ── Submit Recommendation Evidence Modal & Handler ──────────────────
+    let _activeEvidenceItemId = null;
+
+    function openSubmitItemEvidenceModal(itemId, recoText, currentLink = '') {
+        _activeEvidenceItemId = itemId;
+        document.getElementById('evidence-item-text-preview').innerText = recoText;
+        document.getElementById('evidence-item-link').value = currentLink || '';
+        openModal('submit-item-evidence-modal');
+    }
+
+    function closeSubmitItemEvidenceModal() {
+        _activeEvidenceItemId = null;
+        closeModal('submit-item-evidence-modal');
+    }
+
+    function submitItemEvidence(e) {
+        e.preventDefault();
+        if (!_activeEvidenceItemId) return;
+
+        const link = document.getElementById('evidence-item-link').value.trim();
+        if (!link) {
+            alert('Please enter a valid evidence URL.');
+            return;
+        }
+
+        const btn = document.getElementById('evidence-item-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        fetch(`/compliance/recommendations/${_activeEvidenceItemId}/evidence`, {
+            method: 'POST',
+            body: JSON.stringify({ evidence_link: link }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (currentDetailId) {
+                    updateCardRecoCache(currentDetailId, _activeEvidenceItemId, {
+                        status: data.status,
+                        evidence_link: data.evidence_link,
+                        admin_remarks: null
+                    });
+                }
+                closeSubmitItemEvidenceModal();
+                alert('Evidence link submitted successfully! It is now queued for QA Admin review.');
+                if (_currentDetailCard) openDetailModal(_currentDetailCard);
+            } else {
+                alert(data.message || 'Error submitting evidence link.');
+            }
+        })
+        .catch(err => {
+            console.error('Evidence submission failed:', err);
+            alert('Failed to submit evidence.');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = 'Submit Evidence Link';
+        });
     }
 
     const accreditingBodiesMap = @json($dbAccreditingBodies->keyBy('code')->map(function($ab) {
@@ -2138,18 +3574,70 @@
         // Build recommendations checklist display
         const recoContainer = document.getElementById('detail-recommendation');
         if (recommendations.length > 0) {
-            let html = '<div class="space-y-1.5">';
-            recommendations.forEach(function(item) {
-                const completed = item.is_completed;
+            let html = '<div class="space-y-3">';
+            recommendations.forEach(function(item, idx) {
+                const itemId = item.recommendation_item_id || item.id;
+                const completed = item.is_completed || item.status === 'approved';
+                const itemStatus = item.status || (completed ? 'approved' : 'pending');
 
-                html += '<div class="py-2 border-b border-gray-50 last:border-0">';
-                html += '<label class="flex items-start gap-2 cursor-pointer group" onclick="event.stopPropagation();">';
-                html += '<input type="checkbox" ' + (completed ? 'checked' : '') + 
-                        ' onchange="toggleRecommendation(' + item.id + ', ' + id + ')"' +
-                        ' class="w-4 h-4 rounded border-gray-300 text-hau-maroon focus:ring-hau-maroon mt-0.5 cursor-pointer shrink-0" />';
-                html += '<span id="reco-text-modal-' + item.id + '" class="text-sm flex-1 ' + (completed ? 'line-through text-gray-400' : 'text-gray-700') + '">' + escapeHtml(item.text) + '</span>';
-                html += '</label>';
+                html += `<div class="bg-white rounded-xl p-3.5 border border-gray-200 shadow-2xs space-y-2.5 transition" id="modal-reco-row-${itemId}">`;
+                
+                // Header: Checkbox + Text + Status Badge
+                html += '<div class="flex items-start justify-between gap-3">';
+                html += '<div class="flex items-start gap-2.5 flex-1 min-w-0">';
+                if ("{{ $role }}" === 'QA Admin') {
+                    html += `<input type="checkbox" ${completed ? 'checked' : ''} onchange="toggleRecommendation(${itemId}, ${id})" class="w-4 h-4 rounded border-gray-300 text-hau-maroon focus:ring-hau-maroon mt-0.5 cursor-pointer shrink-0" title="QA Admin: Click to toggle approval completion" />`;
+                } else {
+                    html += `<input type="checkbox" ${completed ? 'checked' : ''} disabled class="w-4 h-4 rounded border-gray-300 text-hau-maroon mt-0.5 cursor-not-allowed opacity-75 shrink-0" title="Only QA Admin can directly check off items." />`;
+                }
+                html += `<div class="space-y-0.5 flex-1 min-w-0">`;
+                html += `<div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recommendation #${idx + 1}</div>`;
+                html += `<p id="reco-text-modal-${itemId}" class="text-xs font-bold leading-relaxed ${completed ? 'line-through text-gray-400' : 'text-gray-900'}">${escapeHtml(item.text)}</p>`;
+                html += `</div></div>`;
+                html += `<div class="shrink-0" id="reco-status-badge-${itemId}">${getRecoStatusBadge(itemStatus, completed)}</div>`;
                 html += '</div>';
+
+                // Evidence link if present
+                if (item.evidence_link) {
+                    html += `<div class="bg-gray-50 rounded-lg p-2 border border-gray-150 flex items-center justify-between text-xs gap-2">`;
+                    html += `<span class="text-gray-500 font-semibold flex items-center gap-1"><svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg> Evidence:</span>`;
+                    html += `<a href="${escapeHtml(item.evidence_link)}" target="_blank" class="text-hau-maroon hover:underline font-mono font-bold truncate max-w-[280px]" title="${escapeHtml(item.evidence_link)}">${escapeHtml(item.evidence_link)} 🔗</a>`;
+                    html += `</div>`;
+                }
+
+                // Admin Remarks (if revision requested)
+                if (item.admin_remarks) {
+                    html += `<div class="bg-rose-50 border border-rose-200 rounded-lg p-2.5 text-xs text-rose-800 space-y-1" id="reco-remarks-box-${itemId}">`;
+                    html += `<strong class="font-bold flex items-center gap-1.5 text-rose-700"><svg class="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> QA Admin Revision Request Feedback:</strong>`;
+                    html += `<p class="font-medium text-rose-800 leading-relaxed">${escapeHtml(item.admin_remarks)}</p>`;
+                    html += `</div>`;
+                }
+
+                // Action Toolbar for this item
+                html += `<div class="flex items-center justify-between pt-2 border-t border-gray-100 flex-wrap gap-2 text-xs">`;
+                if ("{{ $role }}" === 'QA Admin') {
+                    html += `<div class="flex items-center gap-1.5">`;
+                    if (!completed) {
+                        html += `<button type="button" onclick="approveRecommendationItem(${itemId}, ${id})" class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-lg transition shadow-2xs">`;
+                        html += `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Approve Item`;
+                        html += `</button>`;
+                        html += `<button type="button" onclick="openRejectItemModal(${itemId}, '${escapeHtml(item.text).replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[11px] rounded-lg transition">`;
+                        html += `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> Request Revision`;
+                        html += `</button>`;
+                    }
+                    html += `</div>`;
+                    html += `<button type="button" onclick="openSubmitItemEvidenceModal(${itemId}, '${escapeHtml(item.text).replace(/'/g, "\\'")}', '${escapeHtml(item.evidence_link || '').replace(/'/g, "\\'")}')" class="text-[11px] font-bold text-gray-600 hover:text-hau-maroon transition underline ml-auto">`;
+                    html += item.evidence_link ? 'Edit Evidence Link' : '+ Add Evidence Link';
+                    html += `</button>`;
+                } else {
+                    html += `<button type="button" onclick="openSubmitItemEvidenceModal(${itemId}, '${escapeHtml(item.text).replace(/'/g, "\\'")}', '${escapeHtml(item.evidence_link || '').replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-hau-maroon hover:bg-hau-maroon-light text-white font-bold text-[11px] rounded-lg transition shadow-2xs">`;
+                    html += `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>`;
+                    html += item.evidence_link ? 'Update Evidence Link' : 'Submit Evidence Link';
+                    html += `</button>`;
+                }
+                html += `</div>`;
+
+                html += `</div>`;
             });
             html += '</div>';
             recoContainer.innerHTML = html;
@@ -2311,7 +3799,7 @@
             linkContainer.innerHTML = '<span class="italic text-gray-400">No document attached</span>';
         }
 
-        // Render sub-assignments breakdown table
+        // Render sub-assignments breakdown table (Cross-Tab Matrix Grid)
         const assignmentsList = document.getElementById('detail-assignments-list');
         let assignments = [];
         try { assignments = JSON.parse(card.getAttribute('data-assignments') || '[]'); } catch(e) {}
@@ -2319,44 +3807,114 @@
 
         if (assignmentsList) {
             if (assignments.length > 0) {
-                let html = '<div class="overflow-x-auto border border-gray-200 rounded-lg"><table class="w-full text-left text-xs">';
-                html += '<thead class="bg-gray-50 text-[10px] uppercase font-bold text-gray-500 border-b border-gray-200"><tr>';
-                html += '<th class="px-3 py-2">Assigned Target</th>';
-                html += '<th class="px-3 py-2">Status</th>';
-                html += '<th class="px-3 py-2">SharePoint Link</th>';
-                html += '<th class="px-3 py-2 text-right">Actions</th>';
+                // 1. Extract Unique Schools
+                let schools = [];
+                assignments.forEach(a => {
+                    if (a.school_name && a.school_name.trim()) schools.push(a.school_name.trim());
+                    else if (a.program_code) schools.push(a.program_code);
+                });
+                if (schools.length === 0 && school && school !== 'General') {
+                    schools = school.split(';').map(s => s.trim()).filter(Boolean);
+                }
+                schools = [...new Set(schools)];
+                if (schools.length === 0) schools = ['General'];
+
+                // 2. Extract Unique Units
+                let units = [];
+                let seenUnitIds = new Set();
+                assignments.forEach(a => {
+                    if (a.unit_id && !seenUnitIds.has(a.unit_id)) {
+                        seenUnitIds.add(a.unit_id);
+                        units.push({
+                            id: a.unit_id,
+                            name: a.unit_name || ('Unit #' + a.unit_id),
+                            code: a.unit_code || a.unit_name
+                        });
+                    }
+                });
+                if (units.length === 0) {
+                    units = [{ id: null, name: 'Evidence Document', code: 'GEN' }];
+                }
+
+                // 3. Build Matrix HTML
+                let html = '<div class="overflow-x-auto border border-gray-200 rounded-xl shadow-2xs">';
+                html += '<table class="min-w-full text-left text-xs divide-y divide-gray-200">';
+                html += '<thead class="bg-gray-50 text-[10px] uppercase font-bold text-gray-600"><tr>';
+                html += '<th class="px-3.5 py-2.5 border-r border-gray-200 min-w-[160px]">Target School / College</th>';
+                units.forEach(u => {
+                    html += '<th class="px-3 py-2.5 text-center border-r border-gray-200 min-w-[140px]">' + escapeHtml(u.name) + '</th>';
+                });
+                html += '<th class="px-3 py-2.5 text-center bg-gray-100/60 font-black text-gray-800 min-w-[110px]">Status</th>';
                 html += '</tr></thead><tbody class="divide-y divide-gray-150 bg-white">';
 
-                assignments.forEach(function(a) {
-                    const targetName = a.program_code ? (a.program_code + ' — ' + (a.program_name || '')) : (a.school_name ? a.school_name : (a.unit_name || 'Department'));
-                    const activeLink = a.pending_document_link || a.document_link;
+                schools.forEach(sName => {
+                    let rowCompleted = 0;
+                    let rowTotal = units.length;
+                    let cellsHtml = '';
 
-                    let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ';
-                    if (a.status === 'Compliant') statusBadge += 'bg-emerald-50 text-emerald-700 border border-emerald-200">Compliant</span>';
-                    else if (a.status === 'Non-Compliant') statusBadge += 'bg-rose-50 text-rose-700 border border-rose-200">Non-Compliant</span>';
-                    else statusBadge += 'bg-amber-50 text-amber-700 border border-amber-200">Pending</span>';
+                    units.forEach(u => {
+                        // Find matching assignment
+                        const match = assignments.find(a => {
+                            const matchSchool = (a.school_name && a.school_name.trim().toLowerCase() === sName.toLowerCase()) ||
+                                                (a.program_code && a.program_code.toLowerCase() === sName.toLowerCase()) ||
+                                                (sName === 'General' && !a.school_name && !a.program_id);
+                            const matchUnit = u.id !== null ? (a.unit_id === u.id) : !a.unit_id;
+                            return matchSchool && matchUnit;
+                        }) || (units.length === 1 && units[0].id === null ? assignments.find(a => a.school_name && a.school_name.trim().toLowerCase() === sName.toLowerCase()) : null);
 
-                    let linkHtml = '—';
-                    if (activeLink) {
-                        const linkLabel = a.pending_document_link ? 'Proposed Link 🔗' : 'Evidence Link 🔗';
-                        linkHtml = '<a href="' + escapeHtml(activeLink) + '" target="_blank" class="text-hau-maroon hover:underline font-mono font-semibold truncate block max-w-[170px]" title="' + escapeHtml(activeLink) + '">' + linkLabel + '</a>';
-                    }
+                        cellsHtml += '<td class="px-3 py-2.5 text-center border-r border-gray-150 align-middle">';
+                        if (match) {
+                            const isApproved = (match.status === 'Compliant' && match.approval_state !== 'Pending Approval');
+                            const isReview = (match.approval_state === 'Pending Approval');
+                            const isRej = (match.approval_state === 'Rejected');
 
-                    let actionHtml = '';
-                    if ("{{ $role }}" === 'QA Admin' && a.approval_state === 'Pending Approval') {
-                        actionHtml += '<form method="POST" action="/compliance/' + id + '/approve" class="inline mr-1">' +
-                                      '<input type="hidden" name="_token" value="{{ csrf_token() }}">' +
-                                      '<input type="hidden" name="assignment_id" value="' + a.id + '">' +
-                                      '<button type="submit" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[10px]">Approve</button></form>';
-                    } else if ("{{ $role }}" !== 'QA Admin') {
-                        actionHtml += '<button type="button" data-assignment-id="' + a.id + '" onclick="openSubmitLinkModal(this)" class="px-2 py-0.5 bg-hau-maroon text-white font-bold rounded text-[10px] hover:bg-hau-maroon-dark">Submit Link</button>';
-                    }
+                            if (isApproved) rowCompleted++;
 
-                    html += '<tr>';
-                    html += '<td class="px-3 py-2 font-semibold text-gray-800">' + escapeHtml(targetName) + '</td>';
-                    html += '<td class="px-3 py-2">' + statusBadge + '</td>';
-                    html += '<td class="px-3 py-2">' + linkHtml + '</td>';
-                    html += '<td class="px-3 py-2 text-right">' + actionHtml + '</td>';
+                            cellsHtml += '<div class="flex flex-col items-center justify-center gap-1 py-0.5">';
+                            if (isApproved) {
+                                cellsHtml += '<span class="inline-flex items-center gap-1 px-2 py-0.25 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✓ Approved</span>';
+                                if (match.document_link) {
+                                    cellsHtml += '<a href="' + escapeHtml(match.document_link) + '" target="_blank" class="text-hau-maroon hover:underline font-mono text-[10px] font-semibold truncate max-w-[140px]" title="' + escapeHtml(match.document_link) + '">Evidence Link ↗</a>';
+                                }
+                            } else if (isReview) {
+                                cellsHtml += '<span class="inline-flex items-center gap-1 px-2 py-0.25 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">⏳ In Review</span>';
+                                if (match.pending_document_link) {
+                                    cellsHtml += '<a href="' + escapeHtml(match.pending_document_link) + '" target="_blank" class="text-blue-700 hover:underline font-mono text-[10px] font-semibold truncate max-w-[140px]" title="' + escapeHtml(match.pending_document_link) + '">Review Doc ↗</a>';
+                                }
+                                if ("{{ $role }}" === 'QA Admin') {
+                                    cellsHtml += '<div class="flex items-center gap-1 mt-0.5">' +
+                                                 '<button type="button" onclick="quickApproveAssignment(' + match.id + ', ' + id + ')" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[9px]">Approve</button>' +
+                                                 '<button type="button" onclick="quickRejectAssignment(' + match.id + ', ' + id + ')" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded text-[9px]">Reject</button>' +
+                                                 '</div>';
+                                }
+                            } else if (isRej) {
+                                cellsHtml += '<span class="inline-flex items-center gap-1 px-2 py-0.25 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200" title="' + escapeHtml(match.rejection_reason || '') + '">✕ Needs Revision</span>';
+                                if (match.rejection_reason) {
+                                    cellsHtml += '<span class="text-[9px] text-rose-600 italic line-clamp-1 max-w-[140px]">"' + escapeHtml(match.rejection_reason) + '"</span>';
+                                }
+                                cellsHtml += '<button type="button" onclick="openCellSubmitModal(' + match.id + ', ' + id + ', \'' + escapeHtml(sName) + '\', \'' + escapeHtml(u.name) + '\', \'' + escapeHtml(match.rejection_reason || '') + '\')" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded text-[9px] transition mt-0.5">Submit Revision</button>';
+                            } else {
+                                cellsHtml += '<span class="inline-flex items-center gap-1 px-1.5 py-0.25 rounded text-[9px] font-medium bg-gray-100 text-gray-600 border border-gray-200">Pending</span>';
+                                cellsHtml += '<button type="button" onclick="openCellSubmitModal(' + match.id + ', ' + id + ', \'' + escapeHtml(sName) + '\', \'' + escapeHtml(u.name) + '\', \'\')" class="px-2.5 py-0.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white font-bold rounded text-[9px] shadow-2xs transition mt-0.5">+ Add Link</button>';
+                            }
+                            cellsHtml += '</div>';
+                        } else {
+                            cellsHtml += '<span class="text-gray-300 italic text-[10px]">—</span>';
+                        }
+                        cellsHtml += '</td>';
+                    });
+
+                    const isComplete = (rowTotal > 0 && rowCompleted === rowTotal);
+                    const rowRate = rowTotal > 0 ? Math.round((rowCompleted / rowTotal) * 100) : 0;
+
+                    html += '<tr class="hover:bg-gray-50/70 transition">';
+                    html += '<td class="px-3.5 py-2.5 border-r border-gray-150 font-bold text-gray-900 bg-gray-50/30 text-xs">' + escapeHtml(sName) + '</td>';
+                    html += cellsHtml;
+                    html += '<td class="px-3 py-2.5 text-center bg-gray-50/40 align-middle"><div class="space-y-1 flex flex-col items-center">' +
+                            '<span class="font-mono text-[11px] font-black ' + (isComplete ? 'text-emerald-700' : 'text-gray-700') + '">' + rowCompleted + ' / ' + rowTotal + '</span>' +
+                            '<div class="w-16 bg-gray-200 h-1.5 rounded-full overflow-hidden"><div class="' + (isComplete ? 'bg-emerald-500' : 'bg-hau-maroon') + ' h-full rounded-full" style="width: ' + rowRate + '%"></div></div>' +
+                            '<span class="inline-flex px-1.5 py-0.25 rounded text-[8px] font-extrabold ' + (isComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-150 text-gray-600') + '">' + (isComplete ? '100%' : 'In Progress') + '</span>' +
+                            '</div></td>';
                     html += '</tr>';
                 });
 
@@ -2381,6 +3939,124 @@
         }
 
         openModal('detail-modal');
+    }
+
+    // ── Cell-Level Quick Submission Handlers ──
+    function openCellSubmitModal(assignmentId, complianceId, schoolName, unitName, rejectionReason) {
+        const compInput = document.getElementById('cell-submit-compliance-id');
+        if (compInput) compInput.value = complianceId;
+
+        const assInput = document.getElementById('cell-submit-assignment-id');
+        if (assInput) assInput.value = assignmentId;
+
+        const subTitle = document.getElementById('cell-submit-subtitle');
+        if (subTitle) {
+            subTitle.textContent = (schoolName || 'General') + ' — ' + (unitName || 'Responsible Unit');
+        }
+
+        const rejAlert = document.getElementById('cell-submit-rejection-alert');
+        const rejText = document.getElementById('cell-submit-rejection-text');
+        if (rejAlert && rejText) {
+            if (rejectionReason && rejectionReason.trim()) {
+                rejText.textContent = rejectionReason;
+                rejAlert.classList.remove('hidden');
+            } else {
+                rejAlert.classList.add('hidden');
+            }
+        }
+
+        const linkInput = document.getElementById('cell-submit-link');
+        if (linkInput) linkInput.value = '';
+
+        const planInput = document.getElementById('cell-submit-action-plan');
+        if (planInput) planInput.value = '';
+
+        openModal('cell-submit-modal');
+    }
+
+    async function submitCellEvidence(e) {
+        e.preventDefault();
+        const compId = document.getElementById('cell-submit-compliance-id').value;
+        const assId = document.getElementById('cell-submit-assignment-id').value;
+        const docLink = document.getElementById('cell-submit-link').value;
+        const plan = document.getElementById('cell-submit-action-plan').value;
+        const btn = document.getElementById('cell-submit-btn');
+
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Submitting...';
+
+        try {
+            const response = await fetch(`/compliance/${compId}/submit-update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    assignment_id: assId,
+                    pending_document_link: docLink,
+                    action_plan: plan
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                closeModal('cell-submit-modal');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Submission failed.');
+            }
+        } catch (err) {
+            console.error(err);
+            window.location.reload();
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span>Submit for QA Review</span>';
+        }
+    }
+
+    async function quickApproveAssignment(assignmentId, complianceId) {
+        if (!confirm('Approve this unit evidence submission?')) return;
+        try {
+            const response = await fetch(`/compliance/${complianceId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ assignment_id: assignmentId })
+            });
+            const data = await response.json();
+            if (data.success) {
+                window.location.reload();
+            }
+        } catch(e) {
+            window.location.reload();
+        }
+    }
+
+    async function quickRejectAssignment(assignmentId, complianceId) {
+        const reason = prompt('Please enter the reason for rejection / requested revision:');
+        if (!reason || !reason.trim()) return;
+        try {
+            const response = await fetch(`/compliance/${complianceId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ assignment_id: assignmentId, rejection_reason: reason.trim() })
+            });
+            const data = await response.json();
+            if (data.success) {
+                window.location.reload();
+            }
+        } catch(e) {
+            window.location.reload();
+        }
     }
 
     function openAddModal() {
@@ -2940,12 +4616,26 @@
 
 </script>
 
-<!-- ================= REJECTION REASON MODAL ================= -->
-<div id="reject-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
+<!-- ================= REJECTION REASON MODAL (Record Level) ================= -->
+<div id="reject-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-xs hidden">
     <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon-dark px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-md font-bold text-white">Reject Compliance Update</h3>
-            <button onclick="closeRejectModal()" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+        <div class="modal-dark-header relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Reject Proposal</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">State the reason for rejecting this proposed compliance item</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('reject-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
         <form id="reject-form" action="" method="POST">
             @csrf
@@ -2957,8 +4647,90 @@
                 </div>
             </div>
             <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeRejectModal()" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow transition">Reject Update</button>
+                <button type="button" onclick="closeRejectModal()" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">Reject Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= PER-RECOMMENDATION ITEM REJECTION / REVISION MODAL ================= -->
+<div id="reject-item-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
+        <div class="modal-dark-header relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Request Revision</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Provide feedback on specific recommendation</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeRejectItemModal()" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <form onsubmit="submitRejectItem(event)">
+            <div class="p-6 space-y-4">
+                <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-900">
+                    <span class="text-[10px] font-bold text-rose-600 uppercase tracking-wider block mb-1">Target Recommendation:</span>
+                    <p id="reject-item-text-preview" class="font-semibold leading-relaxed"></p>
+                </div>
+                <div>
+                    <label for="reject-item-remarks" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Revision Reason / Feedback Notes</label>
+                    <textarea id="reject-item-remarks" required rows="3" placeholder="e.g. Evidence link is missing required dean endorsement. Please attach updated file." class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"></textarea>
+                    <span class="text-[10px] text-gray-400 mt-1 block">This feedback will be displayed directly to the submitting unit on this recommendation item.</span>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
+                <button type="button" onclick="closeRejectItemModal()" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">Cancel</button>
+                <button type="submit" id="reject-item-submit-btn" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">Send Revision Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= PER-RECOMMENDATION EVIDENCE SUBMISSION MODAL ================= -->
+<div id="submit-item-evidence-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
+        <div class="modal-dark-header relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Attach Evidence</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Submit document link for recommendation item</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeSubmitItemEvidenceModal()" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <form onsubmit="submitItemEvidence(event)">
+            <div class="p-6 space-y-4">
+                <div class="bg-hau-maroon/5 border border-hau-maroon/10 rounded-xl p-3 text-xs text-gray-800">
+                    <span class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider block mb-1">Recommendation Item:</span>
+                    <p id="evidence-item-text-preview" class="font-semibold leading-relaxed text-gray-900"></p>
+                </div>
+                <div>
+                    <label for="evidence-item-link" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Evidence Document URL (SharePoint / Google Drive / Cloud Link)</label>
+                    <input type="url" id="evidence-item-link" required placeholder="https://onedrive.live.com/... or https://drive.google.com/..." class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-mono" />
+                    <span class="text-[10px] text-gray-400 mt-1 block">Submitting this evidence link will notify QA Admin and move the item status to <strong>Under Review</strong>.</span>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
+                <button type="button" onclick="closeSubmitItemEvidenceModal()" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">Cancel</button>
+                <button type="submit" id="evidence-item-submit-btn" class="px-5 py-2 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">Submit Evidence Link</button>
             </div>
         </form>
     </div>

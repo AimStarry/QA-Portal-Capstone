@@ -39,7 +39,9 @@ class UpdateComplianceSeeder extends Seeder
             })->exists();
 
             if ($hasTargetSchoolsOrPrograms) {
-                $record->assignments()->whereNull('school_name')->whereNull('program_id')->delete();
+                $record->assignments()->where(function($q) {
+                    $q->whereNull('school_name')->orWhere('school_name', '');
+                })->whereNull('program_id')->delete();
             }
 
             // Clean contact person: do not force Dean Computing on non-SOC units or CPO!

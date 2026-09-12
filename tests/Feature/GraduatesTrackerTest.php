@@ -87,17 +87,11 @@ class GraduatesTrackerTest extends TestCase
         $response->assertSee('450'); // sum of graduates count (150 + 300)
     }
 
-    public function test_dean_is_restricted_to_own_college_graduates()
+    public function test_dean_cannot_access_graduates_tracker()
     {
         $response = $this->actingAs($this->dean)->get(route('graduates.index'));
 
-        $response->assertStatus(200);
-        $response->assertSee('SOC');
-        $response->assertDontSee('SBA');
-        $response->assertSee('BSCS');
-        $response->assertDontSee('BSBA');
-        $response->assertSee('150'); // only college 1 graduates
-        $response->assertDontSee('450');
+        $response->assertStatus(403);
     }
 
     public function test_admin_can_log_graduate_record()

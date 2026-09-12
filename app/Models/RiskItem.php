@@ -21,6 +21,14 @@ class RiskItem extends Model
         'impact',
         'mitigation_plan',
         'status',
+        // Auto-logging source tracking
+        'source_type',
+        'source_id',
+        'is_auto_logged',
+    ];
+
+    protected $casts = [
+        'is_auto_logged' => 'boolean',
     ];
 
     /**
@@ -29,5 +37,21 @@ class RiskItem extends Model
     public function program(): BelongsTo
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
+
+    /**
+     * Get the compliance record that sourced this risk (if any).
+     */
+    public function sourceCompliance(): BelongsTo
+    {
+        return $this->belongsTo(ComplianceRecord::class, 'source_id', 'compliance_record_id');
+    }
+
+    /**
+     * Get the accreditation that sourced this risk (if any).
+     */
+    public function sourceAccreditation(): BelongsTo
+    {
+        return $this->belongsTo(Accreditation::class, 'source_id', 'accreditation_id');
     }
 }

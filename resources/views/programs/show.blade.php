@@ -508,22 +508,38 @@
 
 <!-- Log Graduate Modal -->
 <div id="add-graduate-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-md font-bold">Log Graduates Count</h3>
-            <button onclick="closeGraduateModal('add-graduate-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Log Graduates Count</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Record graduate statistics for this program</p>
+                </div>
+            </div>
+            <button onclick="closeGraduateModal('add-graduate-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
         <form action="{{ route('graduates.store') }}" method="POST">
             @csrf
             <input type="hidden" name="program_id" value="{{ $program->id }}">
             <div class="p-6 space-y-4">
                 <div>
-                    <label for="add-sy" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">School Year</label>
-                    <input type="text" name="school_year" id="add-sy" required placeholder="e.g. 2025-2026" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="add-sy" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">School Year <span class="text-rose-500">*</span></label>
+                    <input type="text" name="school_year" id="add-sy" required placeholder="e.g. 2025-2026" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="add-term" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Term</label>
-                    <select name="term" id="add-term" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <label for="add-term" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Term <span class="text-rose-500">*</span></label>
+                    <select name="term" id="add-term" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition">
                         <option value="1st Semester">1st Semester</option>
                         <option value="2nd Semester">2nd Semester</option>
                         <option value="1st Trimester">1st Trimester</option>
@@ -532,13 +548,16 @@
                     </select>
                 </div>
                 <div>
-                    <label for="add-count" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Number of Graduates</label>
-                    <input type="number" name="graduates_count" id="add-count" required min="0" placeholder="e.g. 150" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="add-count" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Number of Graduates <span class="text-rose-500">*</span></label>
+                    <input type="number" name="graduates_count" id="add-count" required min="0" placeholder="e.g. 150" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeGraduateModal('add-graduate-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow transition">Save Record</button>
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <button type="button" onclick="closeGraduateModal('add-graduate-modal')" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Cancel</button>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Save Record
+                </button>
             </div>
         </form>
     </div>
@@ -546,10 +565,25 @@
 
 <!-- Edit Graduate Modal -->
 <div id="edit-graduate-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-md font-bold">Edit Graduates Record</h3>
-            <button onclick="closeGraduateModal('edit-graduate-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200/80 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-200">
+        <!-- Header with dark maroon gradient -->
+        <div class="modal-dark-header flex items-center justify-between border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Edit Graduates Record</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Update graduate count statistics</p>
+                </div>
+            </div>
+            <button onclick="closeGraduateModal('edit-graduate-modal')" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;" aria-label="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
         <form id="edit-graduate-form" action="" method="POST">
             @csrf
@@ -557,12 +591,12 @@
             <input type="hidden" name="program_id" value="{{ $program->id }}">
             <div class="p-6 space-y-4">
                 <div>
-                    <label for="edit-sy" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">School Year</label>
-                    <input type="text" name="school_year" id="edit-sy" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="edit-sy" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">School Year <span class="text-rose-500">*</span></label>
+                    <input type="text" name="school_year" id="edit-sy" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
                 <div>
-                    <label for="edit-term" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Term</label>
-                    <select name="term" id="edit-term" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <label for="edit-term" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Term <span class="text-rose-500">*</span></label>
+                    <select name="term" id="edit-term" required class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition">
                         <option value="1st Semester">1st Semester</option>
                         <option value="2nd Semester">2nd Semester</option>
                         <option value="1st Trimester">1st Trimester</option>
@@ -571,13 +605,16 @@
                     </select>
                 </div>
                 <div>
-                    <label for="edit-count" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Number of Graduates</label>
-                    <input type="number" name="graduates_count" id="edit-count" required min="0" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon" />
+                    <label for="edit-count" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Number of Graduates <span class="text-rose-500">*</span></label>
+                    <input type="number" name="graduates_count" id="edit-count" required min="0" class="block w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon focus:bg-white transition" />
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeGraduateModal('edit-graduate-modal')" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-xs font-bold rounded-lg shadow transition">Update Record</button>
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <button type="button" onclick="closeGraduateModal('edit-graduate-modal')" class="px-4 py-2.5 border border-gray-200 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition">Cancel</button>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Update Record
+                </button>
             </div>
         </form>
     </div>

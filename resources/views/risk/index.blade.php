@@ -200,6 +200,7 @@
                         <th class="px-6 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Impact</th>
                         <th class="px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Mitigation Plan</th>
                         <th class="px-6 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Source</th>
                         @if ($role === 'QA Admin')
                             <th class="px-6 py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-24">Actions</th>
                         @endif
@@ -215,7 +216,9 @@
                             data-likelihood="{{ $r->likelihood }}"
                             data-impact="{{ $r->impact }}"
                             data-mitigation="{{ $r->mitigation_plan }}"
-                            data-status="{{ $r->status }}">
+                            data-status="{{ $r->status }}"
+                            data-source-type="{{ $r->source_type }}"
+                            data-source-id="{{ $r->source_id }}">
                             
                             @if ($role === 'QA Admin')
                                 <td class="px-4 py-4 text-center">
@@ -262,6 +265,31 @@
                                     <span class="inline-flex px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Mitigated</span>
                                 @endif
                             </td>
+
+                            {{-- Source badge + link column --}}
+                            <td class="px-6 py-4 text-center hidden lg:table-cell">
+                                @if ($r->is_auto_logged && $r->source_type === 'compliance')
+                                    <a href="{{ route('compliance.index') }}#record-{{ $r->source_id }}"
+                                       title="View originating compliance record"
+                                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 transition">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        Compliance
+                                    </a>
+                                @elseif ($r->is_auto_logged && $r->source_type === 'accreditation')
+                                    <a href="{{ route('accreditations.index') }}#acc-{{ $r->source_id }}"
+                                       title="View originating accreditation"
+                                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-700 border border-violet-100 hover:bg-violet-100 transition">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                        Accreditation
+                                    </a>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                        Manual
+                                    </span>
+                                @endif
+                            </td>
+
                             <td class="px-6 py-4 text-right text-sm">
                                 <div class="flex items-center justify-end gap-2">
                                     <button onclick="openEditModal(this.closest('tr'))" class="p-1 text-gray-500 hover:text-hau-maroon hover:bg-gray-100 rounded-lg transition" title="Edit">
@@ -282,10 +310,10 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="text-center text-gray-400 py-12 text-sm">No quality risks logged. The portal is clear.</td></tr>
+                        <tr><td colspan="8" class="text-center text-gray-400 py-12 text-sm">No quality risks logged. The portal is clear.</td></tr>
                     @endforelse
                     
-                    <tr id="no-matches-row" class="hidden"><td colspan="7" class="text-center text-gray-400 py-12 text-sm">No risks match the current filters.</td></tr>
+                    <tr id="no-matches-row" class="hidden"><td colspan="8" class="text-center text-gray-400 py-12 text-sm">No risks match the current filters.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -296,19 +324,45 @@
 <!-- ================= MODAL WINDOWS ================= -->
 
 <!-- Add Risk Modal -->
-<div id="add-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-lg font-bold">Log QA Risk Profile</h3>
-            <button onclick="closeModal('add-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
-        </div>
-        <form action="{{ route('risk.store') }}" method="POST">
-            @csrf
-            <div class="p-6 space-y-4">
+<div id="add-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden transition duration-150">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col max-h-[92vh]">
+        <!-- Rich Dark Maroon Header -->
+        <div class="modal-dark-header flex items-center justify-between text-white border-b border-black/20 shrink-0 shadow-md"
+             style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
                 <div>
-                    <label for="add-program_id" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Academic Program</label>
-                    <select name="program_id" id="add-program_id" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                        <option value="">Select a Program</option>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Log QA Risk Profile</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Record potential threat to program accreditation or quality</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('add-modal')" 
+                class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer focus:outline-none shrink-0" 
+                style="color: #ffffff;"
+                title="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form action="{{ route('risk.store') }}" method="POST" class="p-6 space-y-6 overflow-y-auto flex-1">
+            @csrf
+            
+            <!-- Section 1: Academic Scope & Description -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        Program & Risk Description
+                    </span>
+                </div>
+
+                <div>
+                    <label for="add-program_id" class="block text-xs font-semibold text-gray-700 mb-1.5">Academic Program <span class="text-rose-500">*</span></label>
+                    <select name="program_id" id="add-program_id" required 
+                        class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
+                        <option value="">-- Choose Academic Program --</option>
                         @foreach ($programs as $p)
                             <option value="{{ $p->id }}">{{ $p->program_code }} &mdash; {{ $p->program_name }}</option>
                         @endforeach
@@ -316,14 +370,26 @@
                 </div>
 
                 <div>
-                    <label for="add-desc" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Threat / Risk Description</label>
-                    <textarea name="description" id="add-desc" required rows="3" placeholder="Describe the potential threat to quality or accreditation..." class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon"></textarea>
+                    <label for="add-desc" class="block text-xs font-semibold text-gray-700 mb-1.5">Threat / Risk Description <span class="text-rose-500">*</span></label>
+                    <textarea name="description" id="add-desc" required rows="3" placeholder="Describe the potential threat to quality or accreditation..." 
+                        class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 2: Severity Matrix -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Severity & Impact Assessment
+                    </span>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label for="add-like" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Likelihood</label>
-                        <select name="likelihood" id="add-like" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                        <label for="add-like" class="block text-xs font-semibold text-gray-700 mb-1.5">Likelihood <span class="text-rose-500">*</span></label>
+                        <select name="likelihood" id="add-like" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
                             <option value="Low">Low</option>
                             <option value="Medium" selected>Medium</option>
                             <option value="High">High</option>
@@ -331,51 +397,99 @@
                     </div>
 
                     <div>
-                        <label for="add-imp" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Impact</label>
-                        <select name="impact" id="add-imp" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                        <label for="add-imp" class="block text-xs font-semibold text-gray-700 mb-1.5">Impact <span class="text-rose-500">*</span></label>
+                        <select name="impact" id="add-imp" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
                             <option value="Low">Low</option>
                             <option value="Medium">Medium</option>
                             <option value="High" selected>High</option>
                         </select>
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <label for="add-mitigation" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Mitigation Plan</label>
-                    <textarea name="mitigation_plan" id="add-mitigation" rows="3" placeholder="What plans are formulated to mitigate or monitor this threat..." class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon"></textarea>
+            <!-- Section 3: Mitigation & Monitoring -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        Mitigation & Monitoring Status
+                    </span>
                 </div>
 
                 <div>
-                    <label for="add-status" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Monitoring Status</label>
-                    <select name="status" id="add-status" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <label for="add-mitigation" class="block text-xs font-semibold text-gray-700 mb-1.5">Mitigation Plan</label>
+                    <textarea name="mitigation_plan" id="add-mitigation" rows="3" placeholder="What plans are formulated to mitigate or monitor this threat..." 
+                        class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400"></textarea>
+                </div>
+
+                <div>
+                    <label for="add-status" class="block text-xs font-semibold text-gray-700 mb-1.5">Monitoring Status <span class="text-rose-500">*</span></label>
+                    <select name="status" id="add-status" required 
+                        class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
                         <option value="Identified" selected>Identified</option>
                         <option value="Monitoring">Monitoring</option>
                         <option value="Mitigated">Mitigated</option>
                     </select>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeModal('add-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-sm font-semibold rounded-lg shadow transition">Save Risk</button>
+
+            <!-- Modal Action Buttons -->
+            <div class="bg-gray-50 -mx-6 -mb-6 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 mt-6 shrink-0">
+                <button type="button" onclick="closeModal('add-modal')" 
+                    class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-100 transition cursor-pointer shadow-xs">
+                    Cancel
+                </button>
+                <button type="submit" 
+                    class="inline-flex items-center gap-2 px-5 py-2 bg-hau-maroon text-white text-sm font-bold rounded-xl hover:bg-hau-maroon-dark transition cursor-pointer shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Save Risk
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Edit Risk Modal -->
-<div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="bg-hau-maroon px-6 py-4 text-white flex items-center justify-between border-b-2 border-hau-gold">
-            <h3 class="text-lg font-bold">Edit QA Risk Profile</h3>
-            <button onclick="closeModal('edit-modal')" class="text-white hover:text-hau-gold text-2xl leading-none">&times;</button>
+<div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs hidden transition duration-150">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col max-h-[92vh]">
+        <!-- Rich Dark Maroon Header -->
+        <div class="modal-dark-header flex items-center justify-between text-white border-b border-black/20 shrink-0 shadow-md"
+             style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
+            <div class="flex items-center gap-3.5">
+                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
+                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Edit QA Risk Profile</h3>
+                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Update threat description, impact ratings, or mitigation plan</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('edit-modal')" 
+                class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer focus:outline-none shrink-0" 
+                style="color: #ffffff;"
+                title="Close modal">
+                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
-        <form id="edit-form" action="" method="POST">
+
+        <form id="edit-form" action="" method="POST" class="p-6 space-y-6 overflow-y-auto flex-1">
             @csrf
             @method('PUT')
-            <div class="p-6 space-y-4">
+            
+            <!-- Section 1: Academic Scope & Description -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        Program & Risk Description
+                    </span>
+                </div>
+
                 <div>
-                    <label for="edit-program_id" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Academic Program</label>
-                    <select name="program_id" id="edit-program_id" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <label for="edit-program_id" class="block text-xs font-semibold text-gray-700 mb-1.5">Academic Program <span class="text-rose-500">*</span></label>
+                    <select name="program_id" id="edit-program_id" required 
+                        class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
                         @foreach ($programs as $p)
                             <option value="{{ $p->id }}">{{ $p->program_code }} &mdash; {{ $p->program_name }}</option>
                         @endforeach
@@ -383,14 +497,26 @@
                 </div>
 
                 <div>
-                    <label for="edit-desc" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Threat / Risk Description</label>
-                    <textarea name="description" id="edit-desc" required rows="3" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon"></textarea>
+                    <label for="edit-desc" class="block text-xs font-semibold text-gray-700 mb-1.5">Threat / Risk Description <span class="text-rose-500">*</span></label>
+                    <textarea name="description" id="edit-desc" required rows="3" 
+                        class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 2: Severity Matrix -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Severity & Impact Assessment
+                    </span>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label for="edit-like" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Likelihood</label>
-                        <select name="likelihood" id="edit-like" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                        <label for="edit-like" class="block text-xs font-semibold text-gray-700 mb-1.5">Likelihood <span class="text-rose-500">*</span></label>
+                        <select name="likelihood" id="edit-like" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
                             <option value="Low">Low</option>
                             <option value="Medium">Medium</option>
                             <option value="High">High</option>
@@ -398,32 +524,54 @@
                     </div>
 
                     <div>
-                        <label for="edit-imp" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Impact</label>
-                        <select name="impact" id="edit-imp" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                        <label for="edit-imp" class="block text-xs font-semibold text-gray-700 mb-1.5">Impact <span class="text-rose-500">*</span></label>
+                        <select name="impact" id="edit-imp" required 
+                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
                             <option value="Low">Low</option>
                             <option value="Medium">Medium</option>
                             <option value="High">High</option>
                         </select>
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <label for="edit-mitigation" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Mitigation Plan</label>
-                    <textarea name="mitigation_plan" id="edit-mitigation" rows="3" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon"></textarea>
+            <!-- Section 3: Mitigation & Monitoring -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        Mitigation & Monitoring Status
+                    </span>
                 </div>
 
                 <div>
-                    <label for="edit-status" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Monitoring Status</label>
-                    <select name="status" id="edit-status" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
+                    <label for="edit-mitigation" class="block text-xs font-semibold text-gray-700 mb-1.5">Mitigation Plan</label>
+                    <textarea name="mitigation_plan" id="edit-mitigation" rows="3" 
+                        class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition placeholder-gray-400"></textarea>
+                </div>
+
+                <div>
+                    <label for="edit-status" class="block text-xs font-semibold text-gray-700 mb-1.5">Monitoring Status <span class="text-rose-500">*</span></label>
+                    <select name="status" id="edit-status" required 
+                        class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition cursor-pointer">
                         <option value="Identified">Identified</option>
                         <option value="Monitoring">Monitoring</option>
                         <option value="Mitigated">Mitigated</option>
                     </select>
                 </div>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeModal('edit-modal')" class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-hau-maroon hover:bg-hau-maroon-light text-white text-sm font-semibold rounded-lg shadow transition">Update Risk</button>
+
+            <!-- Modal Action Buttons -->
+            <div class="bg-gray-50 -mx-6 -mb-6 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 mt-6 shrink-0">
+                <button type="button" onclick="closeModal('edit-modal')" 
+                    class="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-100 transition cursor-pointer shadow-xs">
+                    Cancel
+                </button>
+                <button type="submit" 
+                    class="inline-flex items-center gap-2 px-5 py-2 bg-hau-maroon text-white text-sm font-bold rounded-xl hover:bg-hau-maroon-dark transition cursor-pointer shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Update Risk
+                </button>
             </div>
         </form>
     </div>

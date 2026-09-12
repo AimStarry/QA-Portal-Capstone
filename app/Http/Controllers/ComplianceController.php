@@ -14,6 +14,12 @@ use App\Services\RiskAutoLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 
 class ComplianceController extends Controller
 {
@@ -466,6 +472,16 @@ class ComplianceController extends Controller
             }
         }
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'        => true,
+                'message'        => 'Action plan & evidence link submitted. Awaiting QA Admin review.',
+                'assignment'     => $assignment,
+                'overall_status' => $compliance->fresh()->status,
+                'approval_state' => $compliance->fresh()->approval_state,
+            ]);
+        }
+
         return redirect()->route('compliance.index')->with('success', 'Action plan & evidence link submitted. Awaiting QA Admin review.');
     }
 
@@ -520,10 +536,20 @@ class ComplianceController extends Controller
         }
 
         $compliance->update($compliancePayload);
+        RiskAutoLogService::syncFromCompliance($compliance->fresh());
 
         $this->notifyContactUser($compliance, 'approved',
             "Your compliance submission for \"{$compliance->title}\" has been approved by QA Admin."
         );
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'        => true,
+                'message'        => 'Compliance update approved.',
+                'overall_status' => $compliance->fresh()->status,
+                'approval_state' => $compliance->fresh()->approval_state,
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Compliance update approved.');
     }
@@ -568,9 +594,21 @@ class ComplianceController extends Controller
             'workflow_stage'   => 'recommendation_created',
         ]);
 
+        RiskAutoLogService::syncFromCompliance($compliance->fresh());
+
         $this->notifyContactUser($compliance, 'rejected',
             "Your compliance submission for \"{$compliance->title}\" was rejected. Reason: {$validated['rejection_reason']}"
         );
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'          => true,
+                'message'          => 'Compliance update rejected. Unit will be prompted to revise.',
+                'rejection_reason' => $validated['rejection_reason'],
+                'overall_status'   => $compliance->fresh()->status,
+                'approval_state'   => $compliance->fresh()->approval_state,
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Compliance update rejected. Unit will be prompted to revise.');
     }
@@ -832,13 +870,59 @@ class ComplianceController extends Controller
         $user      = auth()->user();
         $collegeId = $user->college_id;
 
-        $query = ComplianceRecord::with(['program', 'recommendationItems']);
+        $college = $user->college;
+        $collegeName = $college->name ?? '';
+        $collegeCode = $college->code ?? '';
+
+        $deanScope = function ($q) use ($collegeId, $collegeName, $collegeCode) {
+            $q->whereHas('program', fn ($pq) => $pq->where('college_id', $collegeId))
+              ->orWhereHas('assignments.program', fn ($pq) => $pq->where('college_id', $collegeId));
+
+            if ($collegeName) {
+                $q->orWhere('school', 'like', "%{$collegeName}%")
+                  ->orWhereHas('assignments', fn ($aq) => $aq->where('school_name', 'like', "%{$collegeName}%"));
+            }
+            if ($collegeCode) {
+                $q->orWhere('school', 'like', "%{$collegeCode}%")
+                  ->orWhereHas('assignments', fn ($aq) => $aq->where('school_name', 'like', "%{$collegeCode}%"));
+            }
+            $q->orWhere('school', 'like', '%All Schools%')
+              ->orWhere('school', 'like', '%All Colleges%');
+        };
+
+        $unitFilter = $this->userScopeFilter($user);
+
+        $query = ComplianceRecord::with([
+            'program.college',
+            'recommendationItems',
+            'assignments.program.college',
+            'assignments.responsibleUnit',
+            'responsibleUnitRelation'
+        ]);
 
         if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
-            $query->whereHas('program', fn ($q) => $q->where('college_id', $collegeId));
+            $query->where($deanScope);
         } elseif ($user->usertype === 'Head of Unit') {
-            $unitFilter = $this->userScopeFilter($user);
-            $query->where($unitFilter);
+            $userUnitId = $user->responsible_unit_id ?? $user->unit_id;
+            $query->where(function ($q) use ($unitFilter, $user, $userUnitId) {
+                $unitName = $user->unit->name ?? '';
+                $unitCode = $user->unit->code ?? '';
+                $q->where($unitFilter)
+                  ->orWhereHas('assignments', function ($aq) use ($unitName, $unitCode, $userUnitId) {
+                      if ($userUnitId) {
+                          $aq->where('responsible_unit_id', $userUnitId);
+                      }
+                      $aq->orWhereHas('responsibleUnit', function ($ruq) use ($unitName, $unitCode) {
+                          if ($unitName) $ruq->orWhere('name', $unitName);
+                          if ($unitCode) $ruq->orWhere('code', $unitCode);
+                      });
+                  });
+            });
+        }
+
+        if ($request->filled('ids')) {
+            $ids = is_array($request->input('ids')) ? $request->input('ids') : explode(',', $request->input('ids'));
+            $query->whereIn('compliance_record_id', array_filter($ids));
         }
 
         if ($request->filled('search')) {
@@ -851,54 +935,408 @@ class ComplianceController extends Controller
                   ->orWhere('category', 'like', "%{$s}%")
                   ->orWhere('area', 'like', "%{$s}%")
                   ->orWhere('school', 'like', "%{$s}%")
-                  ->orWhereHas('program', fn ($pq) => $pq->where('program_code', 'like', "%{$s}%"));
+                  ->orWhereHas('program', fn ($pq) => $pq->where('program_code', 'like', "%{$s}%")->orWhere('program_name', 'like', "%{$s}%"))
+                  ->orWhereHas('assignments.program', fn ($pq) => $pq->where('program_code', 'like', "%{$s}%")->orWhere('program_name', 'like', "%{$s}%"))
+                  ->orWhereHas('assignments.responsibleUnit', fn ($ruq) => $ruq->where('name', 'like', "%{$s}%")->orWhere('code', 'like', "%{$s}%"));
             });
         }
-        if ($request->filled('status'))   $query->where('status', $request->input('status'));
-        if ($request->filled('body'))     $query->where('accrediting_body', $request->input('body'));
-        if ($request->filled('category')) $query->where('category', 'like', '%' . $request->input('category') . '%');
-        if ($request->filled('area'))     $query->where('area', 'like', '%' . $request->input('area') . '%');
 
-        $records = $query->orderBy('due_date', 'asc')->get();
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+        if ($request->filled('body') || $request->filled('accrediting_body')) {
+            $query->where('accrediting_body', $request->input('body') ?: $request->input('accrediting_body'));
+        }
+        if ($request->filled('category')) {
+            $query->where('category', 'like', '%' . $request->input('category') . '%');
+        }
+        if ($request->filled('area')) {
+            $query->where('area', 'like', '%' . $request->input('area') . '%');
+        }
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->input('priority'));
+        }
+        if ($request->filled('responsible_unit') || $request->filled('unit')) {
+            $unit = $request->input('responsible_unit') ?: $request->input('unit');
+            $query->where(function ($q) use ($unit) {
+                $q->where('responsible_unit', 'like', "%{$unit}%")
+                  ->orWhereHas('assignments.responsibleUnit', fn ($ruq) => $ruq->where('name', 'like', "%{$unit}%")->orWhere('code', 'like', "%{$unit}%"));
+            });
+        }
+        if ($request->filled('school')) {
+            $sch = $request->input('school');
+            $query->where(function ($q) use ($sch) {
+                $q->where('school', 'like', "%{$sch}%")
+                  ->orWhereHas('assignments', fn ($aq) => $aq->where('school_name', 'like', "%{$sch}%"))
+                  ->orWhereHas('assignments.program.college', fn ($cq) => $cq->where('name', 'like', "%{$sch}%")->orWhere('code', 'like', "%{$sch}%"))
+                  ->orWhereHas('program.college', fn ($cq) => $cq->where('name', 'like', "%{$sch}%")->orWhere('code', 'like', "%{$sch}%"));
+            });
+        }
+
+        $records = $query->orderBy('compliance_record_id', 'asc')->get();
+
+        $format = strtolower($request->input('format', 'xlsx'));
+
+        $stageLabels = [
+            'recommendation_created' => 'Recommendation Created',
+            'action_plan_submitted'  => 'Action Plan Submitted',
+            'admin_reviewing'        => 'Under QA Review',
+            'compliant'              => 'Compliant',
+        ];
+
+        $cleanText = function (?string $text): string {
+            if ($text === null) return '';
+            $t = strip_tags($text);
+            $t = str_replace(["\r\n", "\r"], "\n", $t);
+            return trim($t);
+        };
+
+        // Prepare data rows
+        $dataRows = [];
+        foreach ($records as $r) {
+            // 1. Programs list
+            $programs = [];
+            if ($r->program) {
+                $progCode = $r->program->program_code ? $r->program->program_code : '';
+                $progName = $r->program->program_name ? $r->program->program_name : '';
+                $progStr = trim($progCode . ($progCode && $progName ? ' - ' : '') . $progName);
+                if ($progStr) $programs[] = $progStr;
+            }
+            foreach ($r->assignments as $a) {
+                if ($a->program) {
+                    $pCode = $a->program->program_code ?: '';
+                    $pName = $a->program->program_name ?: '';
+                    $pStr = trim($pCode . ($pCode && $pName ? ' - ' : '') . $pName);
+                    if ($pStr && !in_array($pStr, $programs)) {
+                        $programs[] = $pStr;
+                    }
+                }
+            }
+            $programDisplay = !empty($programs) ? implode('; ', $programs) : 'General / Institutional';
+
+            // 2. Schools list
+            $schools = [];
+            if ($r->school && $r->school !== 'General') {
+                foreach (preg_split('/[,;]+/', $r->school) as $s) {
+                    $s = trim($s);
+                    if ($s && !in_array($s, $schools)) $schools[] = $s;
+                }
+            }
+            foreach ($r->assignments as $a) {
+                if (!empty($a->school_name) && !in_array(trim($a->school_name), $schools)) {
+                    $schools[] = trim($a->school_name);
+                } elseif ($a->program && $a->program->college && !in_array(trim($a->program->college->name), $schools)) {
+                    $schools[] = trim($a->program->college->name);
+                }
+            }
+            $schoolDisplay = !empty($schools) ? implode('; ', $schools) : ($r->school ?: 'General');
+
+            // 3. Units list
+            $units = [];
+            if ($r->responsible_unit && $r->responsible_unit !== 'Unassigned') {
+                foreach (preg_split('/[,;]+/', $r->responsible_unit) as $u) {
+                    $u = trim($u);
+                    if ($u && !in_array($u, $units)) $units[] = $u;
+                }
+            }
+            if ($r->responsibleUnitRelation && !in_array($r->responsibleUnitRelation->name, $units)) {
+                $units[] = $r->responsibleUnitRelation->name;
+            }
+            foreach ($r->assignments as $a) {
+                if ($a->responsibleUnit && !in_array($a->responsibleUnit->name, $units)) {
+                    $units[] = $a->responsibleUnit->name;
+                }
+            }
+            $unitDisplay = !empty($units) ? implode('; ', $units) : ($r->responsible_unit ?: 'Unassigned');
+
+            // 4. Checklist Progress & Items
+            $totalRecs     = $r->recommendationItems->count();
+            $completedRecs = $r->recommendationItems->where('is_completed', true)->count();
+            $rate          = $totalRecs > 0 ? (int) round(($completedRecs / $totalRecs) * 100) : 0;
+
+            $checklistItems = [];
+            foreach ($r->recommendationItems as $item) {
+                $checkMark = $item->is_completed ? '[✓]' : '[ ]';
+                $statusNote = ($item->status && $item->status !== 'approved' && $item->status !== 'pending') ? " ({$item->status})" : '';
+                $checklistItems[] = $checkMark . ' ' . trim($item->text) . $statusNote;
+            }
+            $checklistDisplay = !empty($checklistItems)
+                ? implode("\n", $checklistItems)
+                : ($cleanText($r->recommendation) ?: 'None');
+
+            // 5. Evidence Links
+            $links = [];
+            if ($r->document_link) $links[] = $r->document_link;
+            if ($r->pending_document_link && $r->pending_document_link !== $r->document_link) {
+                $links[] = 'Pending: ' . $r->pending_document_link;
+            }
+            foreach ($r->assignments as $a) {
+                if ($a->document_link && !in_array($a->document_link, $links)) {
+                    $links[] = $a->document_link;
+                }
+                if ($a->pending_document_link && !in_array('Pending: ' . $a->pending_document_link, $links)) {
+                    $links[] = 'Pending: ' . $a->pending_document_link;
+                }
+            }
+            $evidenceDisplay = !empty($links) ? implode("\n", $links) : 'None';
+
+            // 6. Workflow stage
+            $stageDisplay = $stageLabels[$r->workflow_stage] ?? ucwords(str_replace('_', ' ', $r->workflow_stage ?: 'Recommendation Created'));
+
+            $dataRows[] = [
+                'id'             => $r->compliance_record_id,
+                'title'          => $cleanText($r->title),
+                'status'         => $r->status ?: 'Pending',
+                'stage'          => $stageDisplay,
+                'approval_state' => $r->approval_state ?: 'None',
+                'priority'       => $r->priority ?: 'Medium',
+                'body'           => $r->accrediting_body ?: 'N/A',
+                'school'         => $schoolDisplay,
+                'programs'       => $programDisplay,
+                'area'           => $r->area ?: 'N/A',
+                'category'       => $r->category ?: 'N/A',
+                'unit'           => $unitDisplay,
+                'contact_person' => $r->contact_person ?: '',
+                'contact_email'  => $r->contact_email ?: '',
+                'due_date'       => $r->due_date ? $r->due_date->format('Y-m-d') : '',
+                'visit_date'     => $r->visit_date ? $r->visit_date->format('Y-m-d') : '',
+                'rate'           => $rate . '%',
+                'completed_recs' => $completedRecs,
+                'total_recs'     => $totalRecs,
+                'checklist'      => $checklistDisplay,
+                'description'    => $cleanText($r->description),
+                'action_plan'    => $cleanText($r->action_plan),
+                'evidence'       => $evidenceDisplay,
+                'rejection'      => $cleanText($r->rejection_reason),
+                'created_at'     => $r->created_at ? $r->created_at->format('Y-m-d') : '',
+                'updated_at'     => $r->updated_at ? $r->updated_at->format('Y-m-d') : '',
+            ];
+        }
+
+        $headersList = [
+            'Compliance ID',
+            'Task Title',
+            'Status',
+            'Workflow Stage',
+            'Approval State',
+            'Priority',
+            'Accrediting Body',
+            'School / College',
+            'Academic Program(s)',
+            'Area / Standard',
+            'Category',
+            'Unit or Department',
+            'Contact Person',
+            'Contact Email',
+            'Due Date',
+            'Visit Date',
+            'Checklist Progress (%)',
+            'Completed Checklist Items',
+            'Total Checklist Items',
+            'Recommendation Checklist',
+            'Description',
+            'Action Plan',
+            'Document / Evidence Links',
+            'Rejection / Revision Reason',
+            'Created Date',
+            'Last Updated',
+        ];
+
+        // If explicitly requested as CSV
+        if ($format === 'csv') {
+            $filename = 'compliance_report_' . date('Y-m-d_His') . '.csv';
+            $headers = [
+                'Content-Type'        => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+                'Pragma'              => 'no-cache',
+                'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires'             => '0',
+            ];
+
+            $callback = function () use ($headersList, $dataRows) {
+                $file = fopen('php://output', 'w');
+                fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+                fputcsv($file, $headersList);
+                foreach ($dataRows as $row) {
+                    fputcsv($file, array_values($row));
+                }
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, $headers);
+        }
+
+        // Default: Generate Rich, Beautifully Spaced & Colored Excel XLSX Spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Compliance Tracker');
+
+        // Column widths definition (spacious and readable)
+        $columnWidths = [
+            'A' => 16, // Compliance ID
+            'B' => 36, // Task Title
+            'C' => 16, // Status
+            'D' => 24, // Workflow Stage
+            'E' => 18, // Approval State
+            'F' => 15, // Priority
+            'G' => 18, // Accrediting Body
+            'H' => 32, // School / College
+            'I' => 32, // Academic Program(s)
+            'J' => 22, // Area / Standard
+            'K' => 22, // Category
+            'L' => 32, // Unit or Department
+            'M' => 24, // Contact Person
+            'N' => 28, // Contact Email
+            'O' => 15, // Due Date
+            'P' => 15, // Visit Date
+            'Q' => 22, // Checklist Progress (%)
+            'R' => 24, // Completed Checklist Items
+            'S' => 20, // Total Checklist Items
+            'T' => 45, // Recommendation Checklist
+            'U' => 40, // Description
+            'V' => 40, // Action Plan
+            'W' => 38, // Document / Evidence Links
+            'X' => 32, // Rejection / Revision Reason
+            'Y' => 15, // Created Date
+            'Z' => 15, // Last Updated
+        ];
+
+        foreach ($columnWidths as $col => $w) {
+            $sheet->getColumnDimension($col)->setWidth($w);
+        }
+
+        // 1. Write Header Row
+        $sheet->fromArray($headersList, null, 'A1');
+        $sheet->getRowDimension(1)->setRowHeight(32);
+
+        // Header Styling: HAU Maroon background, Bold White text, Centered
+        $sheet->getStyle('A1:Z1')->applyFromArray([
+            'font' => [
+                'bold'  => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size'  => 11,
+                'name'  => 'Calibri',
+            ],
+            'fill' => [
+                'fillType'   => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '5C0000'], // HAU Maroon
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical'   => Alignment::VERTICAL_CENTER,
+                'wrapText'   => true,
+            ],
+            'borders' => [
+                'bottom' => [
+                    'borderStyle' => Border::BORDER_MEDIUM,
+                    'color'       => ['rgb' => 'D4AF37'], // HAU Gold accent
+                ],
+            ],
+        ]);
+
+        // 2. Write Data Rows
+        $currentRow = 2;
+        foreach ($dataRows as $row) {
+            $sheet->fromArray(array_values($row), null, "A{$currentRow}");
+            $sheet->getRowDimension($currentRow)->setRowHeight(-1); // Auto row height based on contents
+
+            // Zebra striping
+            $isEven = ($currentRow % 2 === 0);
+            $bgHex = $isEven ? 'F8FAFC' : 'FFFFFF';
+
+            // General row style (light borders, clean font)
+            $sheet->getStyle("A{$currentRow}:Z{$currentRow}")->applyFromArray([
+                'font' => [
+                    'size' => 10.5,
+                    'name' => 'Calibri',
+                ],
+                'fill' => [
+                    'fillType'   => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => $bgHex],
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color'       => ['rgb' => 'E2E8F0'],
+                    ],
+                ],
+            ]);
+
+            // Alignment: Center aligned columns (ID, Status, Stages, Priority, Dates, Counts, Rates)
+            $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle("C{$currentRow}:G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle("O{$currentRow}:S{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle("Y{$currentRow}:Z{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+
+            // Left & Top alignment for text fields with wrapping enabled
+            $sheet->getStyle("B{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+            $sheet->getStyle("H{$currentRow}:N{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+            $sheet->getStyle("T{$currentRow}:X{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+
+            // Task ID Bold
+            $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true)->getColor()->setRGB('1E293B');
+
+            // Status Column Badge Colors
+            $statusVal = $row['status'];
+            if ($statusVal === 'Compliant') {
+                $sheet->getStyle("C{$currentRow}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1E7DD']],
+                    'font' => ['bold' => true, 'color' => ['rgb' => '0F5132']],
+                ]);
+            } elseif ($statusVal === 'Non-Compliant') {
+                $sheet->getStyle("C{$currentRow}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8D7DA']],
+                    'font' => ['bold' => true, 'color' => ['rgb' => '842029']],
+                ]);
+            } else {
+                $sheet->getStyle("C{$currentRow}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFF3CD']],
+                    'font' => ['bold' => true, 'color' => ['rgb' => '664D03']],
+                ]);
+            }
+
+            // Priority Column Color
+            $pVal = $row['priority'];
+            if ($pVal === 'Critical') {
+                $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true)->getColor()->setRGB('991B1B');
+            } elseif ($pVal === 'High') {
+                $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true)->getColor()->setRGB('C2410C');
+            } elseif ($pVal === 'Medium') {
+                $sheet->getStyle("F{$currentRow}")->getFont()->getColor()->setRGB('1E40AF');
+            }
+
+            // Checklist rate 100% highlight
+            if ($row['rate'] === '100%') {
+                $sheet->getStyle("Q{$currentRow}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8F5E9']],
+                    'font' => ['bold' => true, 'color' => ['rgb' => '1B5E20']],
+                ]);
+            }
+
+            $currentRow++;
+        }
+
+        $lastRow = max(2, $currentRow - 1);
+
+        // Freeze top header row
+        $sheet->freezePane('A2');
+
+        // Enable Excel Auto-Filter dropdowns on header row
+        $sheet->setAutoFilter("A1:Z{$lastRow}");
+
+        $filename = 'compliance_report_' . date('Y-m-d_His') . '.xlsx';
 
         $headers = [
-            'Content-Type'        => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="compliance_report_' . date('Ymd_His') . '.csv"',
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             'Pragma'              => 'no-cache',
             'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
             'Expires'             => '0',
         ];
 
-        $callback = function () use ($records) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, [
-                'ID', 'Academic Program', 'Accrediting Body', 'School/College',
-                'Task Title', 'Area', 'Category', 'Priority', 'Status',
-                'Due Date', 'Responsible Unit', 'Compliance Rate (%)',
-                'Total Recommendations', 'Completed Recommendations',
-            ]);
-
-            foreach ($records as $r) {
-                $total     = $r->recommendationItems->count();
-                $completed = $r->recommendationItems->where('is_completed', true)->count();
-                $rate      = $total > 0 ? round(($completed / $total) * 100) : 0;
-                fputcsv($file, [
-                    $r->compliance_record_id,
-                    ($r->program->program_code ?? '') . ' - ' . ($r->program->program_name ?? 'N/A'),
-                    $r->accrediting_body,
-                    $r->school,
-                    $r->title,
-                    $r->area,
-                    $r->category,
-                    $r->priority,
-                    $r->status,
-                    $r->due_date ? $r->due_date->format('Y-m-d') : 'N/A',
-                    $r->responsible_unit ?? 'Unassigned',
-                    $rate, $total, $completed,
-                ]);
-            }
-
-            fclose($file);
+        $callback = function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
         };
 
         return response()->stream($callback, 200, $headers);
