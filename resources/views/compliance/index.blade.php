@@ -1959,10 +1959,9 @@
                         <div>
                             <label for="edit-status" class="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-0.5">Status</label>
                             <select name="status" id="edit-status" required class="block w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon">
-                                <option value="Complied">Complied</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Pending Review">Pending Review</option>
-                                <option value="Not Complied">Not Complied</option>
+                                <option value="Pending">Pending Audit</option>
+                                <option value="Compliant">Compliant</option>
+                                <option value="Non-Compliant">Non-Compliant</option>
                             </select>
                         </div>
                     </div>
@@ -4218,7 +4217,11 @@
 
         setVal('edit-title', title);
         setVal('edit-desc', desc);
-        setVal('edit-status', status);
+        let normalizedStatus = status || 'Pending';
+        if (normalizedStatus === 'Complied') normalizedStatus = 'Compliant';
+        if (normalizedStatus === 'Not Complied') normalizedStatus = 'Non-Compliant';
+        if (normalizedStatus === 'Pending Audit' || normalizedStatus === 'Pending Review' || normalizedStatus === 'In Progress') normalizedStatus = 'Pending';
+        setVal('edit-status', normalizedStatus);
         setVal('edit-priority', priority);
         setVal('edit-due', due);
         setVal('edit-resp', responsibleUnitId);
