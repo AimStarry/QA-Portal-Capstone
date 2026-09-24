@@ -77,26 +77,26 @@
             return strlen($trimmed) > 8 ? preg_replace('/(?<=\\w)\\w*\\s*/', '', $trimmed) : $trimmed;
         };
     @endphp
-    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5 sm:p-4 hover:shadow-md transition">
             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Tasks</p>
-            <p class="text-2xl font-bold text-gray-900 mt-1 font-mono">{{ $totalCompliance }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1 font-mono">{{ $totalCompliance }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 border-l-4 border-l-emerald-500 hover:shadow-md transition">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5 sm:p-4 border-l-4 border-l-emerald-500 hover:shadow-md transition">
             <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Compliant</p>
-            <p class="text-2xl font-bold text-emerald-600 mt-1 font-mono">{{ $compliantCount }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-emerald-600 mt-1 font-mono">{{ $compliantCount }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 border-l-4 border-l-rose-500 hover:shadow-md transition">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5 sm:p-4 border-l-4 border-l-rose-500 hover:shadow-md transition">
             <p class="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Non-Compliant</p>
-            <p class="text-2xl font-bold text-rose-600 mt-1 font-mono">{{ $nonCompliantCount }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-rose-600 mt-1 font-mono">{{ $nonCompliantCount }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 border-l-4 border-l-gray-400 hover:shadow-md transition">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5 sm:p-4 border-l-4 border-l-gray-400 hover:shadow-md transition">
             <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Pending Audit</p>
-            <p class="text-2xl font-bold text-gray-500 mt-1 font-mono">{{ $pendingCount }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-gray-500 mt-1 font-mono">{{ $pendingCount }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 border-l-4 border-l-hau-maroon hover:shadow-md transition">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5 sm:p-4 border-l-4 border-l-hau-maroon hover:shadow-md transition col-span-2 sm:col-span-1">
             <p class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider">Checklist Compliance</p>
-            <p class="text-2xl font-bold text-hau-maroon mt-1 font-mono">{{ $overallRate }}%</p>
+            <p class="text-xl sm:text-2xl font-bold text-hau-maroon mt-1 font-mono">{{ $overallRate }}%</p>
         </div>
     </div>
 
@@ -360,7 +360,7 @@
     </div>
 
     <!-- Tasks Grid -->
-    <div id="compliance-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div id="compliance-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 hidden">
         @forelse ($complianceRecords as $c)
             @php
                 $leftBorderColor = 'border-l-4 border-l-hau-maroon';
@@ -720,7 +720,7 @@
     </div>
 
     <!-- ===== 1. ENHANCED TABLE VIEW ===== -->
-    <div id="compliance-table-view" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hidden">
+    <div id="compliance-table-view" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-xs">
                 <thead class="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
@@ -920,6 +920,9 @@
                             <td colspan="9" class="text-center py-8 text-gray-400">No compliance items logged yet.</td>
                         </tr>
                     @endforelse
+                    <tr id="table-no-matches-row" class="hidden">
+                        <td colspan="9" class="text-center py-12 text-gray-400 text-sm">No compliance items match your filters.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -1104,22 +1107,36 @@
                                                                 "{{ $cell->rejection_reason }}"
                                                             </span>
                                                         @endif
-                                                        <button type="button"
-                                                                onclick="openCellSubmitModal({{ $cell->id }}, {{ $c->compliance_record_id }}, '{{ addslashes($schoolName) }}', '{{ addslashes($u['name']) }}', '{{ addslashes($cell->rejection_reason ?? '') }}')"
-                                                                class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded text-[10px] shadow-2xs transition mt-0.5">
-                                                            Submit Revision
-                                                        </button>
+                                                        @php
+                                                            $canSubmitCell = $cell->canUserSubmit(auth()->user());
+                                                        @endphp
+                                                        @if($canSubmitCell)
+                                                            <button type="button"
+                                                                    onclick="openCellSubmitModal({{ $cell->id }}, {{ $c->compliance_record_id }}, '{{ addslashes($schoolName) }}', '{{ addslashes($u['name']) }}', '{{ addslashes($cell->rejection_reason ?? '') }}')"
+                                                                    class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded text-[10px] shadow-2xs transition mt-0.5">
+                                                                Submit Revision
+                                                            </button>
+                                                        @else
+                                                            <span class="text-[9px] text-rose-500 italic mt-0.5">Revision required</span>
+                                                        @endif
                                                     @else
                                                         {{-- Pending submission --}}
                                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
                                                             Pending
                                                         </span>
-                                                        <button type="button"
-                                                                onclick="openCellSubmitModal({{ $cell->id }}, {{ $c->compliance_record_id }}, '{{ addslashes($schoolName) }}', '{{ addslashes($u['name']) }}', '')"
-                                                                class="px-2 py-0.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white font-bold rounded text-[10px] shadow-2xs transition mt-0.5 flex items-center gap-1">
-                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                                            <span>Add Link</span>
-                                                        </button>
+                                                        @php
+                                                            $canSubmitCell = $cell->canUserSubmit(auth()->user());
+                                                        @endphp
+                                                        @if($canSubmitCell)
+                                                            <button type="button"
+                                                                    onclick="openCellSubmitModal({{ $cell->id }}, {{ $c->compliance_record_id }}, '{{ addslashes($schoolName) }}', '{{ addslashes($u['name']) }}', '')"
+                                                                    class="px-2 py-0.5 bg-hau-maroon hover:bg-hau-maroon-dark text-white font-bold rounded text-[10px] shadow-2xs transition mt-0.5 flex items-center gap-1">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                                                <span>Add Link</span>
+                                                            </button>
+                                                        @else
+                                                            <span class="text-[9px] text-gray-400 font-mono italic mt-0.5">Awaiting upload</span>
+                                                        @endif
                                                     @endif
                                                 </div>
                                             @else
@@ -1154,6 +1171,9 @@
                 No compliance tasks logged yet.
             </div>
         @endforelse
+        <div id="matrix-no-matches-row" class="bg-white rounded-2xl p-12 text-center border border-gray-200 shadow-sm text-gray-400 text-sm hidden">
+            No compliance items match your filters.
+        </div>
     </div>
     <div id="compliance-board-view" class="hidden">
         @php
@@ -1457,6 +1477,9 @@
                 No compliance items logged.
             </div>
         @endforelse
+        <div id="area-no-matches-row" class="bg-white rounded-2xl p-12 text-center text-gray-400 border border-gray-200 text-sm hidden">
+            No compliance items match your filters.
+        </div>
     </div>
 
     <!-- ===== PAGINATION BAR ===== -->
@@ -2390,21 +2413,35 @@
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         const end   = Math.min(start + ITEMS_PER_PAGE, totalItems);
 
-        // Show/hide cards and table rows based on current page slice
+        // Hide ALL grid cards first
+        document.querySelectorAll('#compliance-grid > [data-id]').forEach(c => c.style.display = 'none');
+
+        // Hide ALL table rows and subrows first
+        document.querySelectorAll('#compliance-table-body tr.table-task-row').forEach(r => r.style.display = 'none');
+        document.querySelectorAll('#compliance-table-body tr[data-table-subrow-id]').forEach(sr => {
+            sr.classList.add('hidden');
+        });
+        document.querySelectorAll('[id^="subrow-chevron-"]').forEach(chev => {
+            chev.classList.remove('rotate-90', 'text-hau-maroon');
+        });
+
+        // Hide ALL matrix cards first
+        document.querySelectorAll('#compliance-matrix-view .matrix-task-card').forEach(m => m.style.display = 'none');
+
+        // Show cards, table rows, and matrix cards for the active page slice
         filteredCards.forEach((card, idx) => {
             const isVisiblePage = (idx >= start && idx < end);
-            card.style.display = isVisiblePage ? '' : 'none';
-            const id = card.getAttribute('data-id');
-            const tableRow = document.querySelector(`tr[data-table-id="${id}"]`);
-            if (tableRow) {
-                tableRow.style.display = isVisiblePage ? '' : 'none';
-            }
-            // If main table row is hidden by pagination, ensure its subrow is hidden as well
-            if (!isVisiblePage) {
-                const subRow = document.getElementById('subrow-' + id);
-                if (subRow) subRow.classList.add('hidden');
-                const chevron = document.getElementById('subrow-chevron-' + id);
-                if (chevron) chevron.classList.remove('rotate-90');
+            if (isVisiblePage) {
+                card.style.display = '';
+                const id = card.getAttribute('data-id');
+                const tableRow = document.querySelector(`tr[data-table-id="${id}"]`);
+                if (tableRow) {
+                    tableRow.style.display = '';
+                }
+                const matrixCard = document.querySelector(`#compliance-matrix-view .matrix-task-card[data-matrix-id="${id}"]`);
+                if (matrixCard) {
+                    matrixCard.style.display = '';
+                }
             }
         });
 
@@ -2420,66 +2457,70 @@
 
         // Render page number buttons
         const controlsEl = document.getElementById('pagination-controls');
-        if (!controlsEl) return;
-
-        const btnBase = 'inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition focus:outline-none';
-        const btnActive = btnBase + ' bg-hau-maroon text-white shadow-sm';
-        const btnInactive = btnBase + ' text-gray-600 hover:bg-gray-100 border border-gray-200 bg-white';
-        const btnDisabled = btnBase + ' text-gray-300 cursor-not-allowed border border-gray-100 bg-gray-50';
-
-        // Determine which page numbers to show (max 5 visible)
-        let pages = [];
-        if (totalPages <= 7) {
-            for (let i = 1; i <= totalPages; i++) pages.push(i);
-        } else {
-            pages.push(1);
-            if (currentPage > 3) pages.push('...');
-            const lo = Math.max(2, currentPage - 1);
-            const hi = Math.min(totalPages - 1, currentPage + 1);
-            for (let i = lo; i <= hi; i++) pages.push(i);
-            if (currentPage < totalPages - 2) pages.push('...');
-            pages.push(totalPages);
-        }
-
-        let html = '';
-
-        // Prev button
-        if (currentPage <= 1) {
-            html += `<button disabled class="${btnDisabled} mr-1" aria-label="Previous page">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>`;
-        } else {
-            html += `<button onclick="goToPage(${currentPage - 1})" class="${btnInactive} mr-1" aria-label="Previous page">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>`;
-        }
-
-        // Page number buttons
-        pages.forEach(p => {
-            if (p === '...') {
-                html += `<span class="inline-flex items-center justify-center w-8 h-8 text-xs text-gray-400 select-none">…</span>`;
+        if (controlsEl) {
+            if (totalItems === 0) {
+                controlsEl.innerHTML = '';
             } else {
-                html += `<button onclick="goToPage(${p})" class="${p === currentPage ? btnActive : btnInactive}" aria-label="Page ${p}">${p}</button>`;
+                const btnBase = 'inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition focus:outline-none';
+                const btnActive = btnBase + ' bg-hau-maroon text-white shadow-sm';
+                const btnInactive = btnBase + ' text-gray-600 hover:bg-gray-100 border border-gray-200 bg-white';
+                const btnDisabled = btnBase + ' text-gray-300 cursor-not-allowed border border-gray-100 bg-gray-50';
+
+                // Determine which page numbers to show (max 5 visible)
+                let pages = [];
+                if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                } else {
+                    pages.push(1);
+                    if (currentPage > 3) pages.push('...');
+                    const lo = Math.max(2, currentPage - 1);
+                    const hi = Math.min(totalPages - 1, currentPage + 1);
+                    for (let i = lo; i <= hi; i++) pages.push(i);
+                    if (currentPage < totalPages - 2) pages.push('...');
+                    pages.push(totalPages);
+                }
+
+                let html = '';
+
+                // Prev button
+                if (currentPage <= 1) {
+                    html += `<button disabled class="${btnDisabled} mr-1" aria-label="Previous page">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>`;
+                } else {
+                    html += `<button onclick="goToPage(${currentPage - 1})" class="${btnInactive} mr-1" aria-label="Previous page">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>`;
+                }
+
+                // Page number buttons
+                pages.forEach(p => {
+                    if (p === '...') {
+                        html += `<span class="inline-flex items-center justify-center w-8 h-8 text-xs text-gray-400 select-none">…</span>`;
+                    } else {
+                        html += `<button onclick="goToPage(${p})" class="${p === currentPage ? btnActive : btnInactive}" aria-label="Page ${p}">${p}</button>`;
+                    }
+                });
+
+                // Next button
+                if (currentPage >= totalPages) {
+                    html += `<button disabled class="${btnDisabled} ml-1" aria-label="Next page">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>`;
+                } else {
+                    html += `<button onclick="goToPage(${currentPage + 1})" class="${btnInactive} ml-1" aria-label="Next page">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>`;
+                }
+
+                controlsEl.innerHTML = html;
             }
-        });
-
-        // Next button
-        if (currentPage >= totalPages) {
-            html += `<button disabled class="${btnDisabled} ml-1" aria-label="Next page">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </button>`;
-        } else {
-            html += `<button onclick="goToPage(${currentPage + 1})" class="${btnInactive} ml-1" aria-label="Next page">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </button>`;
         }
-
-        controlsEl.innerHTML = html;
 
         // Show/hide the whole pagination bar based on current view and items
         const bar = document.getElementById('pagination-bar');
         if (bar) {
-            const isPagedView = (currentComplianceView === 'table' || currentComplianceView === 'grid');
+            const isPagedView = (currentComplianceView === 'table' || currentComplianceView === 'grid' || currentComplianceView === 'matrix');
             bar.style.display = (isPagedView && totalItems > 0) ? '' : 'none';
         }
     }
@@ -2487,7 +2528,14 @@
     function goToPage(page) {
         currentPage = page;
         renderPagination();
-        const scrollTarget = document.getElementById('compliance-table-view') || document.getElementById('compliance-grid');
+        let scrollTarget = null;
+        if (currentComplianceView === 'matrix') {
+            scrollTarget = document.getElementById('compliance-matrix-view');
+        } else if (currentComplianceView === 'table') {
+            scrollTarget = document.getElementById('compliance-table-view');
+        } else {
+            scrollTarget = document.getElementById('compliance-grid');
+        }
         if (scrollTarget) scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -2580,8 +2628,8 @@
         const btnArea = document.getElementById('view-btn-area');
         const btnGrid = document.getElementById('view-btn-grid');
 
-        const activeClass = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-hau-maroon text-white shadow-xs flex items-center gap-1.5 transition';
-        const inactiveClass = 'px-2.5 py-1 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-200 flex items-center gap-1.5 transition';
+        const activeClass = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-hau-maroon text-white shadow-xs flex items-center gap-1.5 transition cursor-pointer';
+        const inactiveClass = 'px-2.5 py-1 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-200 flex items-center gap-1.5 transition cursor-pointer';
 
         // Reset all buttons
         if (btnTable) btnTable.className = inactiveClass;
@@ -2604,7 +2652,7 @@
         } else if (mode === 'matrix') {
             if (matrixEl) matrixEl.classList.remove('hidden');
             if (btnMatrix) btnMatrix.className = activeClass;
-            if (paginationBar) paginationBar.style.display = 'none';
+            if (paginationBar) paginationBar.style.display = filteredCards.length > 0 ? '' : 'none';
         } else if (mode === 'board') {
             if (boardEl) boardEl.classList.remove('hidden');
             if (btnBoard) btnBoard.className = activeClass;
@@ -2800,14 +2848,9 @@
             }
         });
 
-        // 1.5. Sync Matrix Grid View cards
-        document.querySelectorAll('#compliance-matrix-view .matrix-task-card').forEach(mCard => {
-            const mId = mCard.getAttribute('data-matrix-id');
-            const isMatch = matchedIds.has(String(mId));
-            mCard.style.display = isMatch ? '' : 'none';
-        });
 
         // 2. Sync Grouped by Area View cards & area counters + Body Pills filter
+        let totalAreaVisible = 0;
         document.querySelectorAll('#compliance-area-view .area-group-card').forEach(areaCard => {
             const cardBody = (areaCard.getAttribute('data-area-body') || '').toLowerCase().trim();
             const matchesBodyFilter = (currentAreaBodyFilter === 'all' || cardBody === currentAreaBodyFilter || cardBody.includes(currentAreaBodyFilter));
@@ -2824,7 +2867,9 @@
             if (counterEl) counterEl.textContent = `${areaVisibleCount} Task${areaVisibleCount !== 1 ? 's' : ''}`;
             
             // Show area card only if at least one matching item is inside and matches the selected body pill
-            areaCard.style.display = (areaVisibleCount > 0 && matchesBodyFilter) ? '' : 'none';
+            const showCard = (areaVisibleCount > 0 && matchesBodyFilter);
+            areaCard.style.display = showCard ? '' : 'none';
+            if (showCard) totalAreaVisible += areaVisibleCount;
         });
 
         // 3. Reset to page 1 and render table & card pagination
@@ -2835,14 +2880,34 @@
         const countEl = document.getElementById('visible-count');
         if (countEl) countEl.textContent = filteredCards.length;
 
-        // 5. Toggle empty/no-matches indicators
+        // 5. Toggle empty/no-matches indicators across all views
+        const hasNoMatches = (filteredCards.length === 0 && allCards.length > 0);
         if (noMatches) {
-            noMatches.style.display = (filteredCards.length === 0 && allCards.length > 0) ? '' : 'none';
+            noMatches.style.display = hasNoMatches ? '' : 'none';
+        }
+        const tableNoMatches = document.getElementById('table-no-matches-row');
+        if (tableNoMatches) {
+            tableNoMatches.classList.toggle('hidden', !hasNoMatches);
+        }
+        const matrixNoMatches = document.getElementById('matrix-no-matches-row');
+        if (matrixNoMatches) {
+            matrixNoMatches.style.display = hasNoMatches ? '' : 'none';
+        }
+        const areaNoMatches = document.getElementById('area-no-matches-row');
+        if (areaNoMatches) {
+            areaNoMatches.style.display = (totalAreaVisible === 0 && allCards.length > 0) ? '' : 'none';
         }
 
         if (isUserAction && filteredCards.length > 0) {
-            const container = document.getElementById('compliance-table-view') || document.getElementById('compliance-grid');
-            if (container && container.style.display !== 'none') {
+            let container = null;
+            if (currentComplianceView === 'matrix') {
+                container = document.getElementById('compliance-matrix-view');
+            } else if (currentComplianceView === 'table') {
+                container = document.getElementById('compliance-table-view');
+            } else {
+                container = document.getElementById('compliance-grid');
+            }
+            if (container && container.style.display !== 'none' && !container.classList.contains('hidden')) {
                 container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
@@ -2850,14 +2915,8 @@
 
     // Initialize pagination & view on page load
     document.addEventListener('DOMContentLoaded', () => {
-        // Build initial filteredCards from all cards
-        filteredCards = Array.from(document.querySelectorAll('#compliance-grid > [data-id]'));
-        renderPagination();
+        applyFilters(false);
         setComplianceView(currentComplianceView);
-
-        // Set initial visible-count to total records
-        const countEl = document.getElementById('visible-count');
-        if (countEl) countEl.textContent = filteredCards.length;
 
         setupAutoContactPopulate();
         setupAutoSchoolPopulate();
@@ -3536,6 +3595,11 @@
     }
 
     function openDetailModal(card) {
+        if (!card) return;
+        if (typeof card === 'string' || typeof card === 'number') {
+            card = document.querySelector('#compliance-grid > [data-id="' + card + '"]') || document.querySelector('[data-id="' + card + '"]');
+        }
+        if (!card) return;
         _currentDetailCard = card;
         const id = card.getAttribute('data-id');
         const code = card.getAttribute('data-program-code');
@@ -4065,6 +4129,11 @@
     }
 
     function openEditModal(card) {
+        if (!card) return;
+        if (typeof card === 'string' || typeof card === 'number') {
+            card = document.querySelector('#compliance-grid > [data-id="' + card + '"]') || document.querySelector('[data-id="' + card + '"]');
+        }
+        if (!card) return;
         const id = card.getAttribute('data-id');
         const programId = card.getAttribute('data-program-id');
         const title = card.getAttribute('data-title');
@@ -4215,6 +4284,11 @@
     }
 
     function openProposeModal(card, assignmentId = null, initialLink = '', initialPlan = '') {
+        if (!card) return;
+        if (typeof card === 'string' || typeof card === 'number') {
+            card = document.querySelector('#compliance-grid > [data-id="' + card + '"]') || document.querySelector('[data-id="' + card + '"]');
+        }
+        if (!card) return;
         const id = card.getAttribute('data-id');
         const code = card.getAttribute('data-program-code');
         const body = card.getAttribute('data-body') || 'Accreditor';

@@ -79,4 +79,107 @@ class ComplianceAssignment extends Model
     {
         return $this->document_link ?: $this->pending_document_link;
     }
+
+    /**
+     * Check if a given user is authorized to submit evidence for this assignment.
+     *
+     * Rules:
+     * - QA Admin: can submit/approve across all assignments.
+     * - Units & Offices: can submit to assignments assigned to their unit/office across any targeted school/department.
+     * - School Departments / Deans: can ONLY submit to assignments for their own department, school, or programs.
+     */
+    public function canUserSubmit(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->usertype === 'QA Admin') {
+            return true;
+        }
+
+        $userRespUnitId = $user->responsible_unit_id;
+        $userUnitId     = $user->unit_id;
+        $userCollegeId  = $user->college_id;
+
+        if (!$userCollegeId && $userRespUnitId) {
+            $userCollegeId = ResponsibleUnit::where('responsible_unit_id', $userRespUnitId)->value('college_id');
+        }
+
+        // 1. Is this assignment assigned to an Administrative Office / Support Unit?
+        if ($this->responsible_unit_id) {
+            $ru = $this->responsibleUnit;
+            $isOffice = $ru && ($ru->unit_id !== null || $ru->college_id === null);
+
+            if ($isOffice) {
+                // Administrative office staff can submit if it matches their unit
+                if ($userRespUnitId && (int)$this->responsible_unit_id === (int)$userRespUnitId) {
+                    return true;
+                }
+                if ($userUnitId && $ru && (int)$ru->unit_id === (int)$userUnitId) {
+                    return true;
+                }
+                // Academic school users cannot submit for an external administrative office's column
+                return false;
+            }
+        }
+
+        // 2. School Department / Dean / College authorization:
+        // User can ONLY submit for their own department, school, or programs.
+        if ($userCollegeId) {
+            $userCollege = College::find($userCollegeId);
+            $collegeName = $userCollege?->name;
+            $collegeCode = $userCollege?->code;
+
+            // Check if school_name matches this user's college
+            if (!empty($this->school_name)) {
+                $trimmedSchool = trim($this->school_name);
+                if (($collegeName && strcasecmp($trimmedSchool, trim($collegeName)) === 0) ||
+                    ($collegeCode && strcasecmp($trimmedSchool, trim($collegeCode)) === 0)) {
+                    
+                    // If assignment is for a specific department under that school:
+                    if ($this->responsible_unit_id && $userRespUnitId) {
+                        if ((int)$this->responsible_unit_id === (int)$userRespUnitId) {
+                            return true;
+                        }
+                        if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
+                            $ru = $this->responsibleUnit;
+                            if ($ru && (int)$ru->college_id === (int)$userCollegeId) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                    return true;
+                }
+            }
+
+            // Check if program matches user's college
+            if ($this->program_id && $this->program) {
+                if ((int)$this->program->college_id === (int)$userCollegeId) {
+                    return true;
+                }
+            }
+
+            // Check if responsible unit is in user's college
+            if ($this->responsible_unit_id) {
+                $ru = $this->responsibleUnit;
+                if ($ru && (int)$ru->college_id === (int)$userCollegeId) {
+                    if (!$userRespUnitId || (int)$userRespUnitId === (int)$this->responsible_unit_id || $user->usertype === 'Dean' || $user->usertype === 'Principal') {
+                        return true;
+                    }
+                }
+            }
+
+            // Outside this user's school/college/program -> denied!
+            return false;
+        }
+
+        // 3. Fallback for office user matching responsible unit
+        if ($userRespUnitId && (int)$this->responsible_unit_id === (int)$userRespUnitId) {
+            return true;
+        }
+
+        return false;
+    }
 }

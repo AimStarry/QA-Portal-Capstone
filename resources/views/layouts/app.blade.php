@@ -133,118 +133,127 @@
     <div class="h-full flex overflow-hidden bg-gray-100">
         
         <!-- Sidebar Navigation for Large Screens -->
-        <aside class="hidden lg:flex lg:flex-shrink-0">
-            <div class="flex flex-col w-64 border-r border-hau-gold/30 bg-hau-maroon text-white">
+        <aside id="desktop-sidebar" class="hidden lg:flex lg:flex-shrink-0 transition-[width] duration-300 ease-in-out w-64 group/sidebar">
+            <div class="flex flex-col w-full border-r border-hau-gold/30 bg-hau-maroon text-white h-full select-none">
                 
                 <!-- HAU Header Banner -->
-                <div class="flex items-center h-20 px-6 bg-hau-maroon-dark border-b border-hau-gold/20 gap-3">
-                    <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border-2 border-hau-gold overflow-hidden flex-shrink-0">
+                <div class="sidebar-header-banner flex items-center h-20 px-5 bg-hau-maroon-dark border-b border-hau-gold/20 gap-3 overflow-hidden flex-shrink-0">
+                    <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border-2 border-hau-gold overflow-hidden flex-shrink-0 shadow-sm">
                         <img src="{{ asset('images/hau_logo.png') }}" alt="HAU Logo" class="w-full h-full object-cover transform scale-[1.8]">
                     </div>
-                    <div>
+                    <div class="sidebar-label whitespace-nowrap overflow-hidden transition-all duration-200">
                         <h2 class="font-bold text-sm leading-tight tracking-wide text-white">Holy Angel University</h2>
                         <span class="text-[10px] text-hau-gold font-semibold uppercase tracking-wider">QA Portal</span>
                     </div>
                 </div>
 
                 <!-- Navigation Links based on Active Role -->
-                <div class="flex-1 flex flex-col justify-between overflow-y-auto overflow-x-hidden px-4 py-6">
-                    <nav class="space-y-2">
+                <div class="sidebar-inner-content flex-1 flex flex-col justify-between overflow-y-auto overflow-x-hidden px-3.5 py-6">
+                    <nav class="space-y-1.5">
                         <!-- 1. Dashboard (Shared) -->
-                        <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('dashboard') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                            <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('dashboard') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <a href="{{ route('dashboard') }}" title="Dashboard" class="sidebar-nav-link flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('dashboard') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                            <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('dashboard') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"></path>
                             </svg>
-                            Dashboard
+                            <span class="sidebar-label ml-3 truncate">Dashboard</span>
                         </a>
 
                         @if(in_array(auth()->user()->usertype, ['Dean', 'Principal']) || (auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin'))
                             <!-- 2. Programs -->
-                            <a href="{{ route('programs.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('programs.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('programs.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('programs.index') }}" title="Academic Programs" class="sidebar-nav-link flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('programs.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('programs.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                                 </svg>
-                                Academic Programs
+                                <span class="sidebar-label ml-3 truncate">Academic Programs</span>
                             </a>
                         @endif
 
                         @if(auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin')
                             <!-- 3. Accreditations -->
-                            <a href="{{ route('accreditations.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('accreditations.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('accreditations.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('accreditations.index') }}" title="Accreditations" class="sidebar-nav-link flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('accreditations.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('accreditations.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                Accreditations
+                                <span class="sidebar-label ml-3 truncate">Accreditations</span>
                             </a>
                         @endif
 
                         <!-- 4. Compliance (Shared) -->
-                        <a href="{{ route('compliance.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('compliance.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                            <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('compliance.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <a href="{{ route('compliance.index') }}" title="Compliance Tracker" class="sidebar-nav-link flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('compliance.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                            <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('compliance.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                             </svg>
-                            Compliance Tracker
+                            <span class="sidebar-label ml-3 truncate">Compliance Tracker</span>
                         </a>
 
                         @if(auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin')
                             <!-- 5. Graduates -->
-                            <a href="{{ route('graduates.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('graduates.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('graduates.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('graduates.index') }}" title="Graduates Tracker" class="sidebar-nav-link flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('graduates.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('graduates.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v7"></path>
                                 </svg>
-                                Graduates Tracker
+                                <span class="sidebar-label ml-3 truncate">Graduates Tracker</span>
                             </a>
-                        @endif
 
-                        @if(auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin')
                             <!-- 6. Risk Monitor -->
-                            <a href="{{ route('risk.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('risk.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('risk.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('risk.index') }}" title="Risk Monitor" class="sidebar-nav-link flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('risk.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('risk.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                                 </svg>
-                                Risk Monitor
+                                <span class="sidebar-label ml-3 truncate">Risk Monitor</span>
                             </a>
 
                             <!-- 7. User Accounts -->
-                            <a href="{{ route('users.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('users.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
-                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('users.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" style="width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <a href="{{ route('users.index') }}" title="User Accounts" class="sidebar-nav-link flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('users.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('users.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                                 </svg>
-                                User Accounts
+                                <span class="sidebar-label ml-3 truncate">User Accounts</span>
                             </a>
                         @endif
 
                         <!-- 8. Comprehensive Report Export -->
                         <div class="pt-2">
-                            <a href="{{ route('reports.export-full') }}" class="flex items-center px-4 py-2.5 text-xs font-bold rounded-xl text-hau-gold hover:bg-hau-gold/20 transition duration-150 group border border-hau-gold/40 bg-hau-gold/10 shadow-xs" title="Download complete multi-tab audit report (.xlsx)">
-                                <svg class="mr-2.5 w-4 h-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 text-hau-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <a href="{{ route('reports.export-full') }}" title="Full System Report" class="sidebar-nav-link flex items-center px-3.5 py-2.5 text-xs font-bold rounded-xl text-hau-gold hover:bg-hau-gold/20 transition duration-150 group border border-hau-gold/40 bg-hau-gold/10 shadow-xs">
+                                <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 text-hau-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
-                                <span>Full System Report</span>
+                                <span class="sidebar-label ml-2.5 truncate">Full System Report</span>
                             </a>
                         </div>
                     </nav>
 
-                    <!-- Sidebar Footer: User Identity & System Info -->
+                    <!-- Sidebar Footer: Collapse Toggle + User Info -->
                     <div class="mt-auto pt-4 border-t border-white/15 space-y-3">
+                        <!-- Desktop Sidebar Collapse/Expand Toggle Button -->
+                        <button type="button" onclick="toggleDesktopSidebar()" id="sidebar-toggle-btn" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-white/80 hover:text-hau-gold hover:bg-white/10 transition-colors duration-150 cursor-pointer" title="Collapse or Expand sidebar (Ctrl+B)">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <svg id="sidebar-toggle-icon" class="w-4 h-4 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                                </svg>
+                                <span class="sidebar-label truncate">Collapse Sidebar</span>
+                            </div>
+                            <span class="sidebar-label text-[10px] text-white/40 uppercase tracking-widest font-mono">Rail</span>
+                        </button>
+
                         <!-- Signed-in User Card -->
-                        <div class="group flex items-center gap-3 p-3 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md shadow-md hover:bg-white/15 transition-all duration-200">
+                        <div class="sidebar-user-card group flex items-center gap-3 p-2.5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md shadow-md hover:bg-white/15 transition-all duration-200 overflow-hidden" title="{{ auth()->user()->name ?? 'User' }} ({{ auth()->user()->usertype ?? 'User' }})">
                             <!-- Avatar Pill with Gold Accent Ring -->
-                            <div class="flex-shrink-0">
+                            <div class="sidebar-avatar-wrapper flex-shrink-0 mx-auto">
                                 <div class="w-10 h-10 rounded-xl text-hau-maroon font-black text-base shadow-sm flex items-center justify-center ring-2 ring-hau-gold/60" style="background: linear-gradient(135deg, #D4AF37 0%, #F3E5AB 100%);">
                                     {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
                                 </div>
                             </div>
 
                             <!-- User Info -->
-                            <div class="min-w-0 flex-1">
+                            <div class="sidebar-label min-w-0 flex-1">
                                 <div class="flex items-center justify-between">
                                     <p class="text-white text-xs font-bold truncate tracking-tight group-hover:text-hau-gold transition-colors">{{ auth()->user()->name ?? 'User' }}</p>
                                 </div>
                                 <div class="flex items-center gap-1.5 mt-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-hau-gold/20 text-hau-gold border border-hau-gold/30 uppercase tracking-wider">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-hau-gold/20 text-hau-gold border border-hau-gold/30 uppercase tracking-wider truncate">
                                         {{ ucwords(str_replace('_', ' ', auth()->user()->usertype ?? 'User')) }}
                                     </span>
                                 </div>
@@ -252,13 +261,13 @@
                         </div>
 
                         <!-- Institutional Branding Footer -->
-                        <div class="text-center pt-1 pb-1">
+                        <div class="sidebar-label text-center pt-1 pb-1">
                             <div class="inline-flex items-center justify-center gap-1.5">
                                 <span class="w-1 h-1 rounded-full bg-hau-gold"></span>
-                                <p class="text-[10px] text-hau-gold font-extrabold tracking-widest uppercase">Holy Angel University</p>
+                                <p class="text-[10px] text-hau-gold font-extrabold tracking-widest uppercase truncate">Holy Angel University</p>
                                 <span class="w-1 h-1 rounded-full bg-hau-gold"></span>
                             </div>
-                            <p class="text-[9px] text-white/50 font-medium tracking-wide mt-0.5">Quality Assurance Office &middot; Portal</p>
+                            <p class="text-[9px] text-white/50 font-medium tracking-wide mt-0.5">QA Office &middot; Portal</p>
                         </div>
                     </div>
                 </div>
@@ -271,27 +280,29 @@
             <!-- Top Mobile Bar & Portal Title & Role Switcher -->
             <header class="relative z-30 flex-shrink-0 flex h-16 bg-white shadow-xs border-b border-gray-200">
                 <!-- Mobile Navigation Toggle -->
-                <div class="lg:hidden pl-4 flex items-center">
-                    <button type="button" onclick="toggleMobileMenu()" class="text-gray-500 hover:text-hau-maroon focus:outline-none">
+                <div class="lg:hidden pl-3 sm:pl-4 flex items-center">
+                    <button type="button" onclick="openMobileMenu()" class="p-2 -ml-1 text-gray-600 hover:text-hau-maroon hover:bg-gray-100 rounded-xl transition focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 cursor-pointer" aria-label="Open sidebar menu">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
                 </div>
 
-                <div class="flex-1 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-                    <div>
-                        <span class="text-sm font-semibold text-gray-500 hidden sm:inline">HAU QA Portal &middot; </span>
-                        <span class="text-xs font-semibold text-hau-maroon bg-hau-maroon/5 border border-hau-maroon/10 rounded-full px-2.5 py-0.5">Academic Year 2026-2027</span>
+                <div class="flex-1 px-3 sm:px-6 lg:px-8 flex justify-between items-center gap-2 min-w-0">
+                    <div class="flex items-center min-w-0">
+                        <span class="text-sm font-semibold text-gray-500 hidden md:inline">HAU QA Portal &middot;&nbsp;</span>
+                        <span class="text-[11px] sm:text-xs font-semibold text-hau-maroon bg-hau-maroon/5 border border-hau-maroon/10 rounded-full px-2 sm:px-2.5 py-0.5 whitespace-nowrap truncate">
+                            <span class="hidden sm:inline">Academic Year </span>2026-2027
+                        </span>
                     </div>
 
                     <!-- Role Switcher Form & Notifications -->
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                         
                         <!-- Notification Center (Bell) -->
                         <div class="relative">
-                            <button id="notif-bell-btn" onclick="toggleNotifications()" class="relative p-1.5 text-gray-400 hover:text-hau-maroon hover:bg-gray-100 rounded-xl transition focus:outline-none">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <button id="notif-bell-btn" onclick="toggleNotifications()" class="relative p-2 text-gray-500 hover:text-hau-maroon hover:bg-gray-100 rounded-xl transition focus:outline-none cursor-pointer" aria-label="Notifications">
+                                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                                 </svg>
                                 @if ($notifCount > 0)
@@ -302,7 +313,7 @@
                             </button>
 
                             <!-- Notification Dropdown Panel -->
-                            <div id="notif-dropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 py-2 z-50 hidden">
+                            <div id="notif-dropdown" class="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-80 bg-white rounded-2xl shadow-xl border border-gray-200 py-2 z-50 hidden">
                                 <div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
                                     <span class="text-xs font-bold text-gray-800">QA Alerts Center</span>
                                     <span class="text-[10px] font-bold text-hau-maroon bg-hau-maroon/5 px-2 py-0.5 rounded-full">{{ $notifCount }} Alerts</span>
@@ -336,21 +347,21 @@
 
                         <!-- Interactive Header User Profile Dropdown Trigger -->
                         <div class="relative">
-                            <button id="profile-dropdown-btn" onclick="toggleProfileDropdown()" class="flex items-center gap-2.5 px-3 py-1.5 bg-gray-50 border border-gray-200/90 rounded-full shadow-2xs hover:bg-gray-100/90 hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 cursor-pointer group">
+                            <button id="profile-dropdown-btn" onclick="toggleProfileDropdown()" class="flex items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-1.5 bg-gray-50 border border-gray-200/90 rounded-full shadow-2xs hover:bg-gray-100/90 hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 cursor-pointer group">
                                 <div class="w-7 h-7 rounded-full bg-gradient-to-br from-hau-maroon to-hau-maroon-dark text-white flex items-center justify-center font-bold text-xs shadow-xs ring-2 ring-hau-gold/40 flex-shrink-0">
                                     {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
                                 </div>
                                 <div class="hidden sm:flex flex-col text-left pr-0.5 min-w-0">
-                                    <span class="text-xs font-bold text-gray-800 leading-tight truncate max-w-[130px]">{{ auth()->user()->name }}</span>
+                                    <span class="text-xs font-bold text-gray-800 leading-tight truncate max-w-[120px]">{{ auth()->user()->name }}</span>
                                     <span class="text-[10px] text-hau-maroon font-semibold leading-tight truncate">{{ auth()->user()->usertype }}</span>
                                 </div>
-                                <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-gray-400 group-hover:text-hau-maroon transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
 
                             <!-- Profile Dropdown Panel -->
-                            <div id="profile-dropdown" class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-200/90 py-2.5 z-50 hidden transform origin-top-right transition-all">
+                            <div id="profile-dropdown" class="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-xs sm:w-72 bg-white rounded-2xl shadow-xl border border-gray-200/90 py-2.5 z-50 hidden transform origin-top-right transition-all">
                                 <!-- User Overview -->
                                 <div class="px-4 py-2 border-b border-gray-100 flex items-center gap-3">
                                     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-hau-maroon to-hau-maroon-dark text-white flex items-center justify-center font-black text-sm shadow-sm ring-2 ring-hau-gold/40 flex-shrink-0">
@@ -392,54 +403,115 @@
                 </div>
             </header>
 
-            <!-- Mobile Sidebar Overlay Menu -->
-            <div id="mobile-menu" class="fixed inset-0 z-40 lg:hidden hidden" role="dialog" aria-modal="true">
-                <div class="fixed inset-0 bg-gray-600 bg-opacity-75" onclick="toggleMobileMenu()"></div>
-                <div class="relative flex-1 flex flex-col max-w-xs w-full bg-hau-maroon text-white h-full z-50 shadow-xl">
-                    <div class="absolute top-0 right-0 -mr-12 pt-2">
-                        <button type="button" onclick="toggleMobileMenu()" class="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
-                            <span class="sr-only">Close sidebar</span>
-                            <svg class="h-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            <!-- Mobile Sidebar Overlay Drawer -->
+            <div id="mobile-menu" class="fixed inset-0 z-50 lg:hidden invisible transition-[visibility] duration-300 pointer-events-none" role="dialog" aria-modal="true" aria-label="Mobile Navigation Menu">
+                <!-- Backdrop with fade transition -->
+                <div id="mobile-backdrop" class="fixed inset-0 bg-gray-900/70 backdrop-blur-xs opacity-0 transition-opacity duration-300 pointer-events-auto cursor-pointer" onclick="closeMobileMenu()"></div>
+
+                <!-- Drawer Container with slide-in transition -->
+                <div id="mobile-drawer" class="relative flex flex-col max-w-xs w-full bg-hau-maroon text-white h-full z-10 shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out pointer-events-auto">
+                    
+                    <!-- HAU Mobile Header Banner with inside Close Button -->
+                    <div class="flex items-center justify-between h-20 px-5 bg-hau-maroon-dark border-b border-hau-gold/20 flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center border-2 border-hau-gold overflow-hidden flex-shrink-0 shadow-sm">
+                                <img src="{{ asset('images/hau_logo.png') }}" alt="HAU Logo" class="w-full h-full object-cover transform scale-[1.8]">
+                            </div>
+                            <div>
+                                <h2 class="font-bold text-xs text-white leading-tight">Holy Angel University</h2>
+                                <span class="text-[9px] text-hau-gold font-semibold uppercase tracking-wider">QA Portal</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Close Button - positioned inside header so it is NEVER cut off on any mobile screen -->
+                        <button type="button" onclick="closeMobileMenu()" class="p-2 -mr-1.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-hau-gold cursor-pointer" aria-label="Close sidebar">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
                     </div>
-                    <div class="flex items-center h-20 px-6 bg-hau-maroon-dark border-b border-hau-gold/20 gap-3">
-                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-hau-gold overflow-hidden">
-                            <img src="{{ asset('images/hau_logo.png') }}" alt="HAU Logo" class="w-full h-full object-cover transform scale-[1.8]">
-                        </div>
-                        <div>
-                            <h2 class="font-bold text-xs text-white leading-tight">Holy Angel University</h2>
-                        </div>
-                    </div>
-                    <div class="flex-1 flex flex-col overflow-y-auto px-4 py-4 space-y-2">
-                        <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('dashboard') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Dashboard</a>
-                        @if(in_array(auth()->user()->usertype, ['Dean', 'Principal']) || $role === 'QA Admin')
-                            <a href="{{ route('programs.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('programs.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Academic Programs</a>
-                        @endif
-                        @if($role === 'QA Admin')
-                            <a href="{{ route('accreditations.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('accreditations.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Accreditations</a>
-                        @endif
-                        <a href="{{ route('compliance.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('compliance.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Compliance Tracker</a>
-                        @if($role === 'QA Admin')
-                            <a href="{{ route('graduates.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('graduates.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Graduates Tracker</a>
-                        @endif
 
-                        @if($role === 'QA Admin')
-                            <a href="{{ route('risk.index') }}" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl {{ request()->routeIs('risk.*') ? 'bg-hau-gold text-hau-maroon' : 'text-white hover:bg-white/10' }}">Risk Monitor</a>
-                        @endif
+                    <!-- Navigation Links with SVG Icons & Full Feature Parity -->
+                    <div class="flex-1 flex flex-col justify-between overflow-y-auto px-4 py-4 space-y-1.5">
+                        <nav class="space-y-1.5">
+                            <!-- 1. Dashboard (Shared) -->
+                            <a href="{{ route('dashboard') }}" onclick="closeMobileMenu()" class="flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('dashboard') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('dashboard') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"></path>
+                                </svg>
+                                <span>Dashboard</span>
+                            </a>
 
-                        <a href="{{ route('reports.export-full') }}" class="flex items-center px-4 py-2.5 text-xs font-bold rounded-xl text-hau-gold bg-hau-gold/10 border border-hau-gold/30">
-                            <svg class="mr-2.5 w-4 h-4 text-hau-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span>Full System Report</span>
-                        </a>
+                            @if(in_array(auth()->user()->usertype, ['Dean', 'Principal']) || (auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin'))
+                                <!-- 2. Programs -->
+                                <a href="{{ route('programs.index') }}" onclick="closeMobileMenu()" class="flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('programs.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                    <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('programs.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                    <span>Academic Programs</span>
+                                </a>
+                            @endif
+
+                            @if(auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin')
+                                <!-- 3. Accreditations -->
+                                <a href="{{ route('accreditations.index') }}" onclick="closeMobileMenu()" class="flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('accreditations.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                    <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('accreditations.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span>Accreditations</span>
+                                </a>
+                            @endif
+
+                            <!-- 4. Compliance (Shared) -->
+                            <a href="{{ route('compliance.index') }}" onclick="closeMobileMenu()" class="flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('compliance.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('compliance.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                </svg>
+                                <span>Compliance Tracker</span>
+                            </a>
+
+                            @if(auth()->user()->usertype === 'QA Admin' && $role === 'QA Admin')
+                                <!-- 5. Graduates -->
+                                <a href="{{ route('graduates.index') }}" onclick="closeMobileMenu()" class="flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('graduates.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                    <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('graduates.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v7"></path>
+                                    </svg>
+                                    <span>Graduates Tracker</span>
+                                </a>
+
+                                <!-- 6. Risk Monitor -->
+                                <a href="{{ route('risk.index') }}" onclick="closeMobileMenu()" class="flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('risk.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                    <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('risk.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <span>Risk Monitor</span>
+                                </a>
+
+                                <!-- 7. User Accounts -->
+                                <a href="{{ route('users.index') }}" onclick="closeMobileMenu()" class="flex items-center px-3.5 py-3 text-sm font-semibold rounded-xl transition duration-150 group {{ request()->routeIs('users.*') ? 'bg-hau-gold text-hau-maroon font-bold shadow-xs' : 'text-white hover:bg-white/10 hover:text-hau-gold' }}">
+                                    <svg class="mr-3 w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 {{ request()->routeIs('users.*') ? 'text-hau-maroon' : 'text-hau-gold-light group-hover:text-hau-gold' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                    </svg>
+                                    <span>User Accounts</span>
+                                </a>
+                            @endif
+
+                            <div class="pt-2">
+                                <a href="{{ route('reports.export-full') }}" onclick="closeMobileMenu()" class="flex items-center px-3.5 py-2.5 text-xs font-bold rounded-xl text-hau-gold bg-hau-gold/10 border border-hau-gold/30 hover:bg-hau-gold/20 transition duration-150">
+                                    <svg class="mr-2.5 w-4 h-4 text-hau-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <span>Full System Report</span>
+                                </a>
+                            </div>
+                        </nav>
 
                         <!-- Mobile Drawer Footer: User Info + Logout -->
-                        <div class="mt-auto pt-4 border-t border-white/10 space-y-3">
-                            <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs shadow-inner">
-                                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-hau-gold to-amber-500 flex items-center justify-center text-hau-maroon font-black text-sm shadow-md flex-shrink-0 ring-2 ring-white/20">
+                        <div class="mt-auto pt-4 border-t border-white/15 space-y-3">
+                            <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/10 border border-white/15 backdrop-blur-xs shadow-inner">
+                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-hau-gold to-amber-500 flex items-center justify-center text-hau-maroon font-black text-sm shadow-md flex-shrink-0 ring-2 ring-white/20">
                                     {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
                                 </div>
                                 <div class="min-w-0 flex-1">
@@ -450,7 +522,7 @@
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button type="submit"
-                                    class="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all cursor-pointer"
+                                    class="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all cursor-pointer shadow-sm hover:brightness-110 active:scale-98"
                                     style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 45%, #b91c1c 100%); border: 1px solid rgba(255,255,255,0.2);">
                                     <svg class="w-4 h-4 text-hau-gold-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
@@ -464,7 +536,8 @@
             </div>
 
             <!-- Page Specific Main Content -->
-            <main class="flex-1 relative overflow-y-auto focus:outline-none bg-gray-50/50 p-6 lg:p-8">
+            <main class="flex-1 relative overflow-y-auto focus:outline-none bg-gray-50/50 p-3 sm:p-5 lg:p-8">
+
                 
                 @if (session('success'))
                     <div id="toast-success" class="mb-6 flex items-center p-4 text-emerald-800 border-l-4 border-emerald-500 bg-emerald-50 rounded-xl shadow-xs" role="alert">
@@ -561,14 +634,105 @@
 
     <!-- Layout JS -->
     <script>
-        function toggleMobileMenu() {
+        // ================= MOBILE DRAWER NAVIGATION =================
+        function openMobileMenu() {
             const menu = document.getElementById('mobile-menu');
-            if (menu.classList.contains('hidden')) {
-                menu.classList.remove('hidden');
+            const drawer = document.getElementById('mobile-drawer');
+            const backdrop = document.getElementById('mobile-backdrop');
+            if (!menu || !drawer || !backdrop) return;
+
+            menu.classList.remove('invisible', 'pointer-events-none');
+            document.body.classList.add('overflow-hidden');
+            
+            // Allow DOM to register removal of invisible before animating
+            requestAnimationFrame(() => {
+                backdrop.classList.remove('opacity-0');
+                backdrop.classList.add('opacity-100');
+                drawer.classList.remove('-translate-x-full');
+                drawer.classList.add('translate-x-0');
+            });
+        }
+
+        function closeMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const drawer = document.getElementById('mobile-drawer');
+            const backdrop = document.getElementById('mobile-backdrop');
+            if (!menu || !drawer || !backdrop) return;
+
+            backdrop.classList.remove('opacity-100');
+            backdrop.classList.add('opacity-0');
+            drawer.classList.remove('translate-x-0');
+            drawer.classList.add('-translate-x-full');
+            document.body.classList.remove('overflow-hidden');
+
+            setTimeout(() => {
+                if (backdrop.classList.contains('opacity-0')) {
+                    menu.classList.add('invisible', 'pointer-events-none');
+                }
+            }, 300);
+        }
+
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            if (drawer && drawer.classList.contains('translate-x-0')) {
+                closeMobileMenu();
             } else {
-                menu.classList.add('hidden');
+                openMobileMenu();
             }
         }
+
+        // ================= DESKTOP SIDEBAR COLLAPSIBLE RAIL =================
+        function toggleDesktopSidebar() {
+            const sidebar = document.getElementById('desktop-sidebar');
+            if (!sidebar) return;
+
+            const isCollapsed = sidebar.classList.toggle('is-collapsed');
+            if (isCollapsed) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-20');
+                localStorage.setItem('hau_sidebar_collapsed', 'true');
+            } else {
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-64');
+                localStorage.setItem('hau_sidebar_collapsed', 'false');
+            }
+        }
+
+        function initDesktopSidebar() {
+            const sidebar = document.getElementById('desktop-sidebar');
+            if (!sidebar) return;
+
+            const savedState = localStorage.getItem('hau_sidebar_collapsed');
+            if (savedState === 'true') {
+                sidebar.classList.add('is-collapsed', 'w-20');
+                sidebar.classList.remove('w-64');
+            } else {
+                sidebar.classList.remove('is-collapsed', 'w-20');
+                sidebar.classList.add('w-64');
+            }
+        }
+
+        // Initialize sidebar immediately
+        initDesktopSidebar();
+
+        // Keyboard navigation shortcuts
+        document.addEventListener('keydown', (event) => {
+            // Escape closes open mobile drawer, modals, and dropdowns
+            if (event.key === 'Escape') {
+                closeMobileMenu();
+                
+                const notifDropdown = document.getElementById('notif-dropdown');
+                if (notifDropdown) notifDropdown.classList.add('hidden');
+                
+                const profileDropdown = document.getElementById('profile-dropdown');
+                if (profileDropdown) profileDropdown.classList.add('hidden');
+            }
+            // Ctrl+B / Cmd+B toggles desktop sidebar
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+                event.preventDefault();
+                toggleDesktopSidebar();
+            }
+        });
 
         function toggleNotifications() {
             const dropdown = document.getElementById('notif-dropdown');

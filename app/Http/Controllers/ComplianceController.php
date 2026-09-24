@@ -27,15 +27,37 @@ class ComplianceController extends Controller
 
     private function userScopeFilter(object $user): \Closure
     {
-        $unitName = $user->unit->name ?? '';
-        $unitCode = $user->unit->code ?? '';
+        // Resolve the user's department/unit ID and its parent (school) ID
+        $userUnitId   = $user->responsible_unit_id ?? $user->unit_id ?? null;
+        $unitName     = $user->unit->name ?? '';
+        $unitCode     = $user->unit->code ?? '';
 
-        return function ($q) use ($unitName, $unitCode) {
-            $q->where(function ($sq) use ($unitName, $unitCode) {
+        // Also pull the name from the ResponsibleUnit record if available
+        $ru = $userUnitId ? \App\Models\ResponsibleUnit::with('parent')->find($userUnitId) : null;
+        $ruName   = $ru->name ?? $unitName;
+        $ruCode   = $ru->code ?? $unitCode;
+
+        return function ($q) use ($userUnitId, $ruName, $ruCode) {
+            $q->where(function ($sq) use ($userUnitId, $ruName, $ruCode) {
+                // Always show items targeted at "all units"
                 $sq->orWhere('responsible_unit', 'like', '%All Units%')
                    ->orWhere('responsible_unit', 'like', '%All Departments%');
-                if ($unitName) $sq->orWhere('responsible_unit', 'like', "%{$unitName}%");
-                if ($unitCode) $sq->orWhere('responsible_unit', 'like', "%{$unitCode}%");
+
+                // Match by FK on the compliance record itself (most accurate)
+                if ($userUnitId) {
+                    $sq->orWhere('responsible_unit_id', $userUnitId);
+                }
+
+                // Match via assignment to this specific unit
+                if ($userUnitId) {
+                    $sq->orWhereHas('assignments', fn ($aq) =>
+                        $aq->where('responsible_unit_id', $userUnitId)
+                    );
+                }
+
+                // Legacy text-based fallback
+                if ($ruName) $sq->orWhere('responsible_unit', 'like', "%{$ruName}%");
+                if ($ruCode) $sq->orWhere('responsible_unit', 'like', "%{$ruCode}%");
             });
         };
     }
@@ -56,22 +78,30 @@ class ComplianceController extends Controller
         }
 
         if ($user->usertype === 'Head of Unit') {
-            $userUnitId = $user->responsible_unit_id ?? $user->unit_id;
-            $unitName   = $user->unit->name ?? '';
-            $unitCode   = $user->unit->code ?? '';
+            $userUnitId = $user->responsible_unit_id ?? $user->unit_id ?? null;
+            $ru         = $userUnitId ? \App\Models\ResponsibleUnit::find($userUnitId) : null;
+            $ruName     = $ru->name ?? ($user->unit->name ?? '');
+            $ruCode     = $ru->code ?? ($user->unit->code ?? '');
 
-            $viaLegacyField = (
+            // Match by FK on the compliance record
+            if ($userUnitId && $compliance->responsible_unit_id == $userUnitId) {
+                return true;
+            }
+
+            // Match via assignment
+            if ($userUnitId && $compliance->assignments->where('responsible_unit_id', $userUnitId)->isNotEmpty()) {
+                return true;
+            }
+
+            // Legacy text-based check
+            $viaLegacy = (
                 str_contains($compliance->responsible_unit ?? '', 'All Units') ||
                 str_contains($compliance->responsible_unit ?? '', 'All Departments') ||
-                ($unitName && str_contains($compliance->responsible_unit ?? '', $unitName)) ||
-                ($unitCode && str_contains($compliance->responsible_unit ?? '', $unitCode))
+                ($ruName && str_contains($compliance->responsible_unit ?? '', $ruName)) ||
+                ($ruCode && str_contains($compliance->responsible_unit ?? '', $ruCode))
             );
 
-            $viaAssignment = $compliance->assignments
-                ->where('responsible_unit_id', $userUnitId)
-                ->isNotEmpty();
-
-            return $viaLegacyField || $viaAssignment;
+            return $viaLegacy;
         }
 
         return false;
@@ -138,21 +168,9 @@ class ComplianceController extends Controller
         if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
             $query->where($deanScope);
         } elseif ($user->usertype === 'Head of Unit') {
-            $userUnitId = $user->responsible_unit_id ?? $user->unit_id;
-            $query->where(function ($q) use ($unitFilter, $user, $userUnitId) {
-                $unitName = $user->unit->name ?? '';
-                $unitCode = $user->unit->code ?? '';
-                $q->where($unitFilter)
-                  ->orWhereHas('assignments', function ($aq) use ($unitName, $unitCode, $userUnitId) {
-                      if ($userUnitId) {
-                          $aq->where('responsible_unit_id', $userUnitId);
-                      }
-                      $aq->orWhereHas('responsibleUnit', function ($ruq) use ($unitName, $unitCode) {
-                          if ($unitName) $ruq->orWhere('name', $unitName);
-                          if ($unitCode) $ruq->orWhere('code', $unitCode);
-                      });
-                  });
-            });
+            // $unitFilter already scopes to: direct responsible_unit_id match,
+            // assignment-level match, and legacy text-based match.
+            $query->where($unitFilter);
         }
 
         if ($request->filled('search')) {
@@ -171,7 +189,7 @@ class ComplianceController extends Controller
             });
         }
         if ($request->filled('status'))           $query->where('status', $request->input('status'));
-        if ($request->filled('body'))             $query->where('accrediting_body', $request->input('body'));
+        if ($request->filled('body'))             $query->where('accrediting_body', 'like', '%' . $request->input('body') . '%');
         if ($request->filled('category'))         $query->where('category', 'like', '%' . $request->input('category') . '%');
         if ($request->filled('area'))             $query->where('area', 'like', '%' . $request->input('area') . '%');
         if ($request->filled('priority'))         $query->where('priority', $request->input('priority'));
@@ -405,6 +423,16 @@ class ComplianceController extends Controller
         }
 
         if ($assignment) {
+            if (!$assignment->canUserSubmit(auth()->user())) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthorized: School departments may only submit evidence for their own department, school, or programs, and offices may only submit for their assigned units.',
+                    ], 403);
+                }
+                return redirect()->back()->with('error', 'Unauthorized: School departments may only submit evidence for their own department, school, or programs.');
+            }
+
             $assignment->update([
                 'pending_document_link' => $validated['pending_document_link'],
                 'action_plan'           => $validated['action_plan'],
@@ -903,21 +931,7 @@ class ComplianceController extends Controller
         if ($user->usertype === 'Dean' || $user->usertype === 'Principal') {
             $query->where($deanScope);
         } elseif ($user->usertype === 'Head of Unit') {
-            $userUnitId = $user->responsible_unit_id ?? $user->unit_id;
-            $query->where(function ($q) use ($unitFilter, $user, $userUnitId) {
-                $unitName = $user->unit->name ?? '';
-                $unitCode = $user->unit->code ?? '';
-                $q->where($unitFilter)
-                  ->orWhereHas('assignments', function ($aq) use ($unitName, $unitCode, $userUnitId) {
-                      if ($userUnitId) {
-                          $aq->where('responsible_unit_id', $userUnitId);
-                      }
-                      $aq->orWhereHas('responsibleUnit', function ($ruq) use ($unitName, $unitCode) {
-                          if ($unitName) $ruq->orWhere('name', $unitName);
-                          if ($unitCode) $ruq->orWhere('code', $unitCode);
-                      });
-                  });
-            });
+            $query->where($unitFilter);
         }
 
         if ($request->filled('ids')) {
@@ -945,7 +959,8 @@ class ComplianceController extends Controller
             $query->where('status', $request->input('status'));
         }
         if ($request->filled('body') || $request->filled('accrediting_body')) {
-            $query->where('accrediting_body', $request->input('body') ?: $request->input('accrediting_body'));
+            $bodyVal = $request->input('body') ?: $request->input('accrediting_body');
+            $query->where('accrediting_body', 'like', '%' . $bodyVal . '%');
         }
         if ($request->filled('category')) {
             $query->where('category', 'like', '%' . $request->input('category') . '%');
@@ -1166,165 +1181,349 @@ class ComplianceController extends Controller
             return response()->stream($callback, 200, $headers);
         }
 
-        // Default: Generate Rich, Beautifully Spaced & Colored Excel XLSX Spreadsheet
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Compliance Tracker');
+        // Default: Generate Rich Multi-Sheet Area-Tabbed Excel XLSX Spreadsheet
+        // -----------------------------------------------------------------------
+        // Groups sheets by Accrediting Body → Area.
+        // - Single body in results: clean tabs (AREA 1, AREA 2, … CONSOLIDATED)
+        // - Multiple bodies:        prefixed tabs (PAASCU-A1, PACUCOA-AI, … CONSOLIDATED)
+        // -----------------------------------------------------------------------
 
-        // Column widths definition (spacious and readable)
-        $columnWidths = [
-            'A' => 16, // Compliance ID
-            'B' => 36, // Task Title
-            'C' => 16, // Status
-            'D' => 24, // Workflow Stage
-            'E' => 18, // Approval State
-            'F' => 15, // Priority
-            'G' => 18, // Accrediting Body
-            'H' => 32, // School / College
-            'I' => 32, // Academic Program(s)
-            'J' => 22, // Area / Standard
-            'K' => 22, // Category
-            'L' => 32, // Unit or Department
-            'M' => 24, // Contact Person
-            'N' => 28, // Contact Email
-            'O' => 15, // Due Date
-            'P' => 15, // Visit Date
-            'Q' => 22, // Checklist Progress (%)
-            'R' => 24, // Completed Checklist Items
-            'S' => 20, // Total Checklist Items
-            'T' => 45, // Recommendation Checklist
-            'U' => 40, // Description
-            'V' => 40, // Action Plan
-            'W' => 38, // Document / Evidence Links
-            'X' => 32, // Rejection / Revision Reason
-            'Y' => 15, // Created Date
-            'Z' => 15, // Last Updated
+        // Detect active filters (for title note on sheet)
+        $activeFilters = array_filter([
+            'Search'    => $request->input('search'),
+            'Status'    => $request->input('status'),
+            'Body'      => $request->input('body') ?: $request->input('accrediting_body'),
+            'Category'  => $request->input('category'),
+            'Area'      => $request->input('area'),
+            'Priority'  => $request->input('priority'),
+            'Unit'      => $request->input('responsible_unit') ?: $request->input('unit'),
+            'School'    => $request->input('school'),
+        ]);
+        $hasFilter = !empty($activeFilters);
+
+        // -----------------------------------------------------------------------
+        // Build per-body → per-area groupings
+        // Each body can have its own area naming convention
+        // -----------------------------------------------------------------------
+
+        // Load AccreditingBody area definitions from DB (keyed by code)
+        $bodyAreaDefs = \App\Models\AccreditingBody::all()->keyBy('code');
+
+        // Generic short-label extractor for an area string
+        // Tries to pull the leading "Area N:" / "Criterion N:" / "Standard N:" / "Area N" part
+        $shortAreaLabel = function (string $area): string {
+            // Match patterns like "Area 1", "Area I", "Criterion 3", "Standard VII", "Principle 2"
+            if (preg_match('/^(Area|Criterion|Principle|Standard)\s+([\dIVXivx]+)/i', $area, $m)) {
+                $prefix = strtoupper(substr($m[1], 0, 1)); // A / C / P / S
+                return $prefix . $m[2];                    // e.g. A1, C3, P2, SII
+            }
+            // Fallback: first 6 chars uppercased
+            return strtoupper(substr(trim($area), 0, 6));
+        };
+
+        // Group data rows: [bodyCode][areaLabel] => [rows...]
+        $rowsByBodyArea = [];
+        $bodyOrder      = [];   // maintains insertion order per body
+
+        foreach ($dataRows as $dr) {
+            // A compliance record has exactly one accrediting body value
+            // (the field may contain a comma-separated list if multi-body records
+            //  are ever introduced — we handle that too)
+            $bodiesRaw = $dr['body'] !== 'N/A' ? $dr['body'] : '';
+            $bodies    = array_filter(array_map('trim', preg_split('/[,;\/]+/', $bodiesRaw)));
+            if (empty($bodies)) $bodies = ['General'];
+
+            $areaRaw = $dr['area'] !== 'N/A' ? trim($dr['area']) : 'Other';
+            // A record can also span multiple areas (comma-separated)
+            $areas = array_filter(array_map('trim', preg_split('/[,;]+/', $areaRaw)));
+            if (empty($areas)) $areas = ['Other'];
+
+            foreach ($bodies as $bodyCode) {
+                if (!isset($rowsByBodyArea[$bodyCode])) {
+                    $rowsByBodyArea[$bodyCode] = [];
+                    $bodyOrder[]               = $bodyCode;
+                }
+                foreach ($areas as $areaLabel) {
+                    $rowsByBodyArea[$bodyCode][$areaLabel][] = $dr;
+                }
+            }
+        }
+
+        // Deduplicate bodyOrder
+        $bodyOrder = array_unique($bodyOrder);
+        $multiBody = count($bodyOrder) > 1;
+
+        // -----------------------------------------------------------------------
+        // Build ordered sheet definitions: ['tabName' => ['body' => X, 'area' => Y, 'rows' => []]]
+        // -----------------------------------------------------------------------
+        $sheetDefs = [];
+
+        foreach ($bodyOrder as $bodyCode) {
+            $bodyDef = $bodyAreaDefs->get($bodyCode);
+
+            // Build area order for this body: DB-defined order first, then any extras
+            $canonicalAreas = $bodyDef ? ($bodyDef->areas ?? []) : [];
+            $presentAreas   = array_keys($rowsByBodyArea[$bodyCode]);
+
+            // Sort present areas by their canonical index (unknown areas go last)
+            usort($presentAreas, function ($a, $b) use ($canonicalAreas) {
+                $iA = array_search($a, $canonicalAreas);
+                $iB = array_search($b, $canonicalAreas);
+                $iA = ($iA === false) ? PHP_INT_MAX : $iA;
+                $iB = ($iB === false) ? PHP_INT_MAX : $iB;
+                return $iA <=> $iB;
+            });
+
+            foreach ($presentAreas as $areaLabel) {
+                // Build tab name
+                if ($multiBody) {
+                    $areaShort = $shortAreaLabel($areaLabel);
+                    // Max Excel sheet name = 31 chars; body code max ~8, separator 1, area short ~5 => safe
+                    $tabName = $bodyCode . '-' . $areaShort;
+                } else {
+                    // Single body: clean tabs — extract short label from area string
+                    $areaShort = $shortAreaLabel($areaLabel);
+                    // Build "AREA 1" style: replace leading letter+digit with "AREA N"
+                    if (preg_match('/^A(\d+)$/i', $areaShort, $m)) {
+                        $tabName = 'AREA ' . $m[1];
+                    } else {
+                        $tabName = $areaShort;
+                    }
+                }
+
+                // Ensure tab name uniqueness (Excel requires unique names)
+                $base = $tabName;
+                $suffix = 2;
+                while (isset($sheetDefs[$tabName])) {
+                    $tabName = $base . '_' . $suffix++;
+                }
+
+                $sheetDefs[$tabName] = [
+                    'body'  => $bodyCode,
+                    'area'  => $areaLabel,
+                    'rows'  => $rowsByBodyArea[$bodyCode][$areaLabel],
+                ];
+            }
+        }
+
+        // -----------------------------------------------------------------------
+        // Column definitions (shared across all sheets)
+        // -----------------------------------------------------------------------
+        $headersList = [
+            'Compliance ID',
+            'Task Title',
+            'Status',
+            'Workflow Stage',
+            'Approval State',
+            'Priority',
+            'Accrediting Body',
+            'School / College',
+            'Academic Program(s)',
+            'Area / Standard',
+            'Category',
+            'Unit or Department',
+            'Contact Person',
+            'Contact Email',
+            'Due Date',
+            'Visit Date',
+            'Checklist Progress (%)',
+            'Completed Checklist Items',
+            'Total Checklist Items',
+            'Recommendation Checklist',
+            'Description',
+            'Action Plan',
+            'Document / Evidence Links',
+            'Rejection / Revision Reason',
+            'Created Date',
+            'Last Updated',
         ];
 
-        foreach ($columnWidths as $col => $w) {
-            $sheet->getColumnDimension($col)->setWidth($w);
-        }
+        $columnWidths = [
+            'A' => 16, 'B' => 36, 'C' => 16, 'D' => 24, 'E' => 18, 'F' => 15,
+            'G' => 18, 'H' => 32, 'I' => 32, 'J' => 22, 'K' => 22, 'L' => 32,
+            'M' => 24, 'N' => 28, 'O' => 15, 'P' => 15, 'Q' => 22, 'R' => 24,
+            'S' => 20, 'T' => 45, 'U' => 40, 'V' => 40, 'W' => 38, 'X' => 32,
+            'Y' => 15, 'Z' => 15,
+        ];
 
-        // 1. Write Header Row
-        $sheet->fromArray($headersList, null, 'A1');
-        $sheet->getRowDimension(1)->setRowHeight(32);
+        // Helper to write one sheet of rows
+        $writeSheet = function (
+            \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $ws,
+            string $areaTitle,
+            array $sheetRows,
+            bool $isConsolidated = false
+        ) use ($headersList, $columnWidths, $activeFilters, $hasFilter) {
 
-        // Header Styling: HAU Maroon background, Bold White text, Centered
-        $sheet->getStyle('A1:Z1')->applyFromArray([
-            'font' => [
-                'bold'  => true,
-                'color' => ['rgb' => 'FFFFFF'],
-                'size'  => 11,
-                'name'  => 'Calibri',
-            ],
-            'fill' => [
-                'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '5C0000'], // HAU Maroon
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
-                'wrapText'   => true,
-            ],
-            'borders' => [
-                'bottom' => [
-                    'borderStyle' => Border::BORDER_MEDIUM,
-                    'color'       => ['rgb' => 'D4AF37'], // HAU Gold accent
-                ],
-            ],
-        ]);
+            // --- Banner ---
+            $ws->mergeCells('A1:Z1');
+            $bannerText = $isConsolidated
+                ? 'COMPLIANCE TRACKER — CONSOLIDATED' . ($hasFilter ? ' (FILTERED)' : ' (ALL RECORDS)')
+                : strtoupper($areaTitle);
+            $ws->setCellValue('A1', $bannerText);
+            $ws->getStyle('A1')->applyFromArray([
+                'font'      => ['bold' => true, 'size' => 12, 'color' => ['rgb' => 'FFFFFF'], 'name' => 'Calibri'],
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '5C0000']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            ]);
+            $ws->getRowDimension(1)->setRowHeight(28);
 
-        // 2. Write Data Rows
-        $currentRow = 2;
-        foreach ($dataRows as $row) {
-            $sheet->fromArray(array_values($row), null, "A{$currentRow}");
-            $sheet->getRowDimension($currentRow)->setRowHeight(-1); // Auto row height based on contents
+            // --- Filter note row (row 2) ---
+            $ws->mergeCells('A2:Z2');
+            if ($hasFilter) {
+                $filterParts = [];
+                foreach ($activeFilters as $label => $val) {
+                    $filterParts[] = "{$label}: \"{$val}\"";
+                }
+                $ws->setCellValue('A2', 'Active Filters: ' . implode('  |  ', $filterParts));
+                $ws->getStyle('A2')->applyFromArray([
+                    'font'      => ['italic' => true, 'size' => 9, 'color' => ['rgb' => '6B7280'], 'name' => 'Calibri'],
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFF8E7']],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
+                ]);
+                $ws->getRowDimension(2)->setRowHeight(16);
+            } else {
+                $ws->setCellValue('A2', config('institution.name', 'Holy Angel University') . ' — Quality Assurance Portal  |  Generated: ' . date('F d, Y h:i A'));
+                $ws->getStyle('A2')->applyFromArray([
+                    'font'      => ['italic' => true, 'size' => 9, 'color' => ['rgb' => '9CA3AF'], 'name' => 'Calibri'],
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F9FAFB']],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
+                ]);
+                $ws->getRowDimension(2)->setRowHeight(16);
+            }
 
-            // Zebra striping
-            $isEven = ($currentRow % 2 === 0);
-            $bgHex = $isEven ? 'F8FAFC' : 'FFFFFF';
+            // --- Column widths ---
+            foreach ($columnWidths as $col => $w) {
+                $ws->getColumnDimension($col)->setWidth($w);
+            }
 
-            // General row style (light borders, clean font)
-            $sheet->getStyle("A{$currentRow}:Z{$currentRow}")->applyFromArray([
-                'font' => [
-                    'size' => 10.5,
-                    'name' => 'Calibri',
-                ],
-                'fill' => [
-                    'fillType'   => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => $bgHex],
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color'       => ['rgb' => 'E2E8F0'],
-                    ],
-                ],
+            // --- Header Row (row 3) ---
+            $ws->fromArray($headersList, null, 'A3');
+            $ws->getRowDimension(3)->setRowHeight(32);
+            $ws->getStyle('A3:Z3')->applyFromArray([
+                'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11, 'name' => 'Calibri'],
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '5C0000']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                'borders'   => ['bottom' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => 'D4AF37']]],
             ]);
 
-            // Alignment: Center aligned columns (ID, Status, Stages, Priority, Dates, Counts, Rates)
-            $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-            $sheet->getStyle("C{$currentRow}:G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-            $sheet->getStyle("O{$currentRow}:S{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-            $sheet->getStyle("Y{$currentRow}:Z{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $ws->freezePane('A4');
 
-            // Left & Top alignment for text fields with wrapping enabled
-            $sheet->getStyle("B{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
-            $sheet->getStyle("H{$currentRow}:N{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
-            $sheet->getStyle("T{$currentRow}:X{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+            // --- Data Rows (start at row 4) ---
+            $currentRow = 4;
+            foreach ($sheetRows as $row) {
+                $ws->fromArray(array_values($row), null, "A{$currentRow}");
+                $ws->getRowDimension($currentRow)->setRowHeight(-1);
 
-            // Task ID Bold
-            $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true)->getColor()->setRGB('1E293B');
+                $isEven = ($currentRow % 2 === 0);
+                $bgHex = $isEven ? 'F8FAFC' : 'FFFFFF';
 
-            // Status Column Badge Colors
-            $statusVal = $row['status'];
-            if ($statusVal === 'Compliant') {
-                $sheet->getStyle("C{$currentRow}")->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1E7DD']],
-                    'font' => ['bold' => true, 'color' => ['rgb' => '0F5132']],
+                $ws->getStyle("A{$currentRow}:Z{$currentRow}")->applyFromArray([
+                    'font'    => ['size' => 10.5, 'name' => 'Calibri'],
+                    'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bgHex]],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]],
                 ]);
-            } elseif ($statusVal === 'Non-Compliant') {
-                $sheet->getStyle("C{$currentRow}")->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8D7DA']],
-                    'font' => ['bold' => true, 'color' => ['rgb' => '842029']],
-                ]);
-            } else {
-                $sheet->getStyle("C{$currentRow}")->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFF3CD']],
-                    'font' => ['bold' => true, 'color' => ['rgb' => '664D03']],
-                ]);
+
+                // Alignment
+                $ws->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $ws->getStyle("C{$currentRow}:G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $ws->getStyle("O{$currentRow}:S{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $ws->getStyle("Y{$currentRow}:Z{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $ws->getStyle("B{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+                $ws->getStyle("H{$currentRow}:N{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+                $ws->getStyle("T{$currentRow}:X{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+
+                // Task ID bold
+                $ws->getStyle("A{$currentRow}")->getFont()->setBold(true)->getColor()->setRGB('1E293B');
+
+                // Status badge
+                $statusVal = $row['status'];
+                if ($statusVal === 'Compliant') {
+                    $ws->getStyle("C{$currentRow}")->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1E7DD']], 'font' => ['bold' => true, 'color' => ['rgb' => '0F5132']]]);
+                } elseif ($statusVal === 'Non-Compliant') {
+                    $ws->getStyle("C{$currentRow}")->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8D7DA']], 'font' => ['bold' => true, 'color' => ['rgb' => '842029']]]);
+                } else {
+                    $ws->getStyle("C{$currentRow}")->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFF3CD']], 'font' => ['bold' => true, 'color' => ['rgb' => '664D03']]]);
+                }
+
+                // Priority color
+                $pVal = $row['priority'];
+                if ($pVal === 'Critical')     $ws->getStyle("F{$currentRow}")->getFont()->setBold(true)->getColor()->setRGB('991B1B');
+                elseif ($pVal === 'High')     $ws->getStyle("F{$currentRow}")->getFont()->setBold(true)->getColor()->setRGB('C2410C');
+                elseif ($pVal === 'Medium')   $ws->getStyle("F{$currentRow}")->getFont()->getColor()->setRGB('1E40AF');
+
+                // 100% checklist highlight
+                if ($row['rate'] === '100%') {
+                    $ws->getStyle("Q{$currentRow}")->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8F5E9']], 'font' => ['bold' => true, 'color' => ['rgb' => '1B5E20']]]);
+                }
+
+                $currentRow++;
             }
 
-            // Priority Column Color
-            $pVal = $row['priority'];
-            if ($pVal === 'Critical') {
-                $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true)->getColor()->setRGB('991B1B');
-            } elseif ($pVal === 'High') {
-                $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true)->getColor()->setRGB('C2410C');
-            } elseif ($pVal === 'Medium') {
-                $sheet->getStyle("F{$currentRow}")->getFont()->getColor()->setRGB('1E40AF');
-            }
+            $lastRow = max(3, $currentRow - 1);
 
-            // Checklist rate 100% highlight
-            if ($row['rate'] === '100%') {
-                $sheet->getStyle("Q{$currentRow}")->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8F5E9']],
-                    'font' => ['bold' => true, 'color' => ['rgb' => '1B5E20']],
+            // Empty state note
+            if (empty($sheetRows)) {
+                $ws->mergeCells('A4:Z4');
+                $ws->setCellValue('A4', 'No compliance records found for this area' . ($hasFilter ? ' with the active filters.' : '.'));
+                $ws->getStyle('A4')->applyFromArray([
+                    'font'      => ['italic' => true, 'color' => ['rgb' => '9CA3AF'], 'size' => 10],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F9FAFB']],
                 ]);
+                $lastRow = 4;
             }
 
-            $currentRow++;
+            // Auto-filter & freeze
+            $ws->setAutoFilter("A3:Z{$lastRow}");
+
+            // Summary footer
+            $footerRow = $lastRow + 2;
+            $ws->mergeCells("A{$footerRow}:D{$footerRow}");
+            $totalRows  = count($sheetRows);
+            $compliant  = count(array_filter($sheetRows, fn($r) => $r['status'] === 'Compliant'));
+            $pending    = count(array_filter($sheetRows, fn($r) => $r['status'] === 'Pending'));
+            $nonComp    = count(array_filter($sheetRows, fn($r) => $r['status'] === 'Non-Compliant'));
+            $ws->setCellValue("A{$footerRow}", "Total: {$totalRows} | Compliant: {$compliant} | Pending: {$pending} | Non-Compliant: {$nonComp}");
+            $ws->getStyle("A{$footerRow}")->applyFromArray([
+                'font'      => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
+            ]);
+            $ws->getRowDimension($footerRow)->setRowHeight(20);
+        };
+
+        // -----------------------------------------------------------------------
+        // Build the Spreadsheet
+        // -----------------------------------------------------------------------
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->removeSheetByIndex(0);
+
+        // Create one sheet per body+area combination
+        foreach ($sheetDefs as $sheetTabName => $def) {
+            $ws = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, $sheetTabName);
+            $spreadsheet->addSheet($ws);
+            // Banner title: for multi-body include body code, for single-body just the area name
+            $bannerTitle = $multiBody
+                ? $def['body'] . ' — ' . $def['area']
+                : $def['area'];
+            $writeSheet($ws, $bannerTitle, $def['rows'], false);
         }
 
-        $lastRow = max(2, $currentRow - 1);
+        // Create CONSOLIDATED sheet (last tab)
+        $consolidatedLabel = 'CONSOLIDATED (' . count($dataRows) . ')';
+        $wsConsolidated = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, $consolidatedLabel);
+        $spreadsheet->addSheet($wsConsolidated);
+        $writeSheet($wsConsolidated, 'Consolidated', $dataRows, true);
 
-        // Freeze top header row
-        $sheet->freezePane('A2');
-
-        // Enable Excel Auto-Filter dropdowns on header row
-        $sheet->setAutoFilter("A1:Z{$lastRow}");
+        // Set first sheet as active
+        $spreadsheet->setActiveSheetIndex(0);
 
         $filename = 'compliance_report_' . date('Y-m-d_His') . '.xlsx';
+
+
+
+
+
 
         $headers = [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

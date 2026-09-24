@@ -27,9 +27,12 @@ Homestead.yaml
 Thumbs.db
 /scratch/
 *.sql
+*.sqlite*
 *.zip
+database_fresh_dump.sql
 programs_export.json
 local_dump_check.php
 app/Http/Controllers/ComplianceControllerTemp.php
-database/seeders/HauRealDataSeeder.php
-database/seeders/HauMockDataSeeder.php
+database/seeders/*
+!database/seeders/DatabaseSeeder.php
+

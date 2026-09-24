@@ -38,8 +38,12 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 2. Call mock database seeder
-        $this->call(MockDataSeeder::class);
-        $this->call(ResponsibleUnitSeeder::class);
+        // 2. Call optional seeders if present locally
+        if (class_exists(MockDataSeeder::class)) {
+            $this->call(MockDataSeeder::class);
+        }
+        if (class_exists(ResponsibleUnitSeeder::class)) {
+            $this->call(ResponsibleUnitSeeder::class);
+        }
     }
 }

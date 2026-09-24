@@ -50,13 +50,16 @@ class FullReportExportService
         @set_time_limit(300);
         @ini_set('memory_limit', '512M');
 
+        $institutionName      = config('institution.name',       'Holy Angel University');
+        $institutionShortName = config('institution.short_name',  'HAU');
+
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getProperties()
-            ->setCreator('Holy Angel University QA Portal')
+            ->setCreator($institutionName . ' QA Portal')
             ->setLastModifiedBy($user->name ?? 'QA System')
-            ->setTitle('HAU QA Portal Comprehensive Accreditation & Compliance Report')
+            ->setTitle($institutionShortName . ' QA Portal Comprehensive Accreditation & Compliance Report')
             ->setSubject('Accreditation, Compliance, Risk, and Academic Matrix')
-            ->setDescription('Full system report generated from the HAU QA Portal.');
+            ->setDescription('Full system report generated from the ' . $institutionShortName . ' QA Portal.');
 
         // Sheet 1: Summary
         $sheet1 = $spreadsheet->getActiveSheet();
@@ -106,7 +109,7 @@ class FullReportExportService
         // Set active sheet back to Summary
         $spreadsheet->setActiveSheetIndex(0);
 
-        $filename = 'HAU_QA_Full_System_Report_' . date('Y-m-d_His') . '.xlsx';
+        $filename = $institutionShortName . '_QA_Full_System_Report_' . date('Y-m-d_His') . '.xlsx';
 
         return response()->streamDownload(function () use ($spreadsheet) {
             $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
@@ -127,7 +130,8 @@ class FullReportExportService
 
         // 1. University Banner Header
         $sheet->mergeCells('A1:G1');
-        $sheet->setCellValue('A1', 'HOLY ANGEL UNIVERSITY — QUALITY ASSURANCE PORTAL');
+        $institutionName = config('institution.name', 'Holy Angel University');
+        $sheet->setCellValue('A1', strtoupper($institutionName) . ' — QUALITY ASSURANCE PORTAL');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE));
         $sheet->getStyle('A1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB(self::COLOR_MAROON);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
@@ -148,7 +152,8 @@ class FullReportExportService
         $sheet->setCellValue('A6', 'Institutional Scope:');
         $sheet->setCellValue('B6', 'University-Wide (All Schools, Colleges, and Support Units)');
         $sheet->setCellValue('A7', 'Accrediting Bodies:');
-        $sheet->setCellValue('B7', 'PAASCU, PACUCOA, AUN-QA, CHED, PTC, PICAB');
+        $accreditingBodiesList = \App\Models\Accreditation::distinct()->whereNotNull('accrediting_body')->pluck('accrediting_body')->sort()->implode(', ');
+        $sheet->setCellValue('B7', $accreditingBodiesList ?: 'N/A');
 
         $sheet->getStyle('A4:A7')->getFont()->setBold(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('4B5563'));
         $sheet->getStyle('B4:B7')->getFont()->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('111827'));
@@ -158,24 +163,55 @@ class FullReportExportService
         $accreditablePrograms = Program::where('is_accreditable', true)->count();
         $nonAccreditablePrograms = Program::where('is_accreditable', false)->count();
 
-        // Accredited programs (Matches Dashboard live calculations)
+        // ── Dynamic candidate/associate tier detection from DB ──────────────────
+        // "Candidate" tiers: any level_or_tier that contains 'Candidate' or 'Associate'
+        $candidateTiers    = Accreditation::distinct()->whereNotNull('level_or_tier')
+            ->where(fn($q) => $q->where('level_or_tier', 'like', '%Candidate%')
+                                ->orWhere('level_or_tier', 'like', '%Associate%'))
+            ->pluck('level_or_tier')->toArray();
+
         $accreditedProgramsCount = Program::whereHas('accreditations', fn($q) => $q->where('status', 'Active')
-            ->whereNotIn('level_or_tier', ['Candidate', 'Associate']))
+            ->whereNotIn('level_or_tier', $candidateTiers))
             ->count();
 
         $candidateProgramsCount = Program::whereHas('accreditations', fn($q) => $q->where('status', 'Active')
-            ->whereIn('level_or_tier', ['Candidate', 'Associate']))
+            ->whereIn('level_or_tier', $candidateTiers))
             ->whereDoesntHave('accreditations', fn($q) => $q->where('status', 'Active')
-                ->whereNotIn('level_or_tier', ['Candidate', 'Associate']))
+                ->whereNotIn('level_or_tier', $candidateTiers))
             ->count();
 
         $unaccreditedProgramsCount = max(0, $accreditablePrograms - $accreditedProgramsCount - $candidateProgramsCount);
         $accreditationRate = $accreditablePrograms > 0 ? round(($accreditedProgramsCount / $accreditablePrograms) * 100) : 0;
 
         $localAccreditedCount = Program::whereHas('accreditations', fn($q) => $q->where('type', 'Local')->where('status', 'Active'))->count();
-        $intlAccreditedCount = Program::whereHas('accreditations', fn($q) => $q->where('type', 'International')->where('status', 'Active'))->count();
+        $intlAccreditedCount  = Program::whereHas('accreditations', fn($q) => $q->where('type', 'International')->where('status', 'Active'))->count();
 
-        // Level breakdown counts
+        // ── Dynamic level-tier detection ─────────────────────────────────────────
+        // Detect the distinct active level names from Accreditation table
+        // and bucket them into Level IV, III, II, I automatically.
+        $activeTiersByLevel = [];
+        foreach (['IV', 'III', 'II', 'I'] as $roman) {
+            // Build a query that matches exactly the roman numeral as a word boundary
+            // e.g. Level IV but not Level VIII when looking for III
+            $activeTiersByLevel[$roman] = Accreditation::where('status', 'Active')
+                ->where('level_or_tier', 'like', '%' . $roman . '%')
+                ->when($roman !== 'IV', function ($q) use ($roman) {
+                    // Exclude higher-level tiers that contain the substring
+                    if ($roman === 'I') {
+                        $q->where('level_or_tier', 'not like', '%II%')
+                          ->where('level_or_tier', 'not like', '%III%')
+                          ->where('level_or_tier', 'not like', '%IV%');
+                    } elseif ($roman === 'II') {
+                        $q->where('level_or_tier', 'not like', '%III%')
+                          ->where('level_or_tier', 'not like', '%IV%');
+                    } elseif ($roman === 'III') {
+                        $q->where('level_or_tier', 'not like', '%IV%');
+                    }
+                })
+                ->distinct()->pluck('accrediting_body')
+                ->filter()->sort()->values()->toArray();
+        }
+
         $level4Count = Program::whereHas('accreditations', fn($q) => $q->where('status', 'Active')->where('level_or_tier', 'like', '%IV%'))->count();
         $level3Count = Program::whereHas('accreditations', fn($q) => $q->where('status', 'Active')->where('level_or_tier', 'like', '%III%'))->count();
         $level2Count = Program::whereHas('accreditations', fn($q) => $q->where('status', 'Active')->where('level_or_tier', 'like', '%II%')->where('level_or_tier', 'not like', '%III%'))->count();
@@ -224,12 +260,17 @@ class FullReportExportService
             ['Academic Offerings', 'Total Academic Degree Programs', $totalPrograms, 'Programs', 'Active Catalog', 'Undergraduate, Graduate & Basic Education Units', 'Academic Programs'],
             ['Accreditation Scope', 'Accreditable Programs Base', $accreditablePrograms, 'Programs', 'Accreditable', 'Degree programs eligible for accreditation review', 'Academic Programs'],
             ['Accreditation Scope', 'Non-Accreditable Programs', $nonAccreditablePrograms, 'Programs', 'Exempt Units', 'Basic Ed, pilot programs, or newly approved curriculum', 'Academic Programs'],
-            ['Accredited Programs', 'Accredited Programs (Level I-IV)', $accreditedProgramsCount, 'Programs', 'Active Certifications', "{$accreditedProgramsCount} of {$accreditablePrograms} eligible programs accredited", 'Academic Programs'],
+            ['Accredited Programs', 'Accredited Programs (All Levels)',  $accreditedProgramsCount, 'Programs', 'Active Certifications', "{$accreditedProgramsCount} of {$accreditablePrograms} eligible programs accredited", 'Academic Programs'],
             ['Accredited Programs', 'Candidate / Associate Status', $candidateProgramsCount, 'Programs', 'In Progress', 'Programs preparing for preliminary or formal survey visit', 'Academic Programs'],
             ['Accredited Programs', 'Unaccredited Programs', $unaccreditedProgramsCount, 'Programs', $unaccreditedProgramsCount > 0 ? 'Pending Assessment' : 'Full Coverage', 'Eligible programs preparing for accreditation survey', 'Academic Programs'],
             ['Accreditation Rate', 'Overall Accreditation Rate', "{$accreditationRate}%", 'Percentage', $accreditationRate >= 80 ? 'High Rate (>=80%)' : 'In Progress', 'Percentage of eligible degree programs holding active accreditation', 'Summary'],
-            ['Accreditation Scope', 'Local Accreditations', $localAccreditedCount, 'Programs', 'PAASCU / PACUCOA / PTC', 'Philippine national accreditation bodies', 'Accreditations'],
-            ['Accreditation Scope', 'International Recognitions', $intlAccreditedCount, 'Programs', 'AUN-QA / IACBE', 'International and regional quality certifications', 'Accreditations'],
+            // Dynamic: pull actual local and international body codes from AccreditingBody model
+            ['Accreditation Scope', 'Local Accreditations', $localAccreditedCount, 'Programs',
+                \App\Models\AccreditingBody::where('type', 'Local')->orderBy('code')->pluck('code')->implode(' / ') ?: 'Local Bodies',
+                'National accreditation bodies recognized for local programs', 'Accreditations'],
+            ['Accreditation Scope', 'International Recognitions', $intlAccreditedCount, 'Programs',
+                \App\Models\AccreditingBody::where('type', 'International')->orderBy('code')->pluck('code')->implode(' / ') ?: 'International Bodies',
+                'International and regional quality certifications', 'Accreditations'],
             ['Accreditations', 'Active Certifications', $activeAccreditations, 'Certificates', "{$activeAccreditations} Active", 'Currently valid certifications across all colleges', 'Accreditations'],
             ['QA Attention Center', 'Expiring / Lapsed Soon (< 6 Mos)', $expiringAccreditations, 'Certificates', $expiringAccreditations > 0 ? 'Expiring/Lapsed' : 'Optimal', 'Accreditations approaching expiry date', 'Accreditations'],
             ['QA Attention Center', 'Expired Accreditations', $expiredAccreditations, 'Certificates', $expiredAccreditations > 0 ? 'Expired' : 'Optimal', 'Requires formal revisit application from accreditor', 'Accreditations'],
@@ -263,12 +304,34 @@ class FullReportExportService
         $levelHeaders = ['Accreditation Level', 'Active Programs', '% Share of Accreditable', 'Accrediting Bodies', 'Level Description', 'Status', 'Validity Period'];
         $levelRows = [
             $levelHeaders,
-            ['Level IV', $level4Count, $accreditablePrograms > 0 ? round(($level4Count / $accreditablePrograms) * 100, 1) . '%' : '0%', 'PAASCU, PACUCOA', 'Highest distinction with institutional autonomy', 'Level IV Accredited', '5 Years'],
-            ['Level III', $level3Count, $accreditablePrograms > 0 ? round(($level3Count / $accreditablePrograms) * 100, 1) . '%' : '0%', 'PAASCU, PACUCOA', 'Re-accredited status with high quality standards', 'Level III Accredited', '5 Years'],
-            ['Level II', $level2Count, $accreditablePrograms > 0 ? round(($level2Count / $accreditablePrograms) * 100, 1) . '%' : '0%', 'PAASCU, PACUCOA, PTC', 'Formal re-accreditation status', 'Level II Accredited', '3 to 5 Years'],
-            ['Level I', $level1Count, $accreditablePrograms > 0 ? round(($level1Count / $accreditablePrograms) * 100, 1) . '%' : '0%', 'PAASCU, PACUCOA, PICAB', 'Initial formal accreditation status', 'Level I Accredited', '3 Years'],
-            ['Candidate Status', $candidateProgramsCount, $accreditablePrograms > 0 ? round(($candidateProgramsCount / $accreditablePrograms) * 100, 1) . '%' : '0%', 'PAASCU, PACUCOA', 'Preliminary survey completed', 'Candidate Status', '2 Years'],
-            ['Unaccredited Programs', $unaccreditedProgramsCount, $accreditablePrograms > 0 ? round(($unaccreditedProgramsCount / $accreditablePrograms) * 100, 1) . '%' : '0%', '—', 'Eligible programs scheduled for assessment', 'Unaccredited', 'Action Plan'],
+            ['Level IV', $level4Count,
+                $accreditablePrograms > 0 ? round(($level4Count / $accreditablePrograms) * 100, 1) . '%' : '0%',
+                implode(', ', $activeTiersByLevel['IV']) ?: '—',
+                'Highest distinction with institutional autonomy', 'Level IV Accredited',
+                Accreditation::where('status','Active')->where('level_or_tier','like','%IV%')->value('validity_period') ?? '5 Years'],
+            ['Level III', $level3Count,
+                $accreditablePrograms > 0 ? round(($level3Count / $accreditablePrograms) * 100, 1) . '%' : '0%',
+                implode(', ', $activeTiersByLevel['III']) ?: '—',
+                'Re-accredited status with high quality standards', 'Level III Accredited',
+                Accreditation::where('status','Active')->where('level_or_tier','like','%III%')->value('validity_period') ?? '5 Years'],
+            ['Level II', $level2Count,
+                $accreditablePrograms > 0 ? round(($level2Count / $accreditablePrograms) * 100, 1) . '%' : '0%',
+                implode(', ', $activeTiersByLevel['II']) ?: '—',
+                'Formal re-accreditation status', 'Level II Accredited',
+                Accreditation::where('status','Active')->where('level_or_tier','like','%II%')->value('validity_period') ?? '3 to 5 Years'],
+            ['Level I', $level1Count,
+                $accreditablePrograms > 0 ? round(($level1Count / $accreditablePrograms) * 100, 1) . '%' : '0%',
+                implode(', ', $activeTiersByLevel['I']) ?: '—',
+                'Initial formal accreditation status', 'Level I Accredited',
+                Accreditation::where('status','Active')->where('level_or_tier','like','%I%')->value('validity_period') ?? '3 Years'],
+            // Candidate row: dynamic body list from DB
+            ['Candidate Status', $candidateProgramsCount,
+                $accreditablePrograms > 0 ? round(($candidateProgramsCount / $accreditablePrograms) * 100, 1) . '%' : '0%',
+                Accreditation::where('status','Active')->whereIn('level_or_tier', $candidateTiers)->distinct()->pluck('accrediting_body')->filter()->sort()->implode(', ') ?: '—',
+                'Preliminary survey completed', 'Candidate Status', '2 Years'],
+            ['Unaccredited Programs', $unaccreditedProgramsCount,
+                $accreditablePrograms > 0 ? round(($unaccreditedProgramsCount / $accreditablePrograms) * 100, 1) . '%' : '0%',
+                '—', 'Eligible programs scheduled for assessment', 'Unaccredited', 'Action Plan'],
             ['Non-Accreditable / Basic Ed', $nonAccreditablePrograms, '—', '—', 'Basic Ed or non-degree academic units', 'Exempt Units', 'N/A'],
         ];
 
@@ -864,7 +927,7 @@ class FullReportExportService
     private function createSheetTitleBanner(Worksheet $sheet, string $title, string $subtitle, string $mergeRange): void
     {
         $sheet->mergeCells($mergeRange);
-        $sheet->setCellValue('A1', "HOLY ANGEL UNIVERSITY — {$title}");
+        $sheet->setCellValue('A1', strtoupper(config('institution.name', 'Holy Angel University')) . " — {$title}");
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(11)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE));
         $sheet->getStyle('A1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB(self::COLOR_MAROON);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER)->setIndent(1);

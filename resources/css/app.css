@@ -1,8 +1,16 @@
 @import 'tailwindcss';
 
 html {
-    font-size: 18px;
+    font-size: 15px;
+    -webkit-text-size-adjust: 100%;
 }
+
+@media (min-width: 640px) {
+    html {
+        font-size: 16px;
+    }
+}
+
 
 @source '../views/**/*.blade.php';
 @source '../../app/**/*.php';
@@ -128,4 +136,76 @@ html {
 
 .reco-row-animate {
     animation: fadeIn 0.2s ease-out;
+}
+
+/* Desktop Sidebar Collapsed Rail Styles */
+#desktop-sidebar.is-collapsed {
+    width: 5.25rem !important; /* 84px */
+}
+
+#desktop-sidebar.is-collapsed .sidebar-label {
+    display: none !important;
+}
+
+#desktop-sidebar.is-collapsed .sidebar-header-banner {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+    gap: 0 !important;
+}
+
+#desktop-sidebar.is-collapsed .sidebar-inner-content {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+}
+
+#desktop-sidebar.is-collapsed .sidebar-nav-link {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+#desktop-sidebar.is-collapsed .sidebar-nav-link svg {
+    margin-right: 0 !important;
+}
+
+#desktop-sidebar.is-collapsed #sidebar-toggle-btn {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+#desktop-sidebar.is-collapsed #sidebar-toggle-icon {
+    transform: rotate(180deg);
+}
+
+#desktop-sidebar.is-collapsed .sidebar-user-card {
+    padding: 0.35rem 0.25rem !important;
+    gap: 0 !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    border-radius: 0.875rem !important;
+    box-sizing: border-box !important;
+}
+
+#desktop-sidebar.is-collapsed .sidebar-avatar-wrapper {
+    margin: 0 auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+#desktop-sidebar.is-collapsed .sidebar-avatar-wrapper > div {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    font-size: 0.875rem !important;
+}
+
+/* Touch friendly momentum scrolling for mobile viewports */
+.overflow-x-auto,
+.overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
 }

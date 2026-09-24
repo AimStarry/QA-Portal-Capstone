@@ -6,6 +6,7 @@ use App\Models\ComplianceRecord;
 use App\Models\ComplianceAssignment;
 use App\Models\RecommendationItem;
 use App\Models\ResponsibleUnit;
+use App\Models\College;
 use App\Models\Program;
 use App\Models\User;
 use Illuminate\Validation\Rule;
@@ -138,12 +139,57 @@ class ComplianceService
         $targetPairs = [];
 
         if (!empty($schoolsList) && !empty($unitIds)) {
-            // Case 1: N Schools x M Units (Cartesian Matrix)
+            $unitsData = ResponsibleUnit::with('college')->whereIn('responsible_unit_id', $unitIds)->get()->keyBy('responsible_unit_id');
+            $officeUnits = [];
+            $deptUnits   = [];
+
+            foreach ($unitIds as $uId) {
+                $ru = $unitsData[$uId] ?? null;
+                if ($ru && $ru->college_id !== null && $ru->unit_id === null) {
+                    $deptUnits[$uId] = $ru;
+                } else {
+                    $officeUnits[$uId] = $ru;
+                }
+            }
+
+            // 1. Support Units / Offices: paired across ALL assigned schools
             foreach ($schoolsList as $sName) {
-                foreach ($unitIds as $uId) {
+                foreach (array_keys($officeUnits) as $uId) {
                     $targetPairs[] = [
                         'school_name'         => $sName,
                         'responsible_unit_id' => $uId,
+                        'program_id'          => null,
+                    ];
+                }
+            }
+
+            // 2. Academic Departments: ONLY paired with their OWN school
+            foreach ($schoolsList as $sName) {
+                $matchedDept = false;
+                foreach ($deptUnits as $uId => $ru) {
+                    $collegeName = $ru->college?->name;
+                    $collegeCode = $ru->college?->code;
+                    $unitName    = $ru->name;
+                    $unitCode    = $ru->code;
+
+                    if (strcasecmp(trim($sName), trim($unitName)) === 0 ||
+                        ($unitCode && strcasecmp(trim($sName), trim($unitCode)) === 0) ||
+                        ($collegeName && strcasecmp(trim($sName), trim($collegeName)) === 0) ||
+                        ($collegeCode && strcasecmp(trim($sName), trim($collegeCode)) === 0)) {
+                        $targetPairs[] = [
+                            'school_name'         => $sName,
+                            'responsible_unit_id' => $uId,
+                            'program_id'          => null,
+                        ];
+                        $matchedDept = true;
+                    }
+                }
+
+                // If no office was assigned and no dept specifically matched, self-assign school
+                if (!$matchedDept && empty($officeUnits)) {
+                    $targetPairs[] = [
+                        'school_name'         => $sName,
+                        'responsible_unit_id' => $validated['responsible_unit_id'] ?? null,
                         'program_id'          => null,
                     ];
                 }
@@ -172,8 +218,17 @@ class ComplianceService
         // Also incorporate specific program targets if provided
         if (!empty($programIds)) {
             if (!empty($unitIds)) {
+                $unitsData = ResponsibleUnit::whereIn('responsible_unit_id', $unitIds)->get()->keyBy('responsible_unit_id');
                 foreach ($programIds as $pId) {
+                    $prog = Program::find($pId);
                     foreach ($unitIds as $uId) {
+                        $ru = $unitsData[$uId] ?? null;
+                        // If ru is an academic department, only pair if it belongs to this program's college
+                        if ($ru && $ru->college_id !== null && $ru->unit_id === null) {
+                            if ($prog && (int)$prog->college_id !== (int)$ru->college_id) {
+                                continue;
+                            }
+                        }
                         $targetPairs[] = [
                             'school_name'         => null,
                             'responsible_unit_id' => $uId,
@@ -290,21 +345,48 @@ class ComplianceService
             $ru = ResponsibleUnit::with(['users', 'parent.users'])->find($validated['responsible_unit_id']);
             if ($ru) {
                 $assignedUser = $ru->users->first()
-                    ?? User::where('responsible_unit_id', $ru->responsible_unit_id)->first()
                     ?? ($ru->unit_id ? User::where('unit_id', $ru->unit_id)->first() : null)
+                    ?? ($ru->college_id ? User::where('college_id', $ru->college_id)->first() : null)
+                    ?? User::where('responsible_unit_id', $ru->responsible_unit_id)->first()
                     ?? ($ru->parent ? $ru->parent->users->first() : null);
             }
         }
 
+        if (!$assignedUser && !empty($validated['program_id'])) {
+            $prog = Program::find($validated['program_id']);
+            if ($prog && $prog->college_id) {
+                $assignedUser = User::where('college_id', $prog->college_id)->first();
+            }
+        }
+
+        if (!$assignedUser && !empty($validated['school']) && $validated['school'] !== 'General') {
+            $schools = array_filter(array_map('trim', explode(';', $validated['school'])));
+            foreach ($schools as $sName) {
+                $col = College::where('name', $sName)->orWhere('code', $sName)->first();
+                if ($col) {
+                    $assignedUser = User::where('college_id', $col->college_id)->first();
+                    if (!$assignedUser && $col->code === 'SED') {
+                        $assignedUser = User::where('email', 'anatividad@hau.edu.ph')->first();
+                    }
+                    if ($assignedUser) break;
+                }
+            }
+        }
+
         if (!$assignedUser && !empty($validated['responsible_unit'])) {
-            $ru = ResponsibleUnit::where('name', $validated['responsible_unit'])
-                ->orWhere('code', $validated['responsible_unit'])
-                ->first();
-            if ($ru) {
-                $assignedUser = $ru->users->first()
-                    ?? User::where('responsible_unit_id', $ru->responsible_unit_id)->first()
-                    ?? ($ru->unit_id ? User::where('unit_id', $ru->unit_id)->first() : null)
-                    ?? ($ru->parent ? $ru->parent->users->first() : null);
+            $ruNames = array_filter(array_map('trim', explode(';', $validated['responsible_unit'])));
+            foreach ($ruNames as $ruName) {
+                $ru = ResponsibleUnit::where('name', $ruName)
+                    ->orWhere('code', $ruName)
+                    ->first();
+                if ($ru) {
+                    $assignedUser = $ru->users->first()
+                        ?? ($ru->unit_id ? User::where('unit_id', $ru->unit_id)->first() : null)
+                        ?? ($ru->college_id ? User::where('college_id', $ru->college_id)->first() : null)
+                        ?? User::where('responsible_unit_id', $ru->responsible_unit_id)->first()
+                        ?? ($ru->parent ? $ru->parent->users->first() : null);
+                    if ($assignedUser) break;
+                }
             }
         }
 
