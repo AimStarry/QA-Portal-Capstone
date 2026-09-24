@@ -3620,8 +3620,10 @@
         const category = card.getAttribute('data-category') || '';
         const area = card.getAttribute('data-area') || '';
         const actionPlan = card.getAttribute('data-action-plan') || 'No action plan formulated yet.';
-        const visitDate = card.getAttribute('data-visit-date') || '';
-        const workflowStage = card.getAttribute('data-workflow-stage') || 'recommendation_created';
+        let workflowStage = card.getAttribute('data-workflow-stage') || 'recommendation_created';
+        if (status === 'Pending' && workflowStage === 'compliant') {
+            workflowStage = (actionPlan && actionPlan !== 'No action plan formulated yet.') ? 'action_plan_submitted' : 'recommendation_created';
+        }
 
         // Parse recommendation items
         let recommendations = [];
@@ -3927,7 +3929,7 @@
 
                         cellsHtml += '<td class="px-3 py-2.5 text-center border-r border-gray-150 align-middle">';
                         if (match) {
-                            const isApproved = (match.status === 'Compliant' && match.approval_state !== 'Pending Approval');
+                            const isApproved = (match.status === 'Compliant' && match.approval_state !== 'Pending Approval' && Boolean(match.document_link || match.action_plan || status === 'Compliant'));
                             const isReview = (match.approval_state === 'Pending Approval');
                             const isRej = (match.approval_state === 'Rejected');
 
