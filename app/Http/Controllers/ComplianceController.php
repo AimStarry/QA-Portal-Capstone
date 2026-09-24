@@ -702,6 +702,7 @@ class ComplianceController extends Controller
 
         $validated = $request->validate([
             'evidence_link' => 'required|url|max:2048',
+            'action_plan'   => 'nullable|string',
         ]);
 
         $item->update([
@@ -709,6 +710,18 @@ class ComplianceController extends Controller
             'status'        => ($item->status === 'approved' && $user->usertype !== 'QA Admin') ? 'under_review' : ($item->status === 'approved' ? 'approved' : 'under_review'),
             'admin_remarks' => null, // Clear past rejection remarks on new submission
         ]);
+
+        if (!empty($validated['action_plan'])) {
+            $compliance->update([
+                'action_plan' => $validated['action_plan'],
+            ]);
+            $userUnitId = $user->responsible_unit_id ?? $user->unit_id;
+            if ($userUnitId) {
+                $compliance->assignments()->where('responsible_unit_id', $userUnitId)->update([
+                    'action_plan' => $validated['action_plan'],
+                ]);
+            }
+        }
 
         // Dispatch in-app notification to QA Admins
         if ($user->usertype !== 'QA Admin') {

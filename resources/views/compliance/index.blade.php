@@ -3439,11 +3439,12 @@
         const planInput = document.getElementById('cell-submit-action-plan');
         const planReq = document.getElementById('cell-submit-plan-req');
         if (planInput) {
-            planInput.required = false;
-            planInput.value = '';
+            planInput.required = true;
+            const existingPlan = _currentDetailCard?.getAttribute('data-action-plan');
+            planInput.value = (existingPlan && existingPlan !== 'No action plan formulated yet.') ? existingPlan : '';
         }
-        if (planReq) planReq.classList.add('hidden');
-        if (planContainer) planContainer.classList.add('hidden');
+        if (planReq) planReq.classList.remove('hidden');
+        if (planContainer) planContainer.classList.remove('hidden');
 
         openModal('cell-submit-modal');
     }
@@ -4078,7 +4079,8 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        evidence_link: docLink
+                        evidence_link: docLink,
+                        action_plan: plan
                     })
                 });
                 const data = await response.json();
@@ -4089,9 +4091,14 @@
                             evidence_link: data.evidence_link,
                             admin_remarks: null
                         });
+                        if (plan && _currentDetailCard) {
+                            _currentDetailCard.setAttribute('data-action-plan', plan);
+                            const planEl = document.getElementById('detail-action-plan');
+                            if (planEl) planEl.innerText = plan;
+                        }
                     }
                     closeModal('cell-submit-modal');
-                    alert('Evidence link submitted successfully! It is now queued for QA Admin review.');
+                    alert('Evidence and Action Plan submitted successfully! It is now queued for QA Admin review.');
                     if (_currentDetailCard) openDetailModal(_currentDetailCard);
                 } else {
                     alert(data.message || 'Error submitting evidence link.');
