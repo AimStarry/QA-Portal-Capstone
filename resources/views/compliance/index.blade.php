@@ -2145,7 +2145,6 @@
                     <input type="url" id="cell-submit-link" name="pending_document_link" required
                            placeholder="https://haueduph.sharepoint.com/..."
                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition" />
-                    <p id="cell-submit-item-hint" class="text-[10px] text-gray-400 mt-1 hidden">Submitting this evidence link will notify QA Admin and move the item status to <strong>Under Review</strong>.</p>
                 </div>
 
                 <div id="cell-submit-plan-container">
@@ -2155,6 +2154,7 @@
                     <textarea id="cell-submit-action-plan" name="action_plan" rows="3" required
                               placeholder="Describe the attached evidence documentation and actions implemented..."
                               class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition leading-relaxed"></textarea>
+                    <p id="cell-submit-item-hint" class="text-[10px] text-gray-400 mt-1.5 hidden">Submitting this evidence will notify QA Admin and move the item status to <strong>Under Review</strong>.</p>
                 </div>
 
                 <div class="pt-3 border-t border-gray-150 flex items-center justify-between">
