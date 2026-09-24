@@ -2124,6 +2124,13 @@
                 @csrf
                 <input type="hidden" id="cell-submit-compliance-id" name="compliance_id" value="" />
                 <input type="hidden" id="cell-submit-assignment-id" name="assignment_id" value="" />
+                <input type="hidden" id="cell-submit-item-id" name="item_id" value="" />
+
+                <!-- Recommendation Item Target Preview (for per-item submissions) -->
+                <div id="cell-submit-reco-box" class="bg-hau-maroon/5 border border-hau-maroon/10 rounded-xl p-3 text-xs text-gray-800 hidden">
+                    <span class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider block mb-1">Recommendation Item:</span>
+                    <p id="cell-submit-reco-text" class="font-semibold leading-relaxed text-gray-900"></p>
+                </div>
 
                 <!-- Rejection Alert if revising -->
                 <div id="cell-submit-rejection-alert" class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700 hidden">
@@ -2138,11 +2145,12 @@
                     <input type="url" id="cell-submit-link" name="pending_document_link" required
                            placeholder="https://haueduph.sharepoint.com/..."
                            class="block w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon transition" />
+                    <p id="cell-submit-item-hint" class="text-[10px] text-gray-400 mt-1 hidden">Submitting this evidence link will notify QA Admin and move the item status to <strong>Under Review</strong>.</p>
                 </div>
 
-                <div>
+                <div id="cell-submit-plan-container">
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                        Action Plan / Summary of Evidence <span class="text-rose-500">*</span>
+                        Action Plan / Summary of Evidence <span class="text-rose-500" id="cell-submit-plan-req">*</span>
                     </label>
                     <textarea id="cell-submit-action-plan" name="action_plan" rows="3" required
                               placeholder="Describe the attached evidence documentation and actions implemented..."
@@ -3393,69 +3401,55 @@
         });
     }
 
-    // ── Submit Recommendation Evidence Modal & Handler ──────────────────
-    let _activeEvidenceItemId = null;
-
+    // ── Submit Recommendation Evidence Modal & Handler ──
     function openSubmitItemEvidenceModal(itemId, recoText, currentLink = '') {
-        _activeEvidenceItemId = itemId;
-        document.getElementById('evidence-item-text-preview').innerText = recoText;
-        document.getElementById('evidence-item-link').value = currentLink || '';
-        openModal('submit-item-evidence-modal');
+        const compInput = document.getElementById('cell-submit-compliance-id');
+        if (compInput) compInput.value = currentDetailId || '';
+
+        const assInput = document.getElementById('cell-submit-assignment-id');
+        if (assInput) assInput.value = '';
+
+        const itemInput = document.getElementById('cell-submit-item-id');
+        if (itemInput) itemInput.value = itemId;
+
+        const subTitle = document.getElementById('cell-submit-subtitle');
+        if (subTitle) {
+            const unitName = document.getElementById('detail-resp')?.innerText || 'Responsible Unit';
+            const schoolName = document.getElementById('detail-school')?.innerText?.split('\n')[0] || '';
+            subTitle.textContent = (schoolName && schoolName !== 'General') ? (schoolName + ' — ' + unitName) : unitName;
+        }
+
+        const recoBox = document.getElementById('cell-submit-reco-box');
+        const recoTextEl = document.getElementById('cell-submit-reco-text');
+        if (recoBox && recoTextEl) {
+            recoTextEl.textContent = recoText;
+            recoBox.classList.remove('hidden');
+        }
+
+        const hintEl = document.getElementById('cell-submit-item-hint');
+        if (hintEl) hintEl.classList.remove('hidden');
+
+        const rejAlert = document.getElementById('cell-submit-rejection-alert');
+        if (rejAlert) rejAlert.classList.add('hidden');
+
+        const linkInput = document.getElementById('cell-submit-link');
+        if (linkInput) linkInput.value = currentLink || '';
+
+        const planContainer = document.getElementById('cell-submit-plan-container');
+        const planInput = document.getElementById('cell-submit-action-plan');
+        const planReq = document.getElementById('cell-submit-plan-req');
+        if (planInput) {
+            planInput.required = false;
+            planInput.value = '';
+        }
+        if (planReq) planReq.classList.add('hidden');
+        if (planContainer) planContainer.classList.add('hidden');
+
+        openModal('cell-submit-modal');
     }
 
     function closeSubmitItemEvidenceModal() {
-        _activeEvidenceItemId = null;
-        closeModal('submit-item-evidence-modal');
-    }
-
-    function submitItemEvidence(e) {
-        e.preventDefault();
-        if (!_activeEvidenceItemId) return;
-
-        const link = document.getElementById('evidence-item-link').value.trim();
-        if (!link) {
-            alert('Please enter a valid evidence URL.');
-            return;
-        }
-
-        const btn = document.getElementById('evidence-item-submit-btn');
-        btn.disabled = true;
-        btn.textContent = 'Submitting...';
-
-        fetch(`/compliance/recommendations/${_activeEvidenceItemId}/evidence`, {
-            method: 'POST',
-            body: JSON.stringify({ evidence_link: link }),
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-            },
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                if (currentDetailId) {
-                    updateCardRecoCache(currentDetailId, _activeEvidenceItemId, {
-                        status: data.status,
-                        evidence_link: data.evidence_link,
-                        admin_remarks: null
-                    });
-                }
-                closeSubmitItemEvidenceModal();
-                alert('Evidence link submitted successfully! It is now queued for QA Admin review.');
-                if (_currentDetailCard) openDetailModal(_currentDetailCard);
-            } else {
-                alert(data.message || 'Error submitting evidence link.');
-            }
-        })
-        .catch(err => {
-            console.error('Evidence submission failed:', err);
-            alert('Failed to submit evidence.');
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.textContent = 'Submit Evidence Link';
-        });
+        closeModal('cell-submit-modal');
     }
 
     const accreditingBodiesMap = @json($dbAccreditingBodies->keyBy('code')->map(function($ab) {
@@ -3691,13 +3685,14 @@
                         html += `</button>`;
                     }
                     html += `</div>`;
-                    html += `<button type="button" onclick="openSubmitItemEvidenceModal(${itemId}, '${escapeHtml(item.text).replace(/'/g, "\\'")}', '${escapeHtml(item.evidence_link || '').replace(/'/g, "\\'")}')" class="text-[11px] font-bold text-gray-600 hover:text-hau-maroon transition underline ml-auto">`;
-                    html += item.evidence_link ? 'Edit Evidence Link' : '+ Add Evidence Link';
+                    html += `<button type="button" onclick="openSubmitItemEvidenceModal(${itemId}, '${escapeHtml(item.text).replace(/'/g, "\\'")}', '${escapeHtml(item.evidence_link || '').replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1 text-[11px] font-bold text-gray-600 hover:text-hau-maroon transition underline ml-auto">`;
+                    html += `<svg class="w-3 h-3 text-hau-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>`;
+                    html += item.evidence_link ? 'Edit Evidence' : '+ Submit Evidence';
                     html += `</button>`;
                 } else {
                     html += `<button type="button" onclick="openSubmitItemEvidenceModal(${itemId}, '${escapeHtml(item.text).replace(/'/g, "\\'")}', '${escapeHtml(item.evidence_link || '').replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-hau-maroon hover:bg-hau-maroon-light text-white font-bold text-[11px] rounded-lg transition shadow-2xs">`;
-                    html += `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>`;
-                    html += item.evidence_link ? 'Update Evidence Link' : 'Submit Evidence Link';
+                    html += `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>`;
+                    html += item.evidence_link ? 'Update Evidence' : 'Submit Evidence';
                     html += `</button>`;
                 }
                 html += `</div>`;
@@ -4006,7 +4001,7 @@
         openModal('detail-modal');
     }
 
-    // ── Cell-Level Quick Submission Handlers ──
+    // ── Cell & Item Quick Submission Handlers ──
     function openCellSubmitModal(assignmentId, complianceId, schoolName, unitName, rejectionReason) {
         const compInput = document.getElementById('cell-submit-compliance-id');
         if (compInput) compInput.value = complianceId;
@@ -4014,10 +4009,19 @@
         const assInput = document.getElementById('cell-submit-assignment-id');
         if (assInput) assInput.value = assignmentId;
 
+        const itemInput = document.getElementById('cell-submit-item-id');
+        if (itemInput) itemInput.value = '';
+
         const subTitle = document.getElementById('cell-submit-subtitle');
         if (subTitle) {
             subTitle.textContent = (schoolName || 'General') + ' — ' + (unitName || 'Responsible Unit');
         }
+
+        const recoBox = document.getElementById('cell-submit-reco-box');
+        if (recoBox) recoBox.classList.add('hidden');
+
+        const hintEl = document.getElementById('cell-submit-item-hint');
+        if (hintEl) hintEl.classList.add('hidden');
 
         const rejAlert = document.getElementById('cell-submit-rejection-alert');
         const rejText = document.getElementById('cell-submit-rejection-text');
@@ -4033,8 +4037,15 @@
         const linkInput = document.getElementById('cell-submit-link');
         if (linkInput) linkInput.value = '';
 
+        const planContainer = document.getElementById('cell-submit-plan-container');
         const planInput = document.getElementById('cell-submit-action-plan');
-        if (planInput) planInput.value = '';
+        const planReq = document.getElementById('cell-submit-plan-req');
+        if (planInput) {
+            planInput.required = true;
+            planInput.value = '';
+        }
+        if (planReq) planReq.classList.remove('hidden');
+        if (planContainer) planContainer.classList.remove('hidden');
 
         openModal('cell-submit-modal');
     }
@@ -4043,13 +4054,59 @@
         e.preventDefault();
         const compId = document.getElementById('cell-submit-compliance-id').value;
         const assId = document.getElementById('cell-submit-assignment-id').value;
-        const docLink = document.getElementById('cell-submit-link').value;
-        const plan = document.getElementById('cell-submit-action-plan').value;
+        const itemId = document.getElementById('cell-submit-item-id').value;
+        const docLink = document.getElementById('cell-submit-link').value.trim();
+        const plan = document.getElementById('cell-submit-action-plan').value.trim();
         const btn = document.getElementById('cell-submit-btn');
+
+        if (!docLink) {
+            alert('Please enter a valid evidence URL.');
+            return;
+        }
 
         btn.disabled = true;
         btn.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Submitting...';
 
+        // Branch 1: If submitting for a Recommendation Item
+        if (itemId) {
+            try {
+                const response = await fetch(`/compliance/recommendations/${itemId}/evidence`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        evidence_link: docLink
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    if (currentDetailId) {
+                        updateCardRecoCache(currentDetailId, itemId, {
+                            status: data.status,
+                            evidence_link: data.evidence_link,
+                            admin_remarks: null
+                        });
+                    }
+                    closeModal('cell-submit-modal');
+                    alert('Evidence link submitted successfully! It is now queued for QA Admin review.');
+                    if (_currentDetailCard) openDetailModal(_currentDetailCard);
+                } else {
+                    alert(data.message || 'Error submitting evidence link.');
+                }
+            } catch (err) {
+                console.error('Evidence submission failed:', err);
+                alert('Failed to submit evidence.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Submit for QA Review</span><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>';
+            }
+            return;
+        }
+
+        // Branch 2: Submitting for an assignment cell
         try {
             const response = await fetch(`/compliance/${compId}/submit-update`, {
                 method: 'POST',
@@ -4077,7 +4134,7 @@
             window.location.reload();
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '<span>Submit for QA Review</span>';
+            btn.innerHTML = '<span>Submit for QA Review</span><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>';
         }
     }
 
@@ -4771,47 +4828,5 @@
                 <button type="submit" id="reject-item-submit-btn" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">Send Revision Request</button>
             </div>
         </form>
-    </div>
-</div>
-
-<!-- ================= PER-RECOMMENDATION EVIDENCE SUBMISSION MODAL ================= -->
-<div id="submit-item-evidence-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden transform scale-95 transition-all">
-        <div class="modal-dark-header relative flex items-center justify-between text-white shrink-0 border-b border-white/10" style="background: linear-gradient(135deg, #5c0000 0%, #2f0000 55%, #150000 100%); padding: 1.25rem 1.5rem; color: #ffffff;">
-            <div class="flex items-center gap-3.5">
-                <div class="modal-icon-badge w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0" style="color: #ffffff;">
-                    <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-base font-bold text-white tracking-wide" style="color: #ffffff;">Attach Evidence</h3>
-                    <p class="text-xs text-white/80 font-normal mt-0.5" style="color: rgba(255, 255, 255, 0.85);">Submit document link for recommendation item</p>
-                </div>
-            </div>
-            <button type="button" onclick="closeSubmitItemEvidenceModal()" class="modal-close-btn p-2 text-white hover:bg-white/20 rounded-xl transition cursor-pointer" style="color: #ffffff;">
-                <svg class="w-5 h-5 text-white" style="color: #ffffff; stroke: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <form onsubmit="submitItemEvidence(event)">
-            <div class="p-6 space-y-4">
-                <div class="bg-hau-maroon/5 border border-hau-maroon/10 rounded-xl p-3 text-xs text-gray-800">
-                    <span class="text-[10px] font-bold text-hau-maroon uppercase tracking-wider block mb-1">Recommendation Item:</span>
-                    <p id="evidence-item-text-preview" class="font-semibold leading-relaxed text-gray-900"></p>
-                </div>
-                <div>
-                    <label for="evidence-item-link" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Evidence Document URL (SharePoint / Google Drive / Cloud Link)</label>
-                    <input type="url" id="evidence-item-link" required placeholder="https://onedrive.live.com/... or https://drive.google.com/..." class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-hau-maroon/20 focus:border-hau-maroon font-mono" />
-                    <span class="text-[10px] text-gray-400 mt-1 block">Submitting this evidence link will notify QA Admin and move the item status to <strong>Under Review</strong>.</span>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                <button type="button" onclick="closeSubmitItemEvidenceModal()" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer">Cancel</button>
-                <button type="submit" id="evidence-item-submit-btn" class="px-5 py-2 bg-hau-maroon hover:bg-hau-maroon-dark text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">Submit Evidence Link</button>
-            </div>
-        </form>
-    </div>
 </div>
 @endsection
