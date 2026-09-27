@@ -35,4 +35,6 @@ local_dump_check.php
 app/Http/Controllers/ComplianceControllerTemp.php
 database/seeders/*
 !database/seeders/DatabaseSeeder.php
+!database/seeders/MockDataSeeder.php
+!database/seeders/ResponsibleUnitSeeder.php
 

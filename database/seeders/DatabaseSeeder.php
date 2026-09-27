@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
                 'first_name' => 'Admin',
                 'last_name' => 'User',
                 'usertype' => 'QA Admin',
-                'email' => 'admin@hau.edu.ph',
+                'email' => 'admin@example.edu',
                 'password' => bcrypt('password'),
             ]
         );
@@ -33,12 +33,12 @@ class DatabaseSeeder extends Seeder
                 'first_name' => 'QAO',
                 'last_name' => 'Admin',
                 'usertype' => 'QA Admin',
-                'email' => 'qaoadmin@hau.edu.ph',
+                'email' => 'qao@example.edu',
                 'password' => bcrypt('password'),
             ]
         );
 
-        // 2. Call optional seeders if present locally
+        // 2. Call mock seeders
         if (class_exists(MockDataSeeder::class)) {
             $this->call(MockDataSeeder::class);
         }
